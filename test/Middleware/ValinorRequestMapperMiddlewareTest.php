@@ -311,6 +311,110 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
         self::assertArrayHasKey('messages', $body);
     }
 
+    #[Test]
+    public function mapsFromRouteOptionsValinorMappings(): void
+    {
+        $mapper = (new MapperBuilder())
+            ->configureWith(new ConvertKeysToCamelCase())
+            ->allowSuperfluousKeys()
+            ->allowPermissiveTypes()
+            ->mapper()
+        ;
+
+        $middleware = new ValinorRequestMapperMiddleware($mapper);
+
+        $request = (new ServerRequest())
+            ->withParsedBody(['name' => 'foo', 'balance' => '100', 'currency_code' => 'USD'])
+            ->withMethod('POST')
+        ;
+
+        $handler = new class implements MiddlewareInterface, RequestHandlerInterface {
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                return $this->handle($request);
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                return new JsonResponse(
+                    $request->getAttribute(CreateBodyRequest::class),
+                );
+            }
+        };
+
+        $route = new Route('/example', $handler, ['POST']);
+        $route->setOptions([
+            'valinor_mappings' => [
+                [
+                    'body' => CreateBodyRequest::class,
+                    'query' => null,
+                    'route' => null,
+                    'source' => null,
+                    'output' => null,
+                    'methods' => [],
+                ],
+            ],
+        ]);
+        $routeResult = RouteResult::fromRoute($route, []);
+        $request = $request->withAttribute(RouteResult::class, $routeResult);
+
+        $response = $middleware->process($request, $this->nextHandler($handler));
+
+        $body = json_decode((string) $response->getBody(), true);
+
+        self::assertSame('foo', $body['name']);
+        self::assertSame('100', $body['balance']);
+        self::assertSame('USD', $body['currencyCode']);
+    }
+
+    #[Test]
+    public function mapsFromRouteOptionsWithMethodFilter(): void
+    {
+        $mapper = (new MapperBuilder())->mapper();
+        $middleware = new ValinorRequestMapperMiddleware($mapper);
+
+        $request = (new ServerRequest())
+            ->withParsedBody(['name' => 'foo'])
+            ->withMethod('GET')
+        ;
+
+        $handler = new class implements MiddlewareInterface, RequestHandlerInterface {
+            public bool $mapped = false;
+
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                return $this->handle($request);
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                $this->mapped = null !== $request->getAttribute(RequiredRequest::class);
+
+                return new EmptyResponse();
+            }
+        };
+
+        $route = new Route('/example', $handler, ['GET', 'POST']);
+        $route->setOptions([
+            'valinor_mappings' => [
+                [
+                    'body' => RequiredRequest::class,
+                    'query' => null,
+                    'route' => null,
+                    'source' => null,
+                    'output' => null,
+                    'methods' => ['POST'],
+                ],
+            ],
+        ]);
+        $routeResult = RouteResult::fromRoute($route, []);
+        $request = $request->withAttribute(RouteResult::class, $routeResult);
+
+        $middleware->process($request, $this->nextHandler($handler));
+
+        self::assertFalse($handler->mapped);
+    }
+
     private function nextHandler(RequestHandlerInterface $routeHandler): RequestHandlerInterface
     {
         return new class($routeHandler) implements RequestHandlerInterface {

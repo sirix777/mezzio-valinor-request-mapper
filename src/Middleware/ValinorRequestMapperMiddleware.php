@@ -130,10 +130,10 @@ final class ValinorRequestMapperMiddleware implements MiddlewareInterface
         $matchedRoute = $routeResult->getMatchedRoute();
 
         if (false !== $matchedRoute) {
-            $defaults = $matchedRoute->getOptions()['defaults'] ?? [];
+            $valinorMappings = $matchedRoute->getOptions()['valinor_mappings'] ?? [];
 
-            if (isset($defaults['valinor_mappings'])) {
-                return $this->filterByMethod($defaults['valinor_mappings'], $httpMethod);
+            if ([] !== $valinorMappings) {
+                return $this->filterByMethod($valinorMappings, $httpMethod);
             }
 
             // 2. Reflection on the actual route handler
