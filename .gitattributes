@@ -1,0 +1,9 @@
+/.phpunit.cache/ export-ignore
+/test/ export-ignore
+/tools/ export-ignore
+/phpunit.xml.dist export-ignore
+/phpstan.neon export-ignore
+/rector.php export-ignore
+/.php-cs-fixer.dist.php export-ignore
+/.gitattributes export-ignore
+/.github/ export-ignore

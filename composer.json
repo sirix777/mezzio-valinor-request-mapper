@@ -1,0 +1,80 @@
+{
+    "name": "sirix/mezzio-valinor-request-mapper",
+    "description": "Transparently maps PSR-7 requests to typed DTOs via cuyz/valinor in Mezzio applications",
+    "keywords": [
+        "mezzio",
+        "valinor",
+        "mapper",
+        "dto",
+        "request",
+        "psr-7",
+        "middleware",
+        "hydration",
+        "attributes"
+    ],
+    "license": "MIT",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Sirix",
+            "homepage": "https://github.com/sirix777"
+        }
+    ],
+    "require": {
+        "php": "~8.2.0 || ~8.3.0 || ~8.4.0 || ~8.5.0",
+        "cuyz/valinor": "^2.0",
+        "laminas/laminas-diactoros": "^3.5.0",
+        "mezzio/mezzio": "^3.20",
+        "mezzio/mezzio-router": "^3.15 || ^4.1",
+        "psr/container": "^1.0 || ^2.0",
+        "psr/http-server-middleware": "^1.0",
+        "sirix/mezzio-routing-contracts": "^0.1"
+    },
+    "require-dev": {
+        "bamarni/composer-bin-plugin": "^1.9",
+        "phpunit/phpunit": "^11.5"
+    },
+    "suggest": {
+        "sirix/mezzio-routing-attributes": "Enables automatic per-route middleware registration for #[MapRequest] via attribute scanning"
+    },
+    "autoload": {
+        "psr-4": {
+            "Sirix\\Mezzio\\Valinor\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Sirix\\Mezzio\\Valinor\\Test\\": "test/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "bamarni/composer-bin-plugin": true
+        }
+    },
+    "extra": {
+        "bamarni-bin": {
+            "bin-links": false,
+            "forward-command": true,
+            "target-directory": "tools"
+        },
+        "laminas": {
+            "config-provider": "Sirix\\Mezzio\\Valinor\\ConfigProvider"
+        }
+    },
+    "scripts": {
+        "analyse-deps": "tools/composer-dependency-analyser/vendor/bin/composer-dependency-analyser",
+        "check": [
+            "@cs-check",
+            "@rector",
+            "@phpstan",
+            "@test"
+        ],
+        "cs-check": "php tools/php-cs-fixer/vendor/bin/php-cs-fixer fix --dry-run -vvv --diff",
+        "cs-fix": "php tools/php-cs-fixer/vendor/bin/php-cs-fixer fix -vvv",
+        "normalize": "@composer bin composer-normalize normalize --diff ../../composer.json",
+        "phpstan": "php tools/phpstan/vendor/bin/phpstan analyse -c phpstan.neon --memory-limit=2G",
+        "rector": "php tools/rector/vendor/bin/rector process --dry-run --memory-limit=2G",
+        "test": "php vendor/bin/phpunit --colors=always --testdox"
+    }
+}

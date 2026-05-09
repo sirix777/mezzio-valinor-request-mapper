@@ -1,0 +1,44 @@
+name: PHP Composer
+
+on:
+    push:
+        branches: ["main"]
+    pull_request:
+        branches: ["main"]
+
+permissions:
+    contents: read
+
+env:
+    FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+    qa:
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                php-version: ["8.2", "8.3", "8.4", "8.5"]
+        steps:
+            - uses: actions/checkout@v5
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ matrix.php-version }}
+                  coverage: none
+
+            - name: Validate composer.json
+              run: composer validate --strict --no-check-lock
+
+            - name: Install dependencies
+              run: composer install
+
+            - name: Run cs-check
+              run: composer cs-check
+
+            - name: Run phpstan
+              run: composer phpstan
+
+            - name: Run phpunit
+              run: composer test
