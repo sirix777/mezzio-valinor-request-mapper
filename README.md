@@ -1,4 +1,5 @@
 # mezzio-valinor-request-mapper
+[![Latest Stable Version](http://poser.pugx.org/sirix/mezzio-valinor-request-mapper/v)](https://packagist.org/packages/sirix/mezzio-valinor-request-mapper) [![Total Downloads](http://poser.pugx.org/sirix/mezzio-valinor-request-mapper/downloads)](https://packagist.org/packages/sirix/mezzio-valinor-request-mapper) [![Latest Unstable Version](http://poser.pugx.org/sirix/mezzio-valinor-request-mapper/v/unstable)](https://packagist.org/packages/sirix/mezzio-valinor-request-mapper) [![License](http://poser.pugx.org/sirix/mezzio-valinor-request-mapper/license)](https://packagist.org/packages/sirix/mezzio-valinor-request-mapper) [![PHP Version Require](http://poser.pugx.org/sirix/mezzio-valinor-request-mapper/require/php)](https://packagist.org/packages/sirix/mezzio-valinor-request-mapper)
 
 Typed request mapping for Mezzio handlers via `cuyz/valinor`.
 
