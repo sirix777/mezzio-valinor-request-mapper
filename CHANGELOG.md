@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-05-27
+
+### Added
+
+- Stable `#[MapRequest]` public attribute API for class-level and method-level request DTO mapping.
+- Stable `ValinorRequestMapperMiddleware` behavior for body, query, route, and combined `source` mapping.
+- Full method-level reflection support for PSR-15 `process()`, request handler `handle()` wrappers, and invokable route middleware.
+- `TreeMapper` service factory registration, allowing applications to override or reuse the configured Valinor mapper.
+- Direct dependency declarations for `laminas/laminas-stratigility`, `psr/http-message`, and `psr/http-server-handler`.
+
+### Changed
+
+- Require stable `sirix/mezzio-routing-contracts ^1.0`.
+- Document stable release requirements and release checklist.
+
 ## [0.1.1] - 2026-05-10
 
 ### Fixed

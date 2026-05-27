@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sirix\Mezzio\Valinor\Factory;
 
 use CuyZ\Valinor\Mapper\Tree\Message\Formatter\MessageMapFormatter;
+use CuyZ\Valinor\Mapper\TreeMapper;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -33,13 +34,13 @@ final readonly class ValinorRequestMapperMiddlewareFactory
             $formatters[] = new MessageMapFormatter($messageMap);
         }
 
-        $treeMapperFactory = new ValinorTreeMapperFactory(
-            $container,
-            (array) ($config['mapper'] ?? []),
-        );
+        /** @var TreeMapper $treeMapper */
+        $treeMapper = $container->has(TreeMapper::class)
+            ? $container->get(TreeMapper::class)
+            : (new ValinorTreeMapperFactory($container, (array) ($config['mapper'] ?? [])))();
 
         return new ValinorRequestMapperMiddleware(
-            $treeMapperFactory(),
+            $treeMapper,
             $errorConfig,
             ...$formatters,
         );
