@@ -3,8 +3,6 @@
 
 Typed request mapping for Mezzio handlers via `cuyz/valinor`.
 
-> **Pre-1.0 package:** Not yet production-ready. Public API and configuration may change with breaking changes before `1.0.0`.
-
 This package reads `#[MapRequest]` attributes on route handlers and maps request input (body/query/route) into DTOs before your handler code runs.
 
 ## Features
@@ -23,8 +21,11 @@ This package reads `#[MapRequest]` attributes on route handlers and maps request
 ## Requirements
 
 - PHP `~8.2 || ~8.3 || ~8.4 || ~8.5`
-- `cuyz/valinor ^2.4`
-- `mezzio/mezzio ^3.2`
+- `cuyz/valinor ^2.0`
+- `laminas/laminas-stratigility ^4.3`
+- `mezzio/mezzio ^3.20`
+- `mezzio/mezzio-router ^3.15 || ^4.1`
+- `sirix/mezzio-routing-contracts ^1.0`
 
 ## Installation
 
@@ -49,6 +50,13 @@ $app->pipe(\Mezzio\Router\Middleware\RouteMiddleware::class);
 $app->pipe(\Sirix\Mezzio\Valinor\Middleware\ValinorRequestMapperMiddleware::class);
 $app->pipe(\Mezzio\Router\Middleware\DispatchMiddleware::class);
 ```
+
+In standalone mode the middleware resolves `#[MapRequest]` by reflection from:
+
+- class-level attributes on the matched route handler
+- method-level attributes on PSR-15 `process()`
+- method-level attributes on request handler `handle()` when Mezzio wraps it as route middleware
+- method-level attributes on invokable route middleware via `__invoke()`
 
 ### 2) With `sirix/mezzio-routing-attributes`
 
@@ -150,7 +158,7 @@ Rules:
 - if `output` is omitted, mapped DTO is stored under its class name
 - `methods = []` means any HTTP method
 - `methods` are normalized (`post`, `Post` -> `POST`)
-- if multiple `#[MapRequest]` attributes match current method, all of them are applied in declaration order
+- if multiple `#[MapRequest]` attributes match current method, all of them are applied in declaration order; class-level mappings run before method-level mappings
 
 ## Combined mapping (`source`)
 
@@ -284,3 +292,14 @@ Status code defaults to `422` and can be overridden by `sirix_mezzio_valinor.err
 - With `sirix/mezzio-routing-attributes`, middleware can be added per-route automatically via attribute scanning.
 - For body mapping, malformed body structures can still fail at Valinor level and return configured mapping error response.
 - When using a custom `output`, ensure downstream code reads the same request key.
+
+## Release checklist
+
+Before tagging a stable release:
+
+```bash
+composer validate --strict
+composer normalize --dry-run --diff
+composer analyse-deps
+composer check
+```

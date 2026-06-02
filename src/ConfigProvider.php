@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sirix\Mezzio\Valinor;
 
+use CuyZ\Valinor\Mapper\TreeMapper;
+
 final class ConfigProvider
 {
     /**
@@ -14,6 +16,7 @@ final class ConfigProvider
         return [
             'dependencies' => [
                 'factories' => [
+                    TreeMapper::class => Factory\ValinorTreeMapperFactory::class,
                     Middleware\ValinorRequestMapperMiddleware::class => Factory\ValinorRequestMapperMiddlewareFactory::class,
                 ],
             ],

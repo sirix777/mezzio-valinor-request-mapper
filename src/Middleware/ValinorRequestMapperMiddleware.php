@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Sirix\Mezzio\Valinor\Middleware;
 
+use Closure;
 use CuyZ\Valinor\Mapper\Http\HttpRequest;
 use CuyZ\Valinor\Mapper\MappingError;
 use CuyZ\Valinor\Mapper\Tree\Message\Formatter\MessageFormatter;
 use CuyZ\Valinor\Mapper\TreeMapper;
 use Laminas\Diactoros\Response\JsonResponse;
+use Laminas\Stratigility\Middleware\CallableMiddlewareDecorator;
+use Laminas\Stratigility\Middleware\RequestHandlerMiddleware;
 use Mezzio\Middleware\LazyLoadingMiddleware;
 use Mezzio\Router\RouteResult;
 use Psr\Http\Message\ResponseInterface;
@@ -16,13 +19,18 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use ReflectionClass;
+use ReflectionException;
+use ReflectionFunction;
 use Sirix\Mezzio\Valinor\Attribute\MapRequest;
 
 use function array_key_exists;
 use function array_unique;
 use function array_values;
 use function class_exists;
+use function implode;
 use function in_array;
+use function is_array;
+use function is_object;
 use function is_string;
 use function lcfirst;
 use function preg_replace;
@@ -150,9 +158,9 @@ final class ValinorRequestMapperMiddleware implements MiddlewareInterface
      */
     private function resolveFromReflection(object|string $handler, string $httpMethod): array
     {
-        $handlerClass = $this->resolveHandlerClass($handler);
+        [$handlerClass, $methodNames] = $this->resolveHandlerReflectionTarget($handler);
 
-        $cacheKey = $handlerClass . '|' . $this->normalizeHttpMethod($httpMethod);
+        $cacheKey = $handlerClass . '|' . implode(',', $methodNames) . '|' . $this->normalizeHttpMethod($httpMethod);
 
         if (array_key_exists($cacheKey, $this->mapRequestCache)) {
             return $this->mapRequestCache[$cacheKey];
@@ -166,15 +174,135 @@ final class ValinorRequestMapperMiddleware implements MiddlewareInterface
 
         $result = [];
 
-        foreach ($refClass->getAttributes(MapRequest::class) as $refAttr) {
-            $attr = $refAttr->newInstance();
-
+        foreach ($this->resolveAttributes($refClass, $methodNames) as $attr) {
             if ($this->matchesHttpMethod($attr->methods, $httpMethod)) {
                 $result[] = $attr;
             }
         }
 
         return $this->mapRequestCache[$cacheKey] = $result;
+    }
+
+    /**
+     * @param ReflectionClass<object> $refClass
+     * @param list<string>            $methodNames
+     *
+     * @return list<MapRequest>
+     */
+    private function resolveAttributes(ReflectionClass $refClass, array $methodNames): array
+    {
+        $result = [];
+
+        foreach ($refClass->getAttributes(MapRequest::class) as $refAttr) {
+            $result[] = $refAttr->newInstance();
+        }
+
+        foreach ($methodNames as $methodName) {
+            if (! $refClass->hasMethod($methodName)) {
+                continue;
+            }
+
+            foreach ($refClass->getMethod($methodName)->getAttributes(MapRequest::class) as $refAttr) {
+                $result[] = $refAttr->newInstance();
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * @return array{0: string, 1: list<string>}
+     */
+    private function resolveHandlerReflectionTarget(object|string $handler): array
+    {
+        $unwrapped = $this->unwrapKnownMiddlewareDecorator($handler);
+
+        if (is_array($unwrapped)) {
+            return $unwrapped;
+        }
+
+        $handlerClass = $this->resolveHandlerClass($unwrapped);
+
+        if (! class_exists($handlerClass)) {
+            return [$handlerClass, []];
+        }
+
+        $refClass = new ReflectionClass($handlerClass);
+        $methods = [];
+
+        if ($refClass->implementsInterface(MiddlewareInterface::class)) {
+            $methods[] = 'process';
+        }
+
+        if ($refClass->implementsInterface(RequestHandlerInterface::class)) {
+            $methods[] = 'handle';
+        }
+
+        if ($refClass->hasMethod('__invoke')) {
+            $methods[] = '__invoke';
+        }
+
+        return [$handlerClass, array_values(array_unique($methods))];
+    }
+
+    /**
+     * @return array{0: string, 1: list<string>}|object|string
+     */
+    private function unwrapKnownMiddlewareDecorator(object|string $handler): array|object|string
+    {
+        if (! is_object($handler)) {
+            return $handler;
+        }
+
+        if (RequestHandlerMiddleware::class === $handler::class) {
+            $innerHandler = $this->readPrivateProperty($handler, 'handler');
+
+            if (is_object($innerHandler)) {
+                return [$innerHandler::class, ['handle']];
+            }
+        }
+
+        if (CallableMiddlewareDecorator::class === $handler::class) {
+            $callable = $this->readPrivateProperty($handler, 'middleware');
+
+            if (is_array($callable) && isset($callable[0], $callable[1]) && is_string($callable[1])) {
+                $class = is_object($callable[0]) ? $callable[0]::class : $callable[0];
+
+                if (is_string($class)) {
+                    return [$class, [$callable[1]]];
+                }
+            }
+
+            if ($callable instanceof Closure) {
+                $refFunction = new ReflectionFunction($callable);
+                $scopeClass = $refFunction->getClosureScopeClass();
+
+                if (null !== $scopeClass && '{closure}' !== $refFunction->getName()) {
+                    return [$scopeClass->getName(), [$refFunction->getName()]];
+                }
+            }
+
+            if (is_object($callable)) {
+                return [$callable::class, ['__invoke']];
+            }
+        }
+
+        return $handler;
+    }
+
+    private function readPrivateProperty(object $object, string $property): mixed
+    {
+        try {
+            $refClass = new ReflectionClass($object);
+
+            if (! $refClass->hasProperty($property)) {
+                return null;
+            }
+
+            return $refClass->getProperty($property)->getValue($object);
+        } catch (ReflectionException) {
+            return null;
+        }
     }
 
     /**

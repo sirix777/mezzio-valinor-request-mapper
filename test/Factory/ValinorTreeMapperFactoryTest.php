@@ -40,6 +40,37 @@ final class ValinorTreeMapperFactoryTest extends TestCase
     }
 
     #[Test]
+    public function containerInvocationReadsPackageMapperConfig(): void
+    {
+        $factory = new ValinorTreeMapperFactory();
+        $container = $this->createContainer([
+            'config' => [
+                'sirix_mezzio_valinor' => [
+                    'mapper' => [
+                        'allow_scalar_value_casting' => false,
+                    ],
+                ],
+            ],
+        ]);
+
+        $mapper = $factory($container);
+
+        $this->expectException(MappingError::class);
+
+        $mapper->map('array{value: string}', ['value' => 42]);
+    }
+
+    #[Test]
+    public function invocationWithoutContainerThrows(): void
+    {
+        $factory = new ValinorTreeMapperFactory();
+
+        $this->expectException(RuntimeException::class);
+
+        $factory();
+    }
+
+    #[Test]
     public function configuratorFromContainerIsApplied(): void
     {
         $configurator = new class implements MapperBuilderConfigurator {
