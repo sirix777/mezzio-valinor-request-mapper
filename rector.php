@@ -24,4 +24,8 @@ return static function(RectorConfig $rectorConfig): void {
         SetList::EARLY_RETURN,
         LevelSetList::UP_TO_PHP_82,
     ]);
+
+    $rectorConfig->skip([
+        StringClassNameToClassConstantRector::class,
+    ]);
 };

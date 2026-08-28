@@ -4,24 +4,35 @@ declare(strict_types=1);
 
 namespace Sirix\Mezzio\Valinor\Test\Middleware;
 
+use Closure;
 use CuyZ\Valinor\Mapper\Configurator\ConvertKeysToCamelCase;
-use CuyZ\Valinor\Mapper\Tree\Message\Formatter\MessageMapFormatter;
 use CuyZ\Valinor\Mapper\TreeMapper;
 use CuyZ\Valinor\MapperBuilder;
+use Fig\Http\Message\RequestMethodInterface;
+use Fig\Http\Message\StatusCodeInterface;
 use Laminas\Diactoros\Response\EmptyResponse;
 use Laminas\Diactoros\Response\JsonResponse;
+use Laminas\Diactoros\ResponseFactory;
 use Laminas\Diactoros\ServerRequest;
+use Laminas\Diactoros\StreamFactory;
 use Laminas\Stratigility\Middleware\CallableMiddlewareDecorator;
 use Laminas\Stratigility\Middleware\RequestHandlerMiddleware;
 use Mezzio\Router\Route;
 use Mezzio\Router\RouteResult;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use RuntimeException;
+use Sirix\ContainerResolver\ContainerResolver;
 use Sirix\Mezzio\Valinor\Attribute\MapRequest;
+use Sirix\Mezzio\Valinor\Error\DefaultMappingErrorResponder;
+use Sirix\Mezzio\Valinor\Error\MappingErrorContext;
+use Sirix\Mezzio\Valinor\Error\MappingErrorResponderInterface;
+use Sirix\Mezzio\Valinor\Error\MappingErrorResponderResolver;
 use Sirix\Mezzio\Valinor\Middleware\ValinorRequestMapperMiddleware;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\CreateBodyRequest;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\PaginationRequest;
@@ -36,7 +47,9 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
     public function mapsBodyQueryRouteCombinedIntoOneObject(): void
     {
         $middleware = $this->camelCaseMiddleware();
-        $request = $this->request('GET', query: ['q' => 'search term']);
+        $request    = $this->request(RequestMethodInterface::METHOD_GET, query: [
+            'q' => 'search term',
+        ]);
 
         $handler = new #[MapRequest(source: SearchRequest::class)]
         class implements MiddlewareInterface, RequestHandlerInterface {
@@ -57,9 +70,11 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
             $middleware,
             $request,
             $handler,
-            routeParams: ['locale' => 'en'],
+            routeParams: [
+                'locale' => 'en',
+            ],
             path: '/:locale/search',
-            methods: ['GET'],
+            methods: [RequestMethodInterface::METHOD_GET],
         );
 
         $body = json_decode((string) $response->getBody(), true);
@@ -73,7 +88,13 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
     public function mapsBodyAndQuerySeparately(): void
     {
         $middleware = $this->camelCaseMiddleware();
-        $request = $this->request('POST', ['balance' => '100', 'currency_code' => 'USD', 'name' => 'foo'], ['page' => '1']);
+        $request    = $this->request(RequestMethodInterface::METHOD_POST, [
+            'balance'       => '100',
+            'currency_code' => 'USD',
+            'name'          => 'foo',
+        ], [
+            'page' => '1',
+        ]);
 
         $handler = new #[MapRequest(body: CreateBodyRequest::class, output: 'body')]
         #[MapRequest(query: PaginationRequest::class, output: 'pagination')]
@@ -86,13 +107,13 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
             public function handle(ServerRequestInterface $request): ResponseInterface
             {
                 return new JsonResponse([
-                    'body' => $request->getAttribute('body'),
+                    'body'       => $request->getAttribute('body'),
                     'pagination' => $request->getAttribute('pagination'),
                 ]);
             }
         };
 
-        $response = $this->processRoute($middleware, $request, $handler, methods: ['POST']);
+        $response = $this->processRoute($middleware, $request, $handler, methods: [RequestMethodInterface::METHOD_POST]);
 
         $body = json_decode((string) $response->getBody(), true);
 
@@ -106,9 +127,11 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
     public function methodFilterSkipsNonMatchingHttpMethod(): void
     {
         $middleware = $this->defaultMiddleware();
-        $request = $this->request('GET', ['name' => 'foo']);
+        $request    = $this->request(RequestMethodInterface::METHOD_GET, [
+            'name' => 'foo',
+        ]);
 
-        $handler = new #[MapRequest(body: RequiredRequest::class, methods: ['POST'])]
+        $handler = new #[MapRequest(body: RequiredRequest::class, methods: [RequestMethodInterface::METHOD_POST])]
         class implements MiddlewareInterface, RequestHandlerInterface {
             public bool $mapped = false;
 
@@ -125,7 +148,7 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
             }
         };
 
-        $this->processRoute($middleware, $request, $handler, methods: ['POST', 'GET']);
+        $this->processRoute($middleware, $request, $handler, methods: [RequestMethodInterface::METHOD_POST, RequestMethodInterface::METHOD_GET]);
 
         self::assertFalse($handler->mapped);
     }
@@ -134,7 +157,9 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
     public function methodFilterMatchesLowerCaseConfiguredMethod(): void
     {
         $middleware = $this->defaultMiddleware();
-        $request = $this->request('POST', ['name' => 'foo']);
+        $request    = $this->request(RequestMethodInterface::METHOD_POST, [
+            'name' => 'foo',
+        ]);
 
         $handler = new #[MapRequest(body: RequiredRequest::class, methods: ['post'])]
         class implements MiddlewareInterface, RequestHandlerInterface {
@@ -151,7 +176,7 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
             }
         };
 
-        $response = $this->processRoute($middleware, $request, $handler, methods: ['POST']);
+        $response = $this->processRoute($middleware, $request, $handler, methods: [RequestMethodInterface::METHOD_POST]);
 
         $body = json_decode((string) $response->getBody(), true);
 
@@ -162,7 +187,9 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
     public function mapsMethodLevelAttributeFromMiddlewareProcessMethod(): void
     {
         $middleware = $this->defaultMiddleware();
-        $request = $this->request('POST', ['name' => 'foo']);
+        $request    = $this->request(RequestMethodInterface::METHOD_POST, [
+            'name' => 'foo',
+        ]);
 
         $handler = new class implements MiddlewareInterface, RequestHandlerInterface {
             #[MapRequest(body: RequiredRequest::class)]
@@ -179,7 +206,7 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
             }
         };
 
-        $response = $this->processRoute($middleware, $request, $handler, methods: ['POST']);
+        $response = $this->processRoute($middleware, $request, $handler, methods: [RequestMethodInterface::METHOD_POST]);
 
         $body = json_decode((string) $response->getBody(), true);
 
@@ -190,7 +217,9 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
     public function mapsMethodLevelAttributeFromWrappedRequestHandlerHandleMethod(): void
     {
         $middleware = $this->defaultMiddleware();
-        $request = $this->request('POST', ['name' => 'foo']);
+        $request    = $this->request(RequestMethodInterface::METHOD_POST, [
+            'name' => 'foo',
+        ]);
 
         $handler = new class implements RequestHandlerInterface {
             #[MapRequest(body: RequiredRequest::class)]
@@ -202,12 +231,108 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
             }
         };
 
-        $wrapperClass = RequestHandlerMiddleware::class;
+        $wrapperClass   = RequestHandlerMiddleware::class;
         $wrappedHandler = new $wrapperClass($handler);
 
-        $response = $this->processRoute($middleware, $request, $wrappedHandler, methods: ['POST']);
+        $response = $this->processRoute($middleware, $request, $wrappedHandler, methods: [RequestMethodInterface::METHOD_POST]);
 
         $body = json_decode((string) $response->getBody(), true);
+
+        self::assertSame('foo', $body['name']);
+    }
+
+    #[Test]
+    public function doesNotUnwrapUserMiddlewareWithDecoratorLikePrivateProperties(): void
+    {
+        $middleware = $this->defaultMiddleware();
+        $request    = $this->request(RequestMethodInterface::METHOD_POST, [
+            'name' => 'foo',
+        ]);
+
+        $handler = new class implements MiddlewareInterface {
+            private const DECORATOR_LIKE_PROPERTIES = ['handler', 'middleware', 'middlewareName'];
+
+            private readonly RequestHandlerInterface $handler;
+
+            private readonly Closure $middleware;
+
+            private readonly string $middlewareName;
+
+            public function __construct()
+            {
+                $this->handler = new class implements RequestHandlerInterface {
+                    public function handle(ServerRequestInterface $request): ResponseInterface
+                    {
+                        return new EmptyResponse();
+                    }
+                };
+                $this->middleware     = static fn (): ResponseInterface => new EmptyResponse();
+                $this->middlewareName = 'not-a-decorator';
+            }
+
+            #[MapRequest(body: RequiredRequest::class)]
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                foreach (self::DECORATOR_LIKE_PROPERTIES as $property) {
+                    if (! isset($this->{$property})) {
+                        throw new RuntimeException('Decorator-like properties should be initialized.');
+                    }
+                }
+
+                return new JsonResponse($request->getAttribute(RequiredRequest::class));
+            }
+        };
+
+        $response = $this->processRoute($middleware, $request, $handler, methods: [RequestMethodInterface::METHOD_POST]);
+        $body     = json_decode((string) $response->getBody(), true);
+
+        self::assertSame('foo', $body['name']);
+    }
+
+    #[Test]
+    public function ignoresUninitializedDecoratorLikeTypedPropertiesOnUserMiddleware(): void
+    {
+        $middleware = $this->defaultMiddleware();
+        $request    = $this->request(RequestMethodInterface::METHOD_POST, [
+            'name' => 'foo',
+        ]);
+
+        $handler = new class implements MiddlewareInterface {
+            private const DECORATOR_LIKE_PROPERTIES = ['handler', 'middleware', 'middlewareName'];
+
+            private RequestHandlerInterface $handler;
+
+            private Closure $middleware;
+
+            private string $middlewareName;
+
+            public function initializeDecoratorLikeProperties(): void
+            {
+                $this->handler = new class implements RequestHandlerInterface {
+                    public function handle(ServerRequestInterface $request): ResponseInterface
+                    {
+                        return new EmptyResponse();
+                    }
+                };
+                $this->middleware     = static fn (): ResponseInterface => new EmptyResponse();
+                $this->middlewareName = 'not-a-decorator';
+            }
+
+            #[MapRequest(body: RequiredRequest::class)]
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                foreach (self::DECORATOR_LIKE_PROPERTIES as $property) {
+                    if (isset($this->{$property})) {
+                        throw new RuntimeException('Decorator-like properties should remain uninitialized.');
+                    }
+                }
+
+                return new JsonResponse($request->getAttribute(RequiredRequest::class));
+            }
+        };
+
+        $response = $this->processRoute($middleware, $request, $handler, methods: [RequestMethodInterface::METHOD_POST]);
+        $body     = json_decode((string) $response->getBody(), true);
 
         self::assertSame('foo', $body['name']);
     }
@@ -216,7 +341,9 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
     public function mapsMethodLevelAttributeFromCallableMiddlewareMethod(): void
     {
         $middleware = $this->defaultMiddleware();
-        $request = $this->request('POST', ['name' => 'foo']);
+        $request    = $this->request(RequestMethodInterface::METHOD_POST, [
+            'name' => 'foo',
+        ]);
 
         $handler = new class {
             #[MapRequest(body: RequiredRequest::class)]
@@ -229,7 +356,7 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
         };
         $callableMiddleware = new CallableMiddlewareDecorator($handler->create(...));
 
-        $response = $this->processRoute($middleware, $request, $callableMiddleware, methods: ['POST']);
+        $response = $this->processRoute($middleware, $request, $callableMiddleware, methods: [RequestMethodInterface::METHOD_POST]);
 
         $body = json_decode((string) $response->getBody(), true);
 
@@ -240,7 +367,9 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
     public function mapsMethodLevelAttributeFromInvokableCallableMiddleware(): void
     {
         $middleware = $this->defaultMiddleware();
-        $request = $this->request('POST', ['name' => 'foo']);
+        $request    = $this->request(RequestMethodInterface::METHOD_POST, [
+            'name' => 'foo',
+        ]);
 
         $handler = new class {
             #[MapRequest(body: RequiredRequest::class)]
@@ -253,7 +382,7 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
         };
         $callableMiddleware = new CallableMiddlewareDecorator($handler);
 
-        $response = $this->processRoute($middleware, $request, $callableMiddleware, methods: ['POST']);
+        $response = $this->processRoute($middleware, $request, $callableMiddleware, methods: [RequestMethodInterface::METHOD_POST]);
 
         $body = json_decode((string) $response->getBody(), true);
 
@@ -264,7 +393,13 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
     public function mapsClassAndMethodLevelAttributesInOrder(): void
     {
         $middleware = $this->camelCaseMiddleware(allowPermissiveTypes: false);
-        $request = $this->request('POST', ['name' => 'foo', 'balance' => '100', 'currency_code' => 'USD'], ['page' => '2']);
+        $request    = $this->request(RequestMethodInterface::METHOD_POST, [
+            'name'          => 'foo',
+            'balance'       => '100',
+            'currency_code' => 'USD',
+        ], [
+            'page' => '2',
+        ]);
 
         $handler = new #[MapRequest(query: PaginationRequest::class, output: 'pagination')]
         class implements MiddlewareInterface, RequestHandlerInterface {
@@ -278,12 +413,12 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
             {
                 return new JsonResponse([
                     'pagination' => $request->getAttribute('pagination'),
-                    'body' => $request->getAttribute('body'),
+                    'body'       => $request->getAttribute('body'),
                 ]);
             }
         };
 
-        $response = $this->processRoute($middleware, $request, $handler, methods: ['POST']);
+        $response = $this->processRoute($middleware, $request, $handler, methods: [RequestMethodInterface::METHOD_POST]);
 
         $body = json_decode((string) $response->getBody(), true);
 
@@ -296,12 +431,14 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
     public function methodLevelMethodFilterSkipsNonMatchingHttpMethod(): void
     {
         $middleware = $this->defaultMiddleware();
-        $request = $this->request('GET', ['name' => 'foo']);
+        $request    = $this->request(RequestMethodInterface::METHOD_GET, [
+            'name' => 'foo',
+        ]);
 
         $handler = new class implements MiddlewareInterface, RequestHandlerInterface {
             public bool $mapped = false;
 
-            #[MapRequest(body: RequiredRequest::class, methods: ['POST'])]
+            #[MapRequest(body: RequiredRequest::class, methods: [RequestMethodInterface::METHOD_POST])]
             public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
             {
                 return $this->handle($request);
@@ -315,7 +452,7 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
             }
         };
 
-        $this->processRoute($middleware, $request, $handler, methods: ['GET', 'POST']);
+        $this->processRoute($middleware, $request, $handler, methods: [RequestMethodInterface::METHOD_GET, RequestMethodInterface::METHOD_POST]);
 
         self::assertFalse($handler->mapped);
     }
@@ -324,7 +461,7 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
     public function noopWhenNoMapRequestAttribute(): void
     {
         $middleware = $this->defaultMiddleware();
-        $request = $this->request('GET');
+        $request    = $this->request(RequestMethodInterface::METHOD_GET);
 
         $handler = new class implements MiddlewareInterface, RequestHandlerInterface {
             public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
@@ -338,10 +475,10 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
             }
         };
 
-        $request = $this->withMatchedRoute($request, $handler, methods: ['GET']);
+        $request = $this->withMatchedRoute($request, $handler, methods: [RequestMethodInterface::METHOD_GET]);
 
         $called = false;
-        $next = new class($called) implements RequestHandlerInterface {
+        $next   = new class($called) implements RequestHandlerInterface {
             public function __construct(public bool &$called) {}
 
             public function handle(ServerRequestInterface $request): ResponseInterface
@@ -365,7 +502,7 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
         $request = new ServerRequest();
 
         $called = false;
-        $next = new class($called) implements RequestHandlerInterface {
+        $next   = new class($called) implements RequestHandlerInterface {
             public function __construct(public bool &$called) {}
 
             public function handle(ServerRequestInterface $request): ResponseInterface
@@ -384,8 +521,8 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
     #[Test]
     public function returnsErrorResponseOnMappingFailure(): void
     {
-        $middleware = new ValinorRequestMapperMiddleware($this->defaultMapper(), ['status_code' => 422]);
-        $request = $this->request('POST', []);
+        $middleware = $this->middleware($this->defaultMapper(), $this->defaultResponder());
+        $request    = $this->request(RequestMethodInterface::METHOD_POST, []);
 
         $handler = new #[MapRequest(body: RequiredRequest::class)]
         class implements MiddlewareInterface, RequestHandlerInterface {
@@ -400,29 +537,37 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
             }
         };
 
-        $response = $this->processRoute($middleware, $request, $handler, methods: ['POST']);
+        $response = $this->processRoute($middleware, $request, $handler, methods: [RequestMethodInterface::METHOD_POST]);
 
-        self::assertSame(422, $response->getStatusCode());
+        self::assertSame(StatusCodeInterface::STATUS_UNPROCESSABLE_ENTITY, $response->getStatusCode());
+        self::assertSame('application/json', $response->getHeaderLine('Content-Type'));
 
         $body = json_decode((string) $response->getBody(), true);
-        self::assertSame('Mapping failed', $body['error']);
-        self::assertArrayHasKey('messages', $body);
+        self::assertSame([
+            'error'    => 'Mapping failed',
+            'messages' => $body['messages'],
+        ], $body);
     }
 
     #[Test]
-    public function formatsErrorResponseWithMessageMapAndSnakeCasePaths(): void
+    public function delegatesMappingErrorsToCustomDefaultResponderWithContext(): void
     {
-        $middleware = new ValinorRequestMapperMiddleware(
-            $this->defaultMapper(),
-            ['status_code' => 400, 'key_case' => 'snake_case'],
-            new MessageMapFormatter([
-                'Cannot be empty and must be filled with a value matching type `string`.' => 'Required.',
-            ]),
-        );
+        $responder = new class implements MappingErrorResponderInterface {
+            public ?MappingErrorContext $context = null;
 
-        $request = $this->request('POST', []);
+            public function respond(MappingErrorContext $context): ResponseInterface
+            {
+                $this->context = $context;
 
-        $handler = new #[MapRequest(body: RequiredRequest::class)]
+                return new JsonResponse([
+                    'handled' => true,
+                ], StatusCodeInterface::STATUS_CONFLICT);
+            }
+        };
+        $middleware = $this->middleware($this->defaultMapper(), $responder);
+        $request    = $this->request(RequestMethodInterface::METHOD_POST, []);
+
+        $handler = new #[MapRequest(body: RequiredRequest::class, output: 'form')]
         class implements MiddlewareInterface, RequestHandlerInterface {
             public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
             {
@@ -435,19 +580,25 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
             }
         };
 
-        $response = $this->processRoute($middleware, $request, $handler, methods: ['POST']);
+        $response = $this->processRoute($middleware, $request, $handler, methods: [RequestMethodInterface::METHOD_POST]);
 
-        $body = json_decode((string) $response->getBody(), true);
-
-        self::assertSame(400, $response->getStatusCode());
-        self::assertArrayHasKey('name', $body['messages']);
+        self::assertSame(StatusCodeInterface::STATUS_CONFLICT, $response->getStatusCode());
+        self::assertInstanceOf(MappingErrorContext::class, $responder->context);
+        self::assertSame(RequiredRequest::class, $responder->context->dtoClass);
+        self::assertSame('body', $responder->context->source);
+        self::assertSame('form', $responder->context->requestAttributeKey);
+        self::assertSame($request->getMethod(), $responder->context->request->getMethod());
     }
 
     #[Test]
     public function mapsFromRouteOptionsValinorMappings(): void
     {
         $middleware = $this->camelCaseMiddleware();
-        $request = $this->request('POST', ['name' => 'foo', 'balance' => '100', 'currency_code' => 'USD']);
+        $request    = $this->request(RequestMethodInterface::METHOD_POST, [
+            'name'          => 'foo',
+            'balance'       => '100',
+            'currency_code' => 'USD',
+        ]);
 
         $handler = new class implements MiddlewareInterface, RequestHandlerInterface {
             public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
@@ -463,15 +614,15 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
             }
         };
 
-        $route = new Route('/example', $handler, ['POST']);
+        $route = new Route('/example', $handler, [RequestMethodInterface::METHOD_POST]);
         $route->setOptions([
             'valinor_mappings' => [
                 [
-                    'body' => CreateBodyRequest::class,
-                    'query' => null,
-                    'route' => null,
-                    'source' => null,
-                    'output' => null,
+                    'body'    => CreateBodyRequest::class,
+                    'query'   => null,
+                    'route'   => null,
+                    'source'  => null,
+                    'output'  => null,
                     'methods' => [],
                 ],
             ],
@@ -491,7 +642,9 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
     public function mapsFromRouteOptionsWithMethodFilter(): void
     {
         $middleware = $this->defaultMiddleware();
-        $request = $this->request('GET', ['name' => 'foo']);
+        $request    = $this->request(RequestMethodInterface::METHOD_GET, [
+            'name' => 'foo',
+        ]);
 
         $handler = new class implements MiddlewareInterface, RequestHandlerInterface {
             public bool $mapped = false;
@@ -509,16 +662,16 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
             }
         };
 
-        $route = new Route('/example', $handler, ['GET', 'POST']);
+        $route = new Route('/example', $handler, [RequestMethodInterface::METHOD_GET, RequestMethodInterface::METHOD_POST]);
         $route->setOptions([
             'valinor_mappings' => [
                 [
-                    'body' => RequiredRequest::class,
-                    'query' => null,
-                    'route' => null,
-                    'source' => null,
-                    'output' => null,
-                    'methods' => ['POST'],
+                    'body'    => RequiredRequest::class,
+                    'query'   => null,
+                    'route'   => null,
+                    'source'  => null,
+                    'output'  => null,
+                    'methods' => [RequestMethodInterface::METHOD_POST],
                 ],
             ],
         ]);
@@ -536,7 +689,7 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
 
     private function defaultMiddleware(): ValinorRequestMapperMiddleware
     {
-        return new ValinorRequestMapperMiddleware($this->defaultMapper());
+        return $this->middleware($this->defaultMapper());
     }
 
     private function camelCaseMiddleware(bool $allowPermissiveTypes = true): ValinorRequestMapperMiddleware
@@ -550,7 +703,41 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
             $builder = $builder->allowPermissiveTypes();
         }
 
-        return new ValinorRequestMapperMiddleware($builder->mapper());
+        return $this->middleware($builder->mapper());
+    }
+
+    private function middleware(TreeMapper $mapper, ?MappingErrorResponderInterface $responder = null): ValinorRequestMapperMiddleware
+    {
+        return new ValinorRequestMapperMiddleware(
+            $mapper,
+            new MappingErrorResponderResolver(
+                $responder ?? $this->defaultResponder(),
+                ContainerResolver::forContext($this->emptyContainer(), self::class),
+            ),
+        );
+    }
+
+    private function defaultResponder(): DefaultMappingErrorResponder
+    {
+        return new DefaultMappingErrorResponder(
+            new ResponseFactory(),
+            new StreamFactory(),
+        );
+    }
+
+    private function emptyContainer(): ContainerInterface
+    {
+        return new class implements ContainerInterface {
+            public function get(string $id): mixed
+            {
+                throw new RuntimeException("Service not found: {$id}");
+            }
+
+            public function has(string $id): bool
+            {
+                return false;
+            }
+        };
     }
 
     /**
@@ -583,10 +770,10 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
         MiddlewareInterface $routeMiddleware,
         array $routeParams = [],
         string $path = '/example',
-        array $methods = ['GET'],
+        array $methods = [RequestMethodInterface::METHOD_GET],
     ): ResponseInterface {
         $request = $this->withMatchedRoute($request, $routeMiddleware, $routeParams, $path, $methods);
-        $next = $routeMiddleware instanceof RequestHandlerInterface
+        $next    = $routeMiddleware instanceof RequestHandlerInterface
             ? $this->nextHandler($routeMiddleware)
             : $this->nextMiddlewareHandler($routeMiddleware);
 
@@ -603,7 +790,7 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
         MiddlewareInterface $routeMiddleware,
         array $routeParams = [],
         string $path = '/example',
-        array $methods = ['GET'],
+        array $methods = [RequestMethodInterface::METHOD_GET],
     ): ServerRequestInterface {
         return $request->withAttribute(
             RouteResult::class,

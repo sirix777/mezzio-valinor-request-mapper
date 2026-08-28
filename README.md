@@ -15,17 +15,20 @@ This package reads `#[MapRequest]` attributes on route handlers and maps request
   - combined HTTP request (`source`) using Valinor HTTP attributes (`FromBody`, `FromQuery`, `FromRoute`)
 - Optional request attribute key override via `output`
 - HTTP method filter via `methods` (case-insensitive, normalized to uppercase)
-- JSON error responses on mapping failures
-- Optional Valinor error message remapping (`message_map`)
+- Pluggable error responders for mapping failures
+- Built-in JSON fallback with a fixed `422` response contract
 
 ## Requirements
 
 - PHP `~8.2 || ~8.3 || ~8.4 || ~8.5`
 - `cuyz/valinor ^2.0`
-- `laminas/laminas-stratigility ^4.3`
-- `mezzio/mezzio ^3.20`
 - `mezzio/mezzio-router ^3.15 || ^4.1`
+- PSR-17 `ResponseFactoryInterface` and `StreamFactoryInterface` services
 - `sirix/mezzio-routing-contracts ^1.0`
+
+The package targets Mezzio applications, but does not install a specific
+Mezzio, PSR-7, or PSR-17 implementation. Your application provides those
+runtime dependencies; the default responder uses its PSR-17 factories.
 
 ## Installation
 
@@ -33,10 +36,26 @@ This package reads `#[MapRequest]` attributes on route handlers and maps request
 composer require sirix/mezzio-valinor-request-mapper
 ```
 
-The package auto-registers its config provider via Composer extra config. If your app does not use `laminas-config-aggregator`, add manually:
+### Required service registration
+
+`ConfigProvider` is required. It registers the `TreeMapper`,
+`DefaultMappingErrorResponder`, `MappingErrorResponderResolver`, and
+`ValinorRequestMapperMiddleware` services.
+
+In a standard Mezzio application it is discovered automatically by
+`laminas/laminas-component-installer`.
+
+If your application configures providers manually, add it to the
+`ConfigAggregator`:
 
 ```php
-\Sirix\Mezzio\Valinor\ConfigProvider::class,
+use Laminas\ConfigAggregator\ConfigAggregator;
+use Sirix\Mezzio\Valinor\ConfigProvider as ValinorRequestMapperConfigProvider;
+
+$aggregator = new ConfigAggregator([
+    ValinorRequestMapperConfigProvider::class,
+    // other providers…
+]);
 ```
 
 ## Middleware registration modes
@@ -149,6 +168,7 @@ new MapRequest(
     source: ?string, // class-string DTO from combined request sources
     output: ?string, // request attribute key, defaults to DTO FQCN
     methods: array,  // HTTP methods filter
+    errorResponder: ?string, // class-string<MappingErrorResponderInterface>
 );
 ```
 
@@ -158,6 +178,7 @@ Rules:
 - if `output` is omitted, mapped DTO is stored under its class name
 - `methods = []` means any HTTP method
 - `methods` are normalized (`post`, `Post` -> `POST`)
+- `errorResponder` is resolved only from the container when mapping fails; when it is not registered, the default responder is used
 - if multiple `#[MapRequest]` attributes match current method, all of them are applied in declaration order; class-level mappings run before method-level mappings
 
 ## Combined mapping (`source`)
@@ -212,13 +233,6 @@ return [
             'allow_undefined_values' => false,
             'support_date_formats' => ['Y-m-d', 'd/m/Y'],
         ],
-        'error' => [
-            'status_code' => 422,
-            'key_case' => null, // null|'snake_case'
-            'message_map' => [
-                // 'Value {source_value} is not a valid string.' => 'This field is required.',
-            ],
-        ],
     ],
 ];
 ```
@@ -263,17 +277,108 @@ $mapperBuilder->warmupCacheFor(
 - service id (resolved from container)
 - class-string implementing `MapperBuilderConfigurator` (instantiated if service not found)
 
-### Error options
+## Error responders
 
-| Option | Type | Default | Description |
-|---|---|---|---|
-| `status_code` | `int` | `422` | HTTP status code for mapping error responses |
-| `key_case` | `null\|'snake_case'` | `null` | Transform error path keys to snake_case |
-| `message_map` | `array<string, string>` | `[]` | Remap Valinor error messages by pattern match |
+On a mapping failure, the middleware delegates to
+`MappingErrorResponderInterface`. The responder receives a
+`MappingErrorContext` with the Valinor `MappingError`, the current PSR-7
+request, the `MapRequest` attribute, DTO class, mapping source (`body`,
+`query`, `route`, or `source`), and the request attribute key.
 
-## Error response format
+The package registers `MappingErrorResponderInterface` to the built-in
+`DefaultMappingErrorResponder`. Override that service in your container to
+change the application-wide response contract:
 
-On mapping failure middleware returns JSON:
+```php
+use Fig\Http\Message\StatusCodeInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ResponseFactoryInterface;
+use Psr\Http\Message\StreamFactoryInterface;
+use Sirix\Mezzio\Valinor\Error\MappingErrorContext;
+use Sirix\Mezzio\Valinor\Error\MappingErrorResponderInterface;
+
+use function json_encode;
+
+use const JSON_THROW_ON_ERROR;
+
+final class ProblemDetailsResponder implements MappingErrorResponderInterface
+{
+    public function __construct(
+        private ResponseFactoryInterface $responseFactory,
+        private StreamFactoryInterface $streamFactory,
+    ) {}
+
+    public function respond(MappingErrorContext $context): ResponseInterface
+    {
+        $body = json_encode([
+            'type' => 'https://example.test/problems/validation-error',
+            'title' => 'Validation failed',
+            'status' => StatusCodeInterface::STATUS_UNPROCESSABLE_ENTITY,
+            'errors' => array_map(
+                static fn ($message): array => [
+                    'code' => $message->code(),
+                    'detail' => (string) $message,
+                ],
+                [...$context->error->messages()],
+            ),
+        ], JSON_THROW_ON_ERROR);
+
+        return $this->responseFactory
+            ->createResponse(StatusCodeInterface::STATUS_UNPROCESSABLE_ENTITY)
+            ->withHeader('Content-Type', 'application/problem+json')
+            ->withBody($this->streamFactory->createStream($body));
+    }
+}
+```
+
+Register `ProblemDetailsResponder` as the service for
+`MappingErrorResponderInterface`. Responder classes need not be stateless: the
+container can inject a translator, logger, response factory, or request-id
+provider.
+
+For a typical Mezzio application using laminas-servicemanager, register the
+concrete responder and alias the package interface to it in your application
+configuration:
+
+```php
+use App\Error\ProblemDetailsResponder;
+use App\Factory\ProblemDetailsResponderFactory;
+use Sirix\Mezzio\Valinor\Error\MappingErrorResponderInterface;
+
+return [
+    'dependencies' => [
+        'factories' => [
+            ProblemDetailsResponder::class => ProblemDetailsResponderFactory::class,
+        ],
+        'aliases' => [
+            MappingErrorResponderInterface::class => ProblemDetailsResponder::class,
+        ],
+    ],
+];
+```
+
+`ProblemDetailsResponderFactory` is a conventional invokable factory that
+receives the container and creates the responder with its dependencies.
+Registering the concrete class is also required when it is referenced by a
+per-mapping `errorResponder` attribute.
+
+For a single mapping, use `errorResponder` on `MapRequest` and register that
+class in the container. The middleware never instantiates this class-string;
+if the service is absent, it safely falls back to the application-wide default.
+
+```php
+#[MapRequest(body: CreateUserRequest::class, errorResponder: ProblemDetailsResponder::class)]
+final class CreateUserHandler implements RequestHandlerInterface
+{
+    // ...
+}
+```
+
+## Default error response and migration
+
+When no custom application-wide responder is configured, the built-in
+`DefaultMappingErrorResponder` registered by `ConfigProvider` is used. Its
+response contract is fixed:
 
 ```json
 {
@@ -284,7 +389,10 @@ On mapping failure middleware returns JSON:
 }
 ```
 
-Status code defaults to `422` and can be overridden by `sirix_mezzio_valinor.error.status_code`.
+It always returns status `422` and `Content-Type: application/json`. To change
+the response contract, register an implementation of
+`MappingErrorResponderInterface`. See the [2.0 migration guide](docs/MIGRATION-2.0.md)
+for constructor and configuration changes.
 
 ## Notes and caveats
 

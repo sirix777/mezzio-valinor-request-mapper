@@ -13,7 +13,8 @@ use CuyZ\Valinor\MapperBuilder;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
-use RuntimeException;
+use Sirix\ContainerResolver\ConfigReader;
+use Sirix\ContainerResolver\ContainerResolver;
 
 use function is_a;
 use function is_string;
@@ -23,44 +24,32 @@ final readonly class ValinorTreeMapperFactory
     private const CONFIG_KEY = 'sirix_mezzio_valinor';
 
     /**
-     * @param null|array<string, mixed> $config
-     */
-    public function __construct(private ?ContainerInterface $container = null, private ?array $config = null) {}
-
-    /**
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
-    public function __invoke(?ContainerInterface $container = null): TreeMapper
+    public function __invoke(ContainerInterface $container): TreeMapper
     {
-        $container ??= $this->container;
+        $resolver = ContainerResolver::forFactory($container, self::class);
 
-        if (! $container instanceof ContainerInterface) {
-            throw new RuntimeException('A PSR-11 container is required to create the Valinor tree mapper.');
-        }
+        $config   = ConfigReader::fromArray(
+            ConfigReader::fromContainer($resolver)->map(self::CONFIG_KEY, default: []),
+            self::class,
+        )->map('mapper', default: []);
 
-        /** @var array<string, mixed> $appConfig */
-        $appConfig = $container->has('config') ? (array) $container->get('config') : [];
-
-        /** @var array<string, mixed> $rootConfig */
-        $rootConfig = $appConfig[self::CONFIG_KEY] ?? [];
-        $config = $this->config ?? (array) ($rootConfig['mapper'] ?? []);
+        $configReader = ConfigReader::fromArray($config, self::class);
 
         $builder = new MapperBuilder();
 
-        $cache = $this->createCache($config);
+        $cache = $this->createCache($configReader);
 
         if ($cache instanceof Cache) {
             $builder = $builder->withCache($cache);
         }
 
-        foreach ($config['configurators'] ?? [] as $configurator) {
+        foreach ($configReader->array('configurators', default: []) as $configurator) {
             if (is_string($configurator)) {
-                if ($container->has($configurator)) {
-                    $configurator = $container->get($configurator);
-                } elseif (is_a($configurator, MapperBuilderConfigurator::class, true)) {
-                    $configurator = new $configurator();
-                }
+                $configurator = $resolver->optionalAs($configurator, MapperBuilderConfigurator::class)
+                    ?? (is_a($configurator, MapperBuilderConfigurator::class, true) ? new $configurator() : null);
             }
 
             if ($configurator instanceof MapperBuilderConfigurator) {
@@ -68,37 +57,32 @@ final readonly class ValinorTreeMapperFactory
             }
         }
 
-        if ($config['allow_superfluous_keys'] ?? true) {
+        if ($configReader->bool('allow_superfluous_keys', default: true)) {
             $builder = $builder->allowSuperfluousKeys();
         }
 
-        if ($config['allow_scalar_value_casting'] ?? true) {
+        if ($configReader->bool('allow_scalar_value_casting', default: true)) {
             $builder = $builder->allowScalarValueCasting();
         }
 
-        if ($config['allow_permissive_types'] ?? false) {
+        if ($configReader->bool('allow_permissive_types', default: false)) {
             $builder = $builder->allowPermissiveTypes();
         }
 
-        if ($config['allow_undefined_values'] ?? false) {
+        if ($configReader->bool('allow_undefined_values', default: false)) {
             $builder = $builder->allowUndefinedValues();
         }
 
-        foreach ((array) ($config['support_date_formats'] ?? []) as $format) {
-            if (is_string($format) && '' !== $format) {
-                $builder = $builder->supportDateFormats($format);
-            }
+        foreach ($configReader->nonEmptyStringList('support_date_formats', default: []) as $format) {
+            $builder = $builder->supportDateFormats($format);
         }
 
         return $builder->mapper();
     }
 
-    /**
-     * @param array<string, mixed> $config
-     */
-    private function createCache(array $config): ?Cache
+    private function createCache(ConfigReader $config): ?Cache
     {
-        $cacheDir = $config['cache_dir'] ?? null;
+        $cacheDir = $config->optionalNonEmptyString('cache_dir');
 
         if (null === $cacheDir || '' === $cacheDir) {
             return null;
@@ -106,7 +90,7 @@ final readonly class ValinorTreeMapperFactory
 
         $cache = new FileSystemCache($cacheDir);
 
-        if ($config['cache_watch'] ?? false) {
+        if ($config->bool('cache_watch', default: false)) {
             return new FileWatchingCache($cache);
         }
 

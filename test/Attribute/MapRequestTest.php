@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Sirix\Mezzio\Valinor\Test\Attribute;
 
+use Fig\Http\Message\RequestMethodInterface;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Sirix\Mezzio\Routing\Contracts\RouteAttributeModifierInterface;
 use Sirix\Mezzio\Valinor\Attribute\MapRequest;
+use Sirix\Mezzio\Valinor\Error\DefaultMappingErrorResponder;
 use Sirix\Mezzio\Valinor\Middleware\ValinorRequestMapperMiddleware;
 
 final class MapRequestTest extends TestCase
@@ -36,9 +38,9 @@ final class MapRequestTest extends TestCase
             body: self::class,
             query: TestCase::class,
             route: MapRequest::class,
-            source: null,
             output: 'form',
-            methods: ['POST', 'PUT'],
+            methods: [RequestMethodInterface::METHOD_POST, RequestMethodInterface::METHOD_PUT],
+            errorResponder: DefaultMappingErrorResponder::class,
         );
 
         $defaults = $attr->getDefaults();
@@ -51,7 +53,8 @@ final class MapRequestTest extends TestCase
         self::assertSame(MapRequest::class, $mapping['route']);
         self::assertNull($mapping['source']);
         self::assertSame('form', $mapping['output']);
-        self::assertSame(['POST', 'PUT'], $mapping['methods']);
+        self::assertSame(DefaultMappingErrorResponder::class, $mapping['errorResponder']);
+        self::assertSame([RequestMethodInterface::METHOD_POST, RequestMethodInterface::METHOD_PUT], $mapping['methods']);
     }
 
     #[Test]
@@ -60,6 +63,15 @@ final class MapRequestTest extends TestCase
         $attr = new MapRequest(body: self::class);
 
         self::assertSame([], $attr->methods);
+    }
+
+    #[Test]
+    public function preservesMethodsAsTheSixthPositionalArgument(): void
+    {
+        $attr = new MapRequest(self::class, null, null, null, null, ['post']);
+
+        self::assertSame([RequestMethodInterface::METHOD_POST], $attr->methods);
+        self::assertNull($attr->errorResponder);
     }
 
     #[Test]
@@ -72,6 +84,7 @@ final class MapRequestTest extends TestCase
         self::assertNull($attr->route);
         self::assertNull($attr->source);
         self::assertNull($attr->output);
+        self::assertNull($attr->errorResponder);
         self::assertSame([], $attr->methods);
     }
 
@@ -112,8 +125,8 @@ final class MapRequestTest extends TestCase
     #[Test]
     public function methodsAreNormalizedAndNonStringsAreFilteredOut(): void
     {
-        $attr = new MapRequest(body: self::class, methods: ['post', 123, 'PUT', '']);
+        $attr = new MapRequest(body: self::class, methods: ['post', 123, RequestMethodInterface::METHOD_PUT, '']);
 
-        self::assertSame(['POST', 'PUT'], $attr->methods);
+        self::assertSame([RequestMethodInterface::METHOD_POST, RequestMethodInterface::METHOD_PUT], $attr->methods);
     }
 }

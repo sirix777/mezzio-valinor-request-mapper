@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use CuyZ\Valinor\Mapper\Configurator\ConvertKeysToCamelCase;
+
 /**
  * Default configuration for sirix/mezzio-valinor-request-mapper.
  *
@@ -9,10 +11,8 @@ declare(strict_types=1);
  */
 return [
     'sirix_mezzio_valinor' => [
-
         // --- MapperBuilder options ---
         'mapper' => [
-
             // Configurators: FQCN implementing MapperBuilderConfigurator.
             // Resolved from container if available, otherwise instantiated directly.
             //
@@ -26,42 +26,25 @@ return [
             //
             // You can also register custom configurators implementing:
             //   CuyZ\Valinor\Mapper\Configurator\MapperBuilderConfigurator
-            'configurators' => [
-                \CuyZ\Valinor\Mapper\Configurator\ConvertKeysToCamelCase::class,
+            'configurators'              => [
+                ConvertKeysToCamelCase::class,
             ],
 
             // Ignore extra keys in request body that don't match DTO properties
-            'allow_superfluous_keys' => true,
+            'allow_superfluous_keys'     => true,
 
             // Cast scalar values: "42" → 42(int), "true" → true(bool)
             'allow_scalar_value_casting' => true,
 
             // Allow mixed/object types in DTO (disabled by valinor strict mode)
-            'allow_permissive_types' => false,
+            'allow_permissive_types'     => false,
 
             // Treat missing keys as null instead of raising an error
-            'allow_undefined_values' => false,
+            'allow_undefined_values'     => false,
 
             // Additional date formats beyond RFC 3339 and timestamp.
             // Example: ['Y-m-d', 'd/m/Y H:i:s']
-            'support_date_formats' => [],
-        ],
-
-        // --- Error response options ---
-        'error' => [
-
-            // HTTP status code returned on mapping failure
-            'status_code' => 422,
-
-            // Error message key naming: null (PHP property names) or 'snake_case'
-            'key_case' => null,
-
-            // Remap valinor error messages to custom text.
-            // Supports valinor placeholders: {source_value}, {node_name}, {expected_signature}, …
-            'message_map' => [
-                // 'Value {source_value} is not a valid string.' => 'This field is required.',
-                // 'Value {source_value} is not a valid {expected_signature}.' => 'Invalid type.',
-            ],
+            'support_date_formats'       => [],
         ],
     ],
 ];

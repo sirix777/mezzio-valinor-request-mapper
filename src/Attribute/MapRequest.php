@@ -7,6 +7,7 @@ namespace Sirix\Mezzio\Valinor\Attribute;
 use Attribute;
 use InvalidArgumentException;
 use Sirix\Mezzio\Routing\Contracts\RouteAttributeModifierInterface;
+use Sirix\Mezzio\Valinor\Error\MappingErrorResponderInterface;
 use Sirix\Mezzio\Valinor\Middleware\ValinorRequestMapperMiddleware;
 
 use function array_filter;
@@ -26,12 +27,13 @@ final readonly class MapRequest implements RouteAttributeModifierInterface
     public array $methods;
 
     /**
-     * @param null|class-string $body    Map from parsed body to this DTO
-     * @param null|class-string $query   Map from query params to this DTO
-     * @param null|class-string $route   Map from route params to this DTO
-     * @param null|class-string $source  Map from all three sources combined to this DTO
-     * @param null|string       $output  Attribute key in $request (default: DTO FQCN)
-     * @param mixed[]           $methods HTTP method filter. Empty = any method.
+     * @param null|class-string                                 $body           Map from parsed body to this DTO
+     * @param null|class-string                                 $query          Map from query params to this DTO
+     * @param null|class-string                                 $route          Map from route params to this DTO
+     * @param null|class-string                                 $source         Map from all three sources combined to this DTO
+     * @param null|string                                       $output         Attribute key in $request (default: DTO FQCN)
+     * @param null|class-string<MappingErrorResponderInterface> $errorResponder
+     * @param mixed[]                                           $methods        HTTP method filter. Empty = any method.
      */
     public function __construct(
         public ?string $body = null,
@@ -40,6 +42,7 @@ final readonly class MapRequest implements RouteAttributeModifierInterface
         public ?string $source = null,
         public ?string $output = null,
         array $methods = [],
+        public ?string $errorResponder = null,
     ) {
         if (null !== $source && (null !== $body || null !== $query || null !== $route)) {
             throw new InvalidArgumentException(
@@ -63,12 +66,13 @@ final readonly class MapRequest implements RouteAttributeModifierInterface
         return [
             'valinor_mappings' => [
                 [
-                    'body' => $this->body,
-                    'query' => $this->query,
-                    'route' => $this->route,
-                    'source' => $this->source,
-                    'output' => $this->output,
-                    'methods' => $this->methods,
+                    'body'           => $this->body,
+                    'query'          => $this->query,
+                    'route'          => $this->route,
+                    'source'         => $this->source,
+                    'output'         => $this->output,
+                    'errorResponder' => $this->errorResponder,
+                    'methods'        => $this->methods,
                 ],
             ],
         ];

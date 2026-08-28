@@ -7,12 +7,7 @@ namespace Sirix\Mezzio\Valinor\Middleware;
 use Closure;
 use CuyZ\Valinor\Mapper\Http\HttpRequest;
 use CuyZ\Valinor\Mapper\MappingError;
-use CuyZ\Valinor\Mapper\Tree\Message\Formatter\MessageFormatter;
 use CuyZ\Valinor\Mapper\TreeMapper;
-use Laminas\Diactoros\Response\JsonResponse;
-use Laminas\Stratigility\Middleware\CallableMiddlewareDecorator;
-use Laminas\Stratigility\Middleware\RequestHandlerMiddleware;
-use Mezzio\Middleware\LazyLoadingMiddleware;
 use Mezzio\Router\RouteResult;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -22,6 +17,8 @@ use ReflectionClass;
 use ReflectionException;
 use ReflectionFunction;
 use Sirix\Mezzio\Valinor\Attribute\MapRequest;
+use Sirix\Mezzio\Valinor\Error\MappingErrorContext;
+use Sirix\Mezzio\Valinor\Error\MappingErrorResponderResolver;
 
 use function array_key_exists;
 use function array_unique;
@@ -32,32 +29,26 @@ use function in_array;
 use function is_array;
 use function is_object;
 use function is_string;
-use function lcfirst;
-use function preg_replace;
-use function strtolower;
 use function strtoupper;
 use function trim;
 
 final class ValinorRequestMapperMiddleware implements MiddlewareInterface
 {
-    /** @var array<MessageFormatter> */
-    private readonly array $messageFormatters;
+    private const REQUEST_HANDLER_MIDDLEWARE = 'Laminas\Stratigility\Middleware\RequestHandlerMiddleware';
+
+    private const CALLABLE_MIDDLEWARE_DECORATOR = 'Laminas\Stratigility\Middleware\CallableMiddlewareDecorator';
+
+    private const LAZY_LOADING_MIDDLEWARE = 'Mezzio\Middleware\LazyLoadingMiddleware';
 
     /**
      * @var array<string, list<MapRequest>>
      */
     private array $mapRequestCache = [];
 
-    /**
-     * @param array<string, mixed> $errorConfig
-     */
     public function __construct(
         private readonly TreeMapper $mapper,
-        private readonly array $errorConfig = [],
-        MessageFormatter ...$messageFormatters,
-    ) {
-        $this->messageFormatters = $messageFormatters;
-    }
+        private readonly MappingErrorResponderResolver $errorResponderResolver,
+    ) {}
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
@@ -78,51 +69,69 @@ final class ValinorRequestMapperMiddleware implements MiddlewareInterface
         foreach ($mapRequests as $mapRequest) {
             try {
                 if (null !== $mapRequest->source) {
-                    $httpRequest = HttpRequest::fromPsr($request, $routeParams);
-                    $dto = $this->mapper->map($mapRequest->source, $httpRequest);
-                    $key = $mapRequest->output ?? $mapRequest->source;
-                    $request = $request->withAttribute($key, $dto);
+                    $dtoClass            = $mapRequest->source;
+                    $source              = 'source';
+                    $requestAttributeKey = $mapRequest->output ?? $dtoClass;
+                    $httpRequest         = HttpRequest::fromPsr($request, $routeParams);
+                    $dto                 = $this->mapper->map($dtoClass, $httpRequest);
+                    $request             = $request->withAttribute($requestAttributeKey, $dto);
 
                     continue;
                 }
 
                 if (null !== $mapRequest->body) {
-                    $dto = $this->mapper->map(
-                        $mapRequest->body,
+                    $dtoClass            = $mapRequest->body;
+                    $source              = 'body';
+                    $requestAttributeKey = $mapRequest->output ?? $dtoClass;
+                    $dto                 = $this->mapper->map(
+                        $dtoClass,
                         new HttpRequest(
                             bodyValues: (array) $request->getParsedBody(),
                             requestObject: $request,
                         ),
                     );
-                    $key = $mapRequest->output ?? $mapRequest->body;
-                    $request = $request->withAttribute($key, $dto);
+                    $request = $request->withAttribute($requestAttributeKey, $dto);
                 }
 
                 if (null !== $mapRequest->query) {
-                    $dto = $this->mapper->map(
-                        $mapRequest->query,
+                    $dtoClass            = $mapRequest->query;
+                    $source              = 'query';
+                    $requestAttributeKey = $mapRequest->output ?? $dtoClass;
+                    $dto                 = $this->mapper->map(
+                        $dtoClass,
                         new HttpRequest(
                             queryParameters: $request->getQueryParams(),
                             requestObject: $request,
                         ),
                     );
-                    $key = $mapRequest->output ?? $mapRequest->query;
-                    $request = $request->withAttribute($key, $dto);
+                    $request = $request->withAttribute($requestAttributeKey, $dto);
                 }
 
                 if (null !== $mapRequest->route) {
-                    $dto = $this->mapper->map(
-                        $mapRequest->route,
+                    $dtoClass            = $mapRequest->route;
+                    $source              = 'route';
+                    $requestAttributeKey = $mapRequest->output ?? $dtoClass;
+                    $dto                 = $this->mapper->map(
+                        $dtoClass,
                         new HttpRequest(
                             routeParameters: $routeParams,
                             requestObject: $request,
                         ),
                     );
-                    $key = $mapRequest->output ?? $mapRequest->route;
-                    $request = $request->withAttribute($key, $dto);
+                    $request = $request->withAttribute($requestAttributeKey, $dto);
                 }
             } catch (MappingError $e) {
-                return $this->createErrorResponse($e);
+                return $this->errorResponderResolver
+                    ->resolve($mapRequest->errorResponder)
+                    ->respond(new MappingErrorContext(
+                        $e,
+                        $request,
+                        $mapRequest,
+                        $dtoClass,
+                        $source,
+                        $requestAttributeKey,
+                    ))
+                ;
             }
         }
 
@@ -228,7 +237,7 @@ final class ValinorRequestMapperMiddleware implements MiddlewareInterface
         }
 
         $refClass = new ReflectionClass($handlerClass);
-        $methods = [];
+        $methods  = [];
 
         if ($refClass->implementsInterface(MiddlewareInterface::class)) {
             $methods[] = 'process';
@@ -247,6 +256,8 @@ final class ValinorRequestMapperMiddleware implements MiddlewareInterface
 
     /**
      * @return array{0: string, 1: list<string>}|object|string
+     *
+     * @throws ReflectionException
      */
     private function unwrapKnownMiddlewareDecorator(object|string $handler): array|object|string
     {
@@ -254,15 +265,15 @@ final class ValinorRequestMapperMiddleware implements MiddlewareInterface
             return $handler;
         }
 
-        if (RequestHandlerMiddleware::class === $handler::class) {
+        if (self::REQUEST_HANDLER_MIDDLEWARE === $handler::class) {
             $innerHandler = $this->readPrivateProperty($handler, 'handler');
 
-            if (is_object($innerHandler)) {
+            if ($innerHandler instanceof RequestHandlerInterface) {
                 return [$innerHandler::class, ['handle']];
             }
         }
 
-        if (CallableMiddlewareDecorator::class === $handler::class) {
+        if (self::CALLABLE_MIDDLEWARE_DECORATOR === $handler::class) {
             $callable = $this->readPrivateProperty($handler, 'middleware');
 
             if (is_array($callable) && isset($callable[0], $callable[1]) && is_string($callable[1])) {
@@ -275,7 +286,7 @@ final class ValinorRequestMapperMiddleware implements MiddlewareInterface
 
             if ($callable instanceof Closure) {
                 $refFunction = new ReflectionFunction($callable);
-                $scopeClass = $refFunction->getClosureScopeClass();
+                $scopeClass  = $refFunction->getClosureScopeClass();
 
                 if (null !== $scopeClass && '{closure}' !== $refFunction->getName()) {
                     return [$scopeClass->getName(), [$refFunction->getName()]];
@@ -287,22 +298,32 @@ final class ValinorRequestMapperMiddleware implements MiddlewareInterface
             }
         }
 
+        if (self::LAZY_LOADING_MIDDLEWARE === $handler::class) {
+            $middlewareName = $this->readPrivateProperty($handler, 'middlewareName');
+
+            if (is_string($middlewareName)) {
+                return [$middlewareName, ['process']];
+            }
+        }
+
         return $handler;
     }
 
     private function readPrivateProperty(object $object, string $property): mixed
     {
-        try {
-            $refClass = new ReflectionClass($object);
+        $reflection = new ReflectionClass($object);
 
-            if (! $refClass->hasProperty($property)) {
-                return null;
-            }
-
-            return $refClass->getProperty($property)->getValue($object);
-        } catch (ReflectionException) {
+        if (! $reflection->hasProperty($property)) {
             return null;
         }
+
+        $reflectionProperty = $reflection->getProperty($property);
+
+        if (! $reflectionProperty->isInitialized($object)) {
+            return null;
+        }
+
+        return $reflectionProperty->getValue($object);
     }
 
     /**
@@ -313,7 +334,7 @@ final class ValinorRequestMapperMiddleware implements MiddlewareInterface
     private function filterByMethod(array $mappings, string $httpMethod): array
     {
         $httpMethod = $this->normalizeHttpMethod($httpMethod);
-        $result = [];
+        $result     = [];
 
         foreach ($mappings as $mapping) {
             $methods = $this->normalizeMethods((array) ($mapping['methods'] ?? []));
@@ -326,6 +347,7 @@ final class ValinorRequestMapperMiddleware implements MiddlewareInterface
                     source: $mapping['source'] ?? null,
                     output: $mapping['output'] ?? null,
                     methods: $methods,
+                    errorResponder: $mapping['errorResponder'] ?? null,
                 );
             }
         }
@@ -337,10 +359,6 @@ final class ValinorRequestMapperMiddleware implements MiddlewareInterface
     {
         if (is_string($handler)) {
             return $handler;
-        }
-
-        if ($handler instanceof LazyLoadingMiddleware) {
-            return $handler->middlewareName;
         }
 
         return $handler::class;
@@ -381,30 +399,5 @@ final class ValinorRequestMapperMiddleware implements MiddlewareInterface
         }
 
         return array_values(array_unique($normalized));
-    }
-
-    private function createErrorResponse(MappingError $error): JsonResponse
-    {
-        $formatted = $error->messages()->formatWith(
-            ...$this->messageFormatters,
-        );
-
-        $messages = [];
-
-        foreach ($formatted as $msg) {
-            $path = '*root*' === $msg->path() ? '' : $msg->path();
-
-            if (($this->errorConfig['key_case'] ?? null) === 'snake_case') {
-                $path = strtolower((string) preg_replace('/[A-Z]/', '_$0', lcfirst($path)));
-            }
-
-            $messages[$path] ??= [];
-            $messages[$path][] = (string) $msg;
-        }
-
-        return new JsonResponse([
-            'error' => 'Mapping failed',
-            'messages' => $messages,
-        ], (int) ($this->errorConfig['status_code'] ?? 422));
     }
 }

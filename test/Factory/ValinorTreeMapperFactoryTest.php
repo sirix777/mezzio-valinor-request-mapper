@@ -18,9 +18,13 @@ use Psr\Container\ContainerInterface;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
+use Sirix\ContainerResolver\Exception\InvalidConfigValueException;
+use Sirix\ContainerResolver\Exception\InvalidContainerServiceException;
 use Sirix\Mezzio\Valinor\Factory\ValinorTreeMapperFactory;
+use stdClass;
 use Throwable;
 
+use function array_key_exists;
 use function mkdir;
 use function rmdir;
 use function sys_get_temp_dir;
@@ -32,42 +36,31 @@ final class ValinorTreeMapperFactoryTest extends TestCase
     #[Test]
     public function defaultConfigCreatesMapper(): void
     {
-        $factory = new ValinorTreeMapperFactory($this->createContainer());
-
-        $mapper = $factory();
-
-        self::assertInstanceOf(TreeMapper::class, $mapper);
+        self::assertInstanceOf(TreeMapper::class, $this->mapper());
     }
 
     #[Test]
-    public function containerInvocationReadsPackageMapperConfig(): void
+    public function readsMapperConfigurationFromTheContainer(): void
     {
-        $factory = new ValinorTreeMapperFactory();
-        $container = $this->createContainer([
-            'config' => [
-                'sirix_mezzio_valinor' => [
-                    'mapper' => [
-                        'allow_scalar_value_casting' => false,
-                    ],
-                ],
-            ],
+        $mapper = $this->mapper([
+            'allow_scalar_value_casting' => false,
         ]);
-
-        $mapper = $factory($container);
 
         $this->expectException(MappingError::class);
 
-        $mapper->map('array{value: string}', ['value' => 42]);
+        $mapper->map('array{value: string}', [
+            'value' => 42,
+        ]);
     }
 
     #[Test]
-    public function invocationWithoutContainerThrows(): void
+    public function rejectsInvalidMapperConfigurationValues(): void
     {
-        $factory = new ValinorTreeMapperFactory();
+        $this->expectException(InvalidConfigValueException::class);
 
-        $this->expectException(RuntimeException::class);
-
-        $factory();
+        $this->mapper([
+            'allow_scalar_value_casting' => 'true',
+        ]);
     }
 
     #[Test]
@@ -84,72 +77,69 @@ final class ValinorTreeMapperFactoryTest extends TestCase
             }
         };
 
-        $container = $this->createContainer(['MyConfigurator' => $configurator]);
-        $factory = new ValinorTreeMapperFactory($container, [
+        $this->mapper([
             'configurators' => ['MyConfigurator'],
+        ], [
+            'MyConfigurator' => $configurator,
         ]);
-
-        $factory();
 
         self::assertTrue($configurator->applied);
     }
 
     #[Test]
+    public function rejectsConfiguratorServiceWithAnIncorrectType(): void
+    {
+        $this->expectException(InvalidContainerServiceException::class);
+
+        $this->mapper([
+            'configurators' => ['MyConfigurator'],
+        ], [
+            'MyConfigurator' => new stdClass(),
+        ]);
+    }
+
+    #[Test]
     public function configuratorClassNameIsInstantiatedDirectly(): void
     {
-        $factory = new ValinorTreeMapperFactory($this->createContainer(), [
+        self::assertInstanceOf(TreeMapper::class, $this->mapper([
             'configurators' => [ConvertKeysToCamelCase::class],
-        ]);
-
-        $mapper = $factory();
-
-        self::assertInstanceOf(TreeMapper::class, $mapper);
+        ]));
     }
 
     #[Test]
     public function invalidStringConfiguratorIsSkipped(): void
     {
-        $factory = new ValinorTreeMapperFactory($this->createContainer(), [
+        self::assertInstanceOf(TreeMapper::class, $this->mapper([
             'configurators' => ['NonExistentClass'],
-        ]);
-
-        $mapper = $factory();
-
-        self::assertInstanceOf(TreeMapper::class, $mapper);
+        ]));
     }
 
     #[Test]
     public function allowSuperfluousKeysIsFalse(): void
     {
-        $factory = new ValinorTreeMapperFactory($this->createContainer(), [
-            'configurators' => [],
+        $mapper = $this->mapper([
             'allow_superfluous_keys' => false,
         ]);
 
-        $mapper = $factory();
-
         $this->expectException(Throwable::class);
 
-        $mapper->map(
-            'array{name: string}',
-            ['name' => 'test', 'extra' => 'should fail'],
-        );
+        $mapper->map('array{name: string}', [
+            'name'  => 'test',
+            'extra' => 'should fail',
+        ]);
     }
 
     #[Test]
     public function allowSuperfluousKeysIsTrue(): void
     {
-        $factory = new ValinorTreeMapperFactory($this->createContainer(), [
-            'configurators' => [],
+        $mapper = $this->mapper([
             'allow_superfluous_keys' => true,
         ]);
 
-        $mapper = $factory();
-
-        $dto = $mapper->map(
-            'array{name: string}',
-            ['name' => 'test', 'extra' => 'ignored'],
-        );
+        $dto = $mapper->map('array{name: string}', [
+            'name'  => 'test',
+            'extra' => 'ignored',
+        ]);
 
         self::assertSame('test', $dto['name']);
     }
@@ -157,18 +147,14 @@ final class ValinorTreeMapperFactoryTest extends TestCase
     #[Test]
     public function allowScalarValueCastingConvertsIntToString(): void
     {
-        $factory = new ValinorTreeMapperFactory($this->createContainer(), [
-            'configurators' => [],
+        $mapper = $this->mapper([
             'allow_scalar_value_casting' => true,
-            'allow_superfluous_keys' => false,
+            'allow_superfluous_keys'     => false,
         ]);
 
-        $mapper = $factory();
-
-        $dto = $mapper->map(
-            'array{value: string}',
-            ['value' => 42],
-        );
+        $dto = $mapper->map('array{value: string}', [
+            'value' => 42,
+        ]);
 
         self::assertSame('42', $dto['value']);
     }
@@ -176,30 +162,28 @@ final class ValinorTreeMapperFactoryTest extends TestCase
     #[Test]
     public function allowScalarValueCastingFalseThrowsOnTypeMismatch(): void
     {
-        $factory = new ValinorTreeMapperFactory($this->createContainer(), [
-            'configurators' => [],
+        $mapper = $this->mapper([
             'allow_scalar_value_casting' => false,
         ]);
 
-        $mapper = $factory();
-
         $this->expectException(MappingError::class);
 
-        $mapper->map('array{value: string}', ['value' => 42]);
+        $mapper->map('array{value: string}', [
+            'value' => 42,
+        ]);
     }
 
     #[Test]
     public function allowPermissiveTypesAllowsMixed(): void
     {
-        $factory = new ValinorTreeMapperFactory($this->createContainer(), [
-            'configurators' => [],
+        $mapper = $this->mapper([
             'allow_permissive_types' => true,
             'allow_superfluous_keys' => false,
         ]);
 
-        $mapper = $factory();
-
-        $dto = $mapper->map('array{data: mixed}', ['data' => 42]);
+        $dto = $mapper->map('array{data: mixed}', [
+            'data' => 42,
+        ]);
 
         self::assertSame(42, $dto['data']);
     }
@@ -207,15 +191,14 @@ final class ValinorTreeMapperFactoryTest extends TestCase
     #[Test]
     public function allowUndefinedValuesFillsMissingWithNull(): void
     {
-        $factory = new ValinorTreeMapperFactory($this->createContainer(), [
-            'configurators' => [],
+        $mapper = $this->mapper([
             'allow_undefined_values' => true,
             'allow_superfluous_keys' => false,
         ]);
 
-        $mapper = $factory();
-
-        $dto = $mapper->map('array{name: string, age: int|null}', ['name' => 'test']);
+        $dto = $mapper->map('array{name: string, age: int|null}', [
+            'name' => 'test',
+        ]);
 
         self::assertSame('test', $dto['name']);
         self::assertNull($dto['age']);
@@ -224,33 +207,28 @@ final class ValinorTreeMapperFactoryTest extends TestCase
     #[Test]
     public function allowUndefinedValuesIsFalseThrowsOnMissingFields(): void
     {
-        $factory = new ValinorTreeMapperFactory($this->createContainer(), [
-            'configurators' => [],
+        $mapper = $this->mapper([
             'allow_undefined_values' => false,
         ]);
 
-        $mapper = $factory();
-
         $this->expectException(MappingError::class);
 
-        $mapper->map('array{name: string, age: int}', ['name' => 'test']);
+        $mapper->map('array{name: string, age: int}', [
+            'name' => 'test',
+        ]);
     }
 
     #[Test]
     public function supportDateFormatsAcceptsCustomFormat(): void
     {
-        $factory = new ValinorTreeMapperFactory($this->createContainer(), [
-            'configurators' => [],
-            'support_date_formats' => ['d/m/Y'],
+        $mapper = $this->mapper([
+            'support_date_formats'   => ['d/m/Y'],
             'allow_superfluous_keys' => false,
         ]);
 
-        $mapper = $factory();
-
-        $dto = $mapper->map(
-            'array{date: DateTimeInterface}',
-            ['date' => '25/12/2024'],
-        );
+        $dto = $mapper->map('array{date: DateTimeInterface}', [
+            'date' => '25/12/2024',
+        ]);
 
         self::assertInstanceOf(DateTimeInterface::class, $dto['date']);
         self::assertSame('2024-12-25', $dto['date']->format('Y-m-d'));
@@ -262,20 +240,13 @@ final class ValinorTreeMapperFactoryTest extends TestCase
         $cacheDir = $this->createTempDir();
 
         try {
-            $factory = new ValinorTreeMapperFactory($this->createContainer(), [
-                'configurators' => [],
-                'cache_dir' => $cacheDir,
+            $mapper = $this->mapper([
+                'cache_dir'              => $cacheDir,
                 'allow_superfluous_keys' => false,
             ]);
 
-            $mapper = $factory();
-
-            $dto = $mapper->map(DateTimeImmutable::class, '2024-01-01T00:00:00+00:00');
-
-            self::assertInstanceOf(DateTimeImmutable::class, $dto);
-
-            $cacheFiles = $this->findFiles($cacheDir);
-            self::assertNotEmpty($cacheFiles, 'Cache files should be created when cache_dir is set');
+            self::assertInstanceOf(DateTimeImmutable::class, $mapper->map(DateTimeImmutable::class, '2024-01-01T00:00:00+00:00'));
+            self::assertNotEmpty($this->findFiles($cacheDir));
         } finally {
             $this->removeDir($cacheDir);
         }
@@ -287,21 +258,14 @@ final class ValinorTreeMapperFactoryTest extends TestCase
         $cacheDir = $this->createTempDir();
 
         try {
-            $factory = new ValinorTreeMapperFactory($this->createContainer(), [
-                'configurators' => [],
-                'cache_dir' => $cacheDir,
-                'cache_watch' => true,
+            $mapper = $this->mapper([
+                'cache_dir'              => $cacheDir,
+                'cache_watch'            => true,
                 'allow_superfluous_keys' => false,
             ]);
 
-            $mapper = $factory();
-
-            $dto = $mapper->map(DateTimeImmutable::class, '2024-01-01T00:00:00+00:00');
-
-            self::assertInstanceOf(DateTimeImmutable::class, $dto);
-
-            $cacheFiles = $this->findFiles($cacheDir);
-            self::assertNotEmpty($cacheFiles, 'Cache files should be created with cache_watch enabled');
+            self::assertInstanceOf(DateTimeImmutable::class, $mapper->map(DateTimeImmutable::class, '2024-01-01T00:00:00+00:00'));
+            self::assertNotEmpty($this->findFiles($cacheDir));
         } finally {
             $this->removeDir($cacheDir);
         }
@@ -313,24 +277,18 @@ final class ValinorTreeMapperFactoryTest extends TestCase
         $cacheDir = $this->createTempDir();
 
         try {
-            $builder = (new MapperBuilder())
-                ->withCache(new FileSystemCache($cacheDir))
-            ;
+            (new MapperBuilder())->withCache(new FileSystemCache($cacheDir))->warmupCacheFor(self::class);
 
-            $builder->warmupCacheFor(self::class);
+            self::assertNotEmpty($this->findFiles($cacheDir));
 
-            $cacheFiles = $this->findFiles($cacheDir);
-            self::assertNotEmpty($cacheFiles, 'Cache files should be created after warmup');
-
-            $factory = new ValinorTreeMapperFactory($this->createContainer(), [
-                'configurators' => [],
-                'cache_dir' => $cacheDir,
+            $mapper = $this->mapper([
+                'cache_dir'              => $cacheDir,
                 'allow_superfluous_keys' => false,
             ]);
+            $dto    = $mapper->map('array{name: string}', [
+                'name' => 'test',
+            ]);
 
-            $mapper = $factory();
-
-            $dto = $mapper->map('array{name: string}', ['name' => 'test']);
             self::assertSame('test', $dto['name']);
         } finally {
             $this->removeDir($cacheDir);
@@ -338,11 +296,26 @@ final class ValinorTreeMapperFactoryTest extends TestCase
     }
 
     /**
+     * @param array<string, mixed> $mapperConfig
+     * @param array<string, mixed> $services
+     */
+    private function mapper(array $mapperConfig = [], array $services = []): TreeMapper
+    {
+        $services['config'] = [
+            'sirix_mezzio_valinor' => [
+                'mapper' => $mapperConfig,
+            ],
+        ];
+
+        return (new ValinorTreeMapperFactory())($this->createContainer($services));
+    }
+
+    /**
      * @return list<string>
      */
     private function findFiles(string $dir): array
     {
-        $result = [];
+        $result   = [];
         $iterator = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator($dir),
             RecursiveIteratorIterator::LEAVES_ONLY,
@@ -387,7 +360,7 @@ final class ValinorTreeMapperFactoryTest extends TestCase
     /**
      * @param array<string, mixed> $services
      */
-    private function createContainer(array $services = []): ContainerInterface
+    private function createContainer(array $services): ContainerInterface
     {
         return new class($services) implements ContainerInterface {
             /**
@@ -402,7 +375,7 @@ final class ValinorTreeMapperFactoryTest extends TestCase
 
             public function has(string $id): bool
             {
-                return isset($this->services[$id]);
+                return array_key_exists($id, $this->services);
             }
         };
     }

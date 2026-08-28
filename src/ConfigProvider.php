@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Sirix\Mezzio\Valinor;
 
 use CuyZ\Valinor\Mapper\TreeMapper;
+use Sirix\Mezzio\Valinor\Error\DefaultMappingErrorResponder;
+use Sirix\Mezzio\Valinor\Error\MappingErrorResponderInterface;
 
 final class ConfigProvider
 {
@@ -16,8 +18,13 @@ final class ConfigProvider
         return [
             'dependencies' => [
                 'factories' => [
-                    TreeMapper::class => Factory\ValinorTreeMapperFactory::class,
+                    TreeMapper::class                                => Factory\ValinorTreeMapperFactory::class,
+                    DefaultMappingErrorResponder::class              => Factory\DefaultMappingErrorResponderFactory::class,
+                    Error\MappingErrorResponderResolver::class       => Factory\MappingErrorResponderResolverFactory::class,
                     Middleware\ValinorRequestMapperMiddleware::class => Factory\ValinorRequestMapperMiddlewareFactory::class,
+                ],
+                'aliases'   => [
+                    MappingErrorResponderInterface::class => DefaultMappingErrorResponder::class,
                 ],
             ],
         ];
