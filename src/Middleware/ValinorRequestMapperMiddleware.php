@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sirix\Mezzio\Valinor\Middleware;
 
-use Closure;
 use CuyZ\Valinor\Mapper\Http\HttpRequest;
 use CuyZ\Valinor\Mapper\MappingError;
 use CuyZ\Valinor\Mapper\TreeMapper;
@@ -13,48 +12,24 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use ReflectionClass;
-use ReflectionException;
-use ReflectionFunction;
 use Sirix\Mezzio\Valinor\Attribute\MapRequest;
 use Sirix\Mezzio\Valinor\Error\MappingErrorContext;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderResolver;
 use Sirix\Mezzio\Valinor\Mapping\HttpMethodNormalizer;
-use Sirix\Mezzio\Valinor\Mapping\MapRequestOptionsParser;
+use Sirix\Mezzio\Valinor\Mapping\MapRequestResolver;
 
-use function array_key_exists;
-use function array_unique;
-use function array_values;
-use function class_exists;
-use function implode;
 use function in_array;
-use function is_array;
-use function is_object;
-use function is_string;
 
-final class ValinorRequestMapperMiddleware implements MiddlewareInterface
+final readonly class ValinorRequestMapperMiddleware implements MiddlewareInterface
 {
-    private const REQUEST_HANDLER_MIDDLEWARE = 'Laminas\Stratigility\Middleware\RequestHandlerMiddleware';
-
-    private const CALLABLE_MIDDLEWARE_DECORATOR = 'Laminas\Stratigility\Middleware\CallableMiddlewareDecorator';
-
-    private const LAZY_LOADING_MIDDLEWARE = 'Mezzio\Middleware\LazyLoadingMiddleware';
-
-    /**
-     * @var array<string, list<MapRequest>>
-     */
-    private array $mapRequestCache = [];
-
-    private readonly HttpMethodNormalizer $httpMethodNormalizer;
-
-    private readonly MapRequestOptionsParser $mapRequestOptionsParser;
+    private HttpMethodNormalizer $httpMethodNormalizer;
 
     public function __construct(
-        private readonly TreeMapper $mapper,
-        private readonly MappingErrorResponderResolver $errorResponderResolver,
+        private TreeMapper $mapper,
+        private MappingErrorResponderResolver $errorResponderResolver,
+        private MapRequestResolver $mapRequestResolver,
     ) {
-        $this->httpMethodNormalizer    = new HttpMethodNormalizer();
-        $this->mapRequestOptionsParser = new MapRequestOptionsParser();
+        $this->httpMethodNormalizer = new HttpMethodNormalizer();
     }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
@@ -150,191 +125,10 @@ final class ValinorRequestMapperMiddleware implements MiddlewareInterface
      */
     private function resolveMapRequests(RouteResult $routeResult, string $httpMethod): array
     {
-        // 1. Priority: route defaults from routing-attributes package
-        $matchedRoute = $routeResult->getMatchedRoute();
-
-        if (false !== $matchedRoute) {
-            $options = $matchedRoute->getOptions();
-
-            if (array_key_exists('valinor_mappings', $options)) {
-                $valinorMappings = $options['valinor_mappings'];
-
-                if ([] !== $valinorMappings) {
-                    return $this->filterByMethod(
-                        $this->mapRequestOptionsParser->parse($valinorMappings),
-                        $httpMethod,
-                    );
-                }
-
-                // Empty payload [] falls back to reflection metadata (plan 02).
-            }
-
-            // 2. Reflection on the actual route handler
-            $handler = $matchedRoute->getMiddleware();
-
-            return $this->resolveFromReflection($handler, $httpMethod);
-        }
-
-        return [];
-    }
-
-    /**
-     * @return list<MapRequest>
-     */
-    private function resolveFromReflection(object|string $handler, string $httpMethod): array
-    {
-        [$handlerClass, $methodNames] = $this->resolveHandlerReflectionTarget($handler);
-
-        $cacheKey = $handlerClass . '|' . implode(',', $methodNames) . '|' . $this->httpMethodNormalizer->normalize($httpMethod);
-
-        if (array_key_exists($cacheKey, $this->mapRequestCache)) {
-            return $this->mapRequestCache[$cacheKey];
-        }
-
-        if (! class_exists($handlerClass)) {
-            return $this->mapRequestCache[$cacheKey] = [];
-        }
-
-        $refClass = new ReflectionClass($handlerClass);
-
-        return $this->mapRequestCache[$cacheKey] = $this->filterByMethod(
-            $this->resolveAttributes($refClass, $methodNames),
+        return $this->filterByMethod(
+            $this->mapRequestResolver->resolve($routeResult),
             $httpMethod,
         );
-    }
-
-    /**
-     * @param ReflectionClass<object> $refClass
-     * @param list<string>            $methodNames
-     *
-     * @return list<MapRequest>
-     */
-    private function resolveAttributes(ReflectionClass $refClass, array $methodNames): array
-    {
-        $result = [];
-
-        foreach ($refClass->getAttributes(MapRequest::class) as $refAttr) {
-            $result[] = $refAttr->newInstance();
-        }
-
-        foreach ($methodNames as $methodName) {
-            if (! $refClass->hasMethod($methodName)) {
-                continue;
-            }
-
-            foreach ($refClass->getMethod($methodName)->getAttributes(MapRequest::class) as $refAttr) {
-                $result[] = $refAttr->newInstance();
-            }
-        }
-
-        return $result;
-    }
-
-    /**
-     * @return array{0: string, 1: list<string>}
-     */
-    private function resolveHandlerReflectionTarget(object|string $handler): array
-    {
-        $unwrapped = $this->unwrapKnownMiddlewareDecorator($handler);
-
-        if (is_array($unwrapped)) {
-            return $unwrapped;
-        }
-
-        $handlerClass = $this->resolveHandlerClass($unwrapped);
-
-        if (! class_exists($handlerClass)) {
-            return [$handlerClass, []];
-        }
-
-        $refClass = new ReflectionClass($handlerClass);
-        $methods  = [];
-
-        if ($refClass->implementsInterface(MiddlewareInterface::class)) {
-            $methods[] = 'process';
-        }
-
-        if ($refClass->implementsInterface(RequestHandlerInterface::class)) {
-            $methods[] = 'handle';
-        }
-
-        if ($refClass->hasMethod('__invoke')) {
-            $methods[] = '__invoke';
-        }
-
-        return [$handlerClass, array_values(array_unique($methods))];
-    }
-
-    /**
-     * @return array{0: string, 1: list<string>}|object|string
-     *
-     * @throws ReflectionException
-     */
-    private function unwrapKnownMiddlewareDecorator(object|string $handler): array|object|string
-    {
-        if (! is_object($handler)) {
-            return $handler;
-        }
-
-        if (self::REQUEST_HANDLER_MIDDLEWARE === $handler::class) {
-            $innerHandler = $this->readPrivateProperty($handler, 'handler');
-
-            if ($innerHandler instanceof RequestHandlerInterface) {
-                return [$innerHandler::class, ['handle']];
-            }
-        }
-
-        if (self::CALLABLE_MIDDLEWARE_DECORATOR === $handler::class) {
-            $callable = $this->readPrivateProperty($handler, 'middleware');
-
-            if (is_array($callable) && isset($callable[0], $callable[1]) && is_string($callable[1])) {
-                $class = is_object($callable[0]) ? $callable[0]::class : $callable[0];
-
-                if (is_string($class)) {
-                    return [$class, [$callable[1]]];
-                }
-            }
-
-            if ($callable instanceof Closure) {
-                $refFunction = new ReflectionFunction($callable);
-                $scopeClass  = $refFunction->getClosureScopeClass();
-
-                if (null !== $scopeClass && '{closure}' !== $refFunction->getName()) {
-                    return [$scopeClass->getName(), [$refFunction->getName()]];
-                }
-            }
-
-            if (is_object($callable)) {
-                return [$callable::class, ['__invoke']];
-            }
-        }
-
-        if (self::LAZY_LOADING_MIDDLEWARE === $handler::class) {
-            $middlewareName = $this->readPrivateProperty($handler, 'middlewareName');
-
-            if (is_string($middlewareName)) {
-                return [$middlewareName, ['process']];
-            }
-        }
-
-        return $handler;
-    }
-
-    private function readPrivateProperty(object $object, string $property): mixed
-    {
-        $reflection = new ReflectionClass($object);
-
-        if (! $reflection->hasProperty($property)) {
-            return null;
-        }
-
-        $reflectionProperty = $reflection->getProperty($property);
-
-        if (! $reflectionProperty->isInitialized($object)) {
-            return null;
-        }
-
-        return $reflectionProperty->getValue($object);
     }
 
     /**
@@ -354,14 +148,5 @@ final class ValinorRequestMapperMiddleware implements MiddlewareInterface
         }
 
         return $result;
-    }
-
-    private function resolveHandlerClass(object|string $handler): string
-    {
-        if (is_string($handler)) {
-            return $handler;
-        }
-
-        return $handler::class;
     }
 }

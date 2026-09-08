@@ -34,6 +34,9 @@ use Sirix\Mezzio\Valinor\Error\MappingErrorContext;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderInterface;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderResolver;
 use Sirix\Mezzio\Valinor\Exception\InvalidMapRequestConfiguration;
+use Sirix\Mezzio\Valinor\Mapping\HandlerTargetResolver;
+use Sirix\Mezzio\Valinor\Mapping\MapRequestOptionsParser;
+use Sirix\Mezzio\Valinor\Mapping\MapRequestResolver;
 use Sirix\Mezzio\Valinor\Middleware\ValinorRequestMapperMiddleware;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\CreateBodyRequest;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\PaginationRequest;
@@ -811,6 +814,10 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
             new MappingErrorResponderResolver(
                 $responder ?? $this->defaultResponder(),
                 ContainerResolver::forContext($this->emptyContainer(), self::class),
+            ),
+            new MapRequestResolver(
+                new HandlerTargetResolver(),
+                new MapRequestOptionsParser(),
             ),
         );
     }

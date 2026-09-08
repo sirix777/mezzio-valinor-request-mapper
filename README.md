@@ -70,12 +70,48 @@ $app->pipe(\Sirix\Mezzio\Valinor\Middleware\ValinorRequestMapperMiddleware::clas
 $app->pipe(\Mezzio\Router\Middleware\DispatchMiddleware::class);
 ```
 
-In standalone mode the middleware resolves `#[MapRequest]` by reflection from:
+In standalone mode the middleware resolves `#[MapRequest]` by reflection from the
+actually callable target. Class-level attributes run first, then method-level
+attributes on the selected method, in PHP declaration order.
 
-- class-level attributes on the matched route handler
-- method-level attributes on PSR-15 `process()`
-- method-level attributes on request handler `handle()` when Mezzio wraps it as route middleware
-- method-level attributes on invokable route middleware via `__invoke()`
+Supported route handler targets:
+
+| Input | Resolved method | Notes |
+|---|---|---|
+| `RequestHandlerInterface` instance or FQCN | `handle` | |
+| `MiddlewareInterface` instance or FQCN | `process` | Priority over `RequestHandlerInterface` when both are implemented |
+| Invokable object | `__invoke` | Only when no PSR-15 interface is implemented |
+| `RequestHandlerMiddleware` wrapper | `handle` of the inner handler | Ignores extra interfaces of the inner handler |
+| `CallableMiddlewareDecorator` with array callable | exact array method | |
+| `CallableMiddlewareDecorator` with first-class callable | real method of the closure scope | |
+| `CallableMiddlewareDecorator` with invokable object | `__invoke` | |
+| `CallableMiddlewareDecorator` with string `Class::method` | `Class` and `method` if callable is valid | |
+| `CallableMiddlewareDecorator` with anonymous closure/function | *(no mapping)* | Attributes of the outer scope are not read |
+| `LazyLoadingMiddleware` with handler FQCN | `handle` or `process` | Chosen by the declared FQCN's interfaces; unknown classes are ignored |
+| `MiddlewarePipe` / pipeline | *(no mapping)* | Use explicit route options (see below) |
+| alias / non-class service name | *(no mapping)* | Use explicit route options (see below) |
+
+For aliases and pipelines the package cannot discover attributes. Provide them
+explicitly via route options:
+
+```php
+$route = $app->get('/orders', 'order.handler.alias');
+$route->setOptions([
+    'valinor_mappings' => [
+        [
+            'body' => CreateOrderRequest::class,
+        ],
+    ],
+]);
+```
+
+An empty `valinor_mappings => []` falls back to reflection; a missing key also
+falls back. Any non-empty invalid payload raises a configuration error.
+
+Discovery reflects the **declared route handler**, not the service instance the
+container may return. If you register a service under an FQCN but the container
+returns a different class, attributes of the declared FQCN are used. To map
+attributes of the actual instance, provide `valinor_mappings` explicitly.
 
 ### 2) With `sirix/mezzio-routing-attributes`
 
