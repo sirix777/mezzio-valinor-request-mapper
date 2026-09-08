@@ -5,22 +5,35 @@ declare(strict_types=1);
 namespace Sirix\Mezzio\Valinor\Attribute;
 
 use Attribute;
-use InvalidArgumentException;
 use Sirix\Mezzio\Routing\Contracts\RouteAttributeModifierInterface;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderInterface;
+use Sirix\Mezzio\Valinor\Exception\InvalidMapRequestConfiguration;
+use Sirix\Mezzio\Valinor\Mapping\HttpMethodNormalizer;
 use Sirix\Mezzio\Valinor\Middleware\ValinorRequestMapperMiddleware;
 
-use function array_filter;
-use function array_map;
-use function array_unique;
-use function array_values;
-use function is_string;
-use function strtoupper;
+use function sprintf;
 use function trim;
 
 #[Attribute(Attribute::TARGET_CLASS | Attribute::TARGET_METHOD | Attribute::IS_REPEATABLE)]
 final readonly class MapRequest implements RouteAttributeModifierInterface
 {
+    /** @var null|class-string */
+    public ?string $body;
+
+    /** @var null|class-string */
+    public ?string $query;
+
+    /** @var null|class-string */
+    public ?string $route;
+
+    /** @var null|class-string */
+    public ?string $source;
+
+    public ?string $output;
+
+    /** @var null|class-string<MappingErrorResponderInterface> */
+    public ?string $errorResponder;
+
     /**
      * @var list<string>
      */
@@ -36,24 +49,39 @@ final readonly class MapRequest implements RouteAttributeModifierInterface
      * @param mixed[]                                           $methods        HTTP method filter. Empty = any method.
      */
     public function __construct(
-        public ?string $body = null,
-        public ?string $query = null,
-        public ?string $route = null,
-        public ?string $source = null,
-        public ?string $output = null,
+        ?string $body = null,
+        ?string $query = null,
+        ?string $route = null,
+        ?string $source = null,
+        ?string $output = null,
         array $methods = [],
-        public ?string $errorResponder = null,
+        ?string $errorResponder = null,
     ) {
         if (null !== $source && (null !== $body || null !== $query || null !== $route)) {
-            throw new InvalidArgumentException(
+            throw new InvalidMapRequestConfiguration(
                 'MapRequest: $source is mutually exclusive with $body/$query/$route.',
             );
         }
 
-        $this->methods = array_values(array_unique(array_map(
-            static fn (string $method): string => strtoupper(trim($method)),
-            array_filter($methods, static fn (mixed $method): bool => is_string($method) && '' !== $method),
-        )));
+        $this->body           = $this->validateClassString('body', $body);
+        $this->query          = $this->validateClassString('query', $query);
+        $this->route          = $this->validateClassString('route', $route);
+        $this->source         = $this->validateClassString('source', $source);
+        $this->output         = $this->validateOptionalString('output', $output);
+        $this->errorResponder = $this->validateResponderClassString('errorResponder', $errorResponder);
+
+        if (
+            null === $this->body
+            && null === $this->query
+            && null === $this->route
+            && null === $this->source
+        ) {
+            throw new InvalidMapRequestConfiguration(
+                'MapRequest: at least one of $body, $query, $route or $source must be set.',
+            );
+        }
+
+        $this->methods = (new HttpMethodNormalizer())->normalizeList($methods);
     }
 
     public function getMiddleware(): array
@@ -76,5 +104,49 @@ final readonly class MapRequest implements RouteAttributeModifierInterface
                 ],
             ],
         ];
+    }
+
+    /**
+     * @param null|class-string $value
+     *
+     * @return null|class-string
+     */
+    private function validateClassString(string $field, ?string $value): ?string
+    {
+        $this->assertNonEmptyStringWithoutSurroundingWhitespace($field, $value);
+
+        return $value;
+    }
+
+    /**
+     * @param null|class-string<MappingErrorResponderInterface> $value
+     *
+     * @return null|class-string<MappingErrorResponderInterface>
+     */
+    private function validateResponderClassString(string $field, ?string $value): ?string
+    {
+        $this->assertNonEmptyStringWithoutSurroundingWhitespace($field, $value);
+
+        return $value;
+    }
+
+    private function validateOptionalString(string $field, ?string $value): ?string
+    {
+        $this->assertNonEmptyStringWithoutSurroundingWhitespace($field, $value);
+
+        return $value;
+    }
+
+    private function assertNonEmptyStringWithoutSurroundingWhitespace(string $field, ?string $value): void
+    {
+        if (null === $value) {
+            return;
+        }
+
+        if ('' === $value || trim($value) !== $value) {
+            throw new InvalidMapRequestConfiguration(
+                sprintf('MapRequest: $%s must be a non-empty string without surrounding whitespace.', $field),
+            );
+        }
     }
 }

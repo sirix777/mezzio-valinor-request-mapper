@@ -33,6 +33,7 @@ use Sirix\Mezzio\Valinor\Error\DefaultMappingErrorResponder;
 use Sirix\Mezzio\Valinor\Error\MappingErrorContext;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderInterface;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderResolver;
+use Sirix\Mezzio\Valinor\Exception\InvalidMapRequestConfiguration;
 use Sirix\Mezzio\Valinor\Middleware\ValinorRequestMapperMiddleware;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\CreateBodyRequest;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\PaginationRequest;
@@ -181,6 +182,39 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
         $body = json_decode((string) $response->getBody(), true);
 
         self::assertSame('foo', $body['name']);
+    }
+
+    #[Test]
+    public function headIsNotTreatedAsGet(): void
+    {
+        $middleware = $this->defaultMiddleware();
+        $request    = $this->request(RequestMethodInterface::METHOD_HEAD);
+
+        $handler = new #[MapRequest(body: RequiredRequest::class, methods: [RequestMethodInterface::METHOD_GET])]
+        class implements MiddlewareInterface, RequestHandlerInterface {
+            public bool $mapped = false;
+
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                return $this->handle($request);
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                $this->mapped = null !== $request->getAttribute(RequiredRequest::class);
+
+                return new EmptyResponse();
+            }
+        };
+
+        $this->processRoute(
+            $middleware,
+            $request,
+            $handler,
+            methods: [RequestMethodInterface::METHOD_HEAD, RequestMethodInterface::METHOD_GET],
+        );
+
+        self::assertFalse($handler->mapped);
     }
 
     #[Test]
@@ -680,6 +714,70 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
         $middleware->process($request, $this->nextHandler($handler));
 
         self::assertFalse($handler->mapped);
+    }
+
+    #[Test]
+    public function invalidRouteOptionsThrowConfigurationError(): void
+    {
+        $middleware = $this->defaultMiddleware();
+        $request    = $this->request(RequestMethodInterface::METHOD_POST);
+
+        $handler = new class implements MiddlewareInterface, RequestHandlerInterface {
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                return $this->handle($request);
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                return new EmptyResponse();
+            }
+        };
+
+        $route = new Route('/example', $handler, [RequestMethodInterface::METHOD_POST]);
+        $route->setOptions([
+            'valinor_mappings' => [
+                [
+                    'methods' => 'POST',
+                ],
+            ],
+        ]);
+        $request = $request->withAttribute(RouteResult::class, RouteResult::fromRoute($route, []));
+
+        $this->expectException(InvalidMapRequestConfiguration::class);
+        $this->expectExceptionMessage('valinor_mappings[0].methods: expected list<string>.');
+
+        $middleware->process($request, $this->nextHandler($handler));
+    }
+
+    #[Test]
+    public function explicitNullValinorMappingsThrowsConfigurationError(): void
+    {
+        $middleware = $this->defaultMiddleware();
+        $request    = $this->request(RequestMethodInterface::METHOD_POST);
+
+        $handler = new class implements MiddlewareInterface, RequestHandlerInterface {
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                return $this->handle($request);
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                return new EmptyResponse();
+            }
+        };
+
+        $route = new Route('/example', $handler, [RequestMethodInterface::METHOD_POST]);
+        $route->setOptions([
+            'valinor_mappings' => null,
+        ]);
+        $request = $request->withAttribute(RouteResult::class, RouteResult::fromRoute($route, []));
+
+        $this->expectException(InvalidMapRequestConfiguration::class);
+        $this->expectExceptionMessage('valinor_mappings: expected list<map<string, mixed>>.');
+
+        $middleware->process($request, $this->nextHandler($handler));
     }
 
     private function defaultMapper(): TreeMapper

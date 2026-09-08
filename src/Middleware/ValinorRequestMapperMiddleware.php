@@ -19,6 +19,8 @@ use ReflectionFunction;
 use Sirix\Mezzio\Valinor\Attribute\MapRequest;
 use Sirix\Mezzio\Valinor\Error\MappingErrorContext;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderResolver;
+use Sirix\Mezzio\Valinor\Mapping\HttpMethodNormalizer;
+use Sirix\Mezzio\Valinor\Mapping\MapRequestOptionsParser;
 
 use function array_key_exists;
 use function array_unique;
@@ -29,8 +31,6 @@ use function in_array;
 use function is_array;
 use function is_object;
 use function is_string;
-use function strtoupper;
-use function trim;
 
 final class ValinorRequestMapperMiddleware implements MiddlewareInterface
 {
@@ -45,10 +45,17 @@ final class ValinorRequestMapperMiddleware implements MiddlewareInterface
      */
     private array $mapRequestCache = [];
 
+    private readonly HttpMethodNormalizer $httpMethodNormalizer;
+
+    private readonly MapRequestOptionsParser $mapRequestOptionsParser;
+
     public function __construct(
         private readonly TreeMapper $mapper,
         private readonly MappingErrorResponderResolver $errorResponderResolver,
-    ) {}
+    ) {
+        $this->httpMethodNormalizer    = new HttpMethodNormalizer();
+        $this->mapRequestOptionsParser = new MapRequestOptionsParser();
+    }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
@@ -147,10 +154,19 @@ final class ValinorRequestMapperMiddleware implements MiddlewareInterface
         $matchedRoute = $routeResult->getMatchedRoute();
 
         if (false !== $matchedRoute) {
-            $valinorMappings = $matchedRoute->getOptions()['valinor_mappings'] ?? [];
+            $options = $matchedRoute->getOptions();
 
-            if ([] !== $valinorMappings) {
-                return $this->filterByMethod($valinorMappings, $httpMethod);
+            if (array_key_exists('valinor_mappings', $options)) {
+                $valinorMappings = $options['valinor_mappings'];
+
+                if ([] !== $valinorMappings) {
+                    return $this->filterByMethod(
+                        $this->mapRequestOptionsParser->parse($valinorMappings),
+                        $httpMethod,
+                    );
+                }
+
+                // Empty payload [] falls back to reflection metadata (plan 02).
             }
 
             // 2. Reflection on the actual route handler
@@ -169,7 +185,7 @@ final class ValinorRequestMapperMiddleware implements MiddlewareInterface
     {
         [$handlerClass, $methodNames] = $this->resolveHandlerReflectionTarget($handler);
 
-        $cacheKey = $handlerClass . '|' . implode(',', $methodNames) . '|' . $this->normalizeHttpMethod($httpMethod);
+        $cacheKey = $handlerClass . '|' . implode(',', $methodNames) . '|' . $this->httpMethodNormalizer->normalize($httpMethod);
 
         if (array_key_exists($cacheKey, $this->mapRequestCache)) {
             return $this->mapRequestCache[$cacheKey];
@@ -181,15 +197,10 @@ final class ValinorRequestMapperMiddleware implements MiddlewareInterface
 
         $refClass = new ReflectionClass($handlerClass);
 
-        $result = [];
-
-        foreach ($this->resolveAttributes($refClass, $methodNames) as $attr) {
-            if ($this->matchesHttpMethod($attr->methods, $httpMethod)) {
-                $result[] = $attr;
-            }
-        }
-
-        return $this->mapRequestCache[$cacheKey] = $result;
+        return $this->mapRequestCache[$cacheKey] = $this->filterByMethod(
+            $this->resolveAttributes($refClass, $methodNames),
+            $httpMethod,
+        );
     }
 
     /**
@@ -327,28 +338,18 @@ final class ValinorRequestMapperMiddleware implements MiddlewareInterface
     }
 
     /**
-     * @param list<array<string, mixed>> $mappings
+     * @param list<MapRequest> $mapRequests
      *
      * @return list<MapRequest>
      */
-    private function filterByMethod(array $mappings, string $httpMethod): array
+    private function filterByMethod(array $mapRequests, string $httpMethod): array
     {
-        $httpMethod = $this->normalizeHttpMethod($httpMethod);
+        $httpMethod = $this->httpMethodNormalizer->normalize($httpMethod);
         $result     = [];
 
-        foreach ($mappings as $mapping) {
-            $methods = $this->normalizeMethods((array) ($mapping['methods'] ?? []));
-
-            if ([] === $methods || in_array($httpMethod, $methods, true)) {
-                $result[] = new MapRequest(
-                    body: $mapping['body'] ?? null,
-                    query: $mapping['query'] ?? null,
-                    route: $mapping['route'] ?? null,
-                    source: $mapping['source'] ?? null,
-                    output: $mapping['output'] ?? null,
-                    methods: $methods,
-                    errorResponder: $mapping['errorResponder'] ?? null,
-                );
+        foreach ($mapRequests as $mapRequest) {
+            if ([] === $mapRequest->methods || in_array($httpMethod, $mapRequest->methods, true)) {
+                $result[] = $mapRequest;
             }
         }
 
@@ -362,42 +363,5 @@ final class ValinorRequestMapperMiddleware implements MiddlewareInterface
         }
 
         return $handler::class;
-    }
-
-    /**
-     * @param list<string> $methods
-     */
-    private function matchesHttpMethod(array $methods, string $httpMethod): bool
-    {
-        return [] === $methods || in_array($this->normalizeHttpMethod($httpMethod), $methods, true);
-    }
-
-    private function normalizeHttpMethod(string $httpMethod): string
-    {
-        return strtoupper(trim($httpMethod));
-    }
-
-    /**
-     * @param array<mixed, mixed> $methods
-     *
-     * @return list<string>
-     */
-    private function normalizeMethods(array $methods): array
-    {
-        $normalized = [];
-
-        foreach ($methods as $method) {
-            if (! is_string($method)) {
-                continue;
-            }
-
-            if ('' === $method) {
-                continue;
-            }
-
-            $normalized[] = $this->normalizeHttpMethod($method);
-        }
-
-        return array_values(array_unique($normalized));
     }
 }
