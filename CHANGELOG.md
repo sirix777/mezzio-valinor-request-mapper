@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Lower bound of `cuyz/valinor` raised from `^2.0` to `^2.4`; previous constraint allowed versions that do not provide the `CuyZ\Valinor\Mapper\Http\HttpRequest` API and `MapperBuilderConfigurator` used by this package.
+- `support_date_formats` no longer replaces previously supported formats; configured formats are now appended to the builder's existing list (including formats set by configurators and Valinor's default RFC 3339 / timestamp formats), with duplicates removed.
 
 ## [2.0.0] - 2026-08-28
 

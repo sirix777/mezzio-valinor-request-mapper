@@ -242,6 +242,187 @@ final class ValinorMapperBuilderFactoryTest extends TestCase
     }
 
     #[Test]
+    public function supportDateFormatsPreservesMultipleConfiguredFormats(): void
+    {
+        $mapper = $this->builder([
+            'support_date_formats'   => ['Y-m-d', 'd/m/Y'],
+            'allow_superfluous_keys' => false,
+        ])->mapper();
+
+        $ymd = $mapper->map('array{date: DateTimeImmutable}', [
+            'date' => '2026-09-08',
+        ]);
+
+        self::assertSame('2026-09-08', $ymd['date']->format('Y-m-d'));
+
+        $dmy = $mapper->map('array{date: DateTimeImmutable}', [
+            'date' => '08/09/2026',
+        ]);
+
+        self::assertSame('2026-09-08', $dmy['date']->format('Y-m-d'));
+    }
+
+    #[Test]
+    public function supportDateFormatsPreservesDefaultRfc3339(): void
+    {
+        $mapper = $this->builder([
+            'support_date_formats'   => ['Y-m-d', 'd/m/Y'],
+            'allow_superfluous_keys' => false,
+        ])->mapper();
+
+        $rfc3339 = $mapper->map('array{date: DateTimeImmutable}', [
+            'date' => '2026-09-08T12:30:00+00:00',
+        ]);
+
+        self::assertSame('2026-09-08T12:30:00+00:00', $rfc3339['date']->format('Y-m-d\TH:i:sP'));
+    }
+
+    #[Test]
+    public function supportDateFormatsPreservesDefaultTimestamp(): void
+    {
+        $mapper = $this->builder([
+            'support_date_formats'   => ['Y-m-d', 'd/m/Y'],
+            'allow_superfluous_keys' => false,
+        ])->mapper();
+
+        $timestamp = $mapper->map('array{date: DateTimeImmutable}', [
+            'date' => '1700000000',
+        ]);
+
+        self::assertSame('1700000000', $timestamp['date']->format('U'));
+    }
+
+    #[Test]
+    public function emptySupportDateFormatsKeepsDefaultFormats(): void
+    {
+        $mapper = $this->builder([
+            'support_date_formats'   => [],
+            'allow_superfluous_keys' => false,
+        ])->mapper();
+
+        $rfc3339 = $mapper->map('array{date: DateTimeImmutable}', [
+            'date' => '2026-09-08T12:30:00+00:00',
+        ]);
+
+        self::assertSame('2026-09-08T12:30:00+00:00', $rfc3339['date']->format('Y-m-d\TH:i:sP'));
+    }
+
+    #[Test]
+    public function supportDateFormatsRemovesDuplicatesKeepingFirstOccurrence(): void
+    {
+        $builder = $this->builder([
+            'support_date_formats'   => ['Y-m-d', 'Y-m-d', 'd/m/Y'],
+            'allow_superfluous_keys' => false,
+        ]);
+
+        self::assertSame(
+            [
+                'Y-m-d\TH:i:sP',
+                'Y-m-d\TH:i:s.uP',
+                'U',
+                'U.u',
+                'Y-m-d',
+                'd/m/Y',
+            ],
+            $builder->supportedDateFormats(),
+        );
+
+        $mapper = $builder->mapper();
+
+        $ymd = $mapper->map('array{date: DateTimeImmutable}', [
+            'date' => '2026-09-08',
+        ]);
+
+        self::assertSame('2026-09-08', $ymd['date']->format('Y-m-d'));
+
+        $dmy = $mapper->map('array{date: DateTimeImmutable}', [
+            'date' => '08/09/2026',
+        ]);
+
+        self::assertSame('2026-09-08', $dmy['date']->format('Y-m-d'));
+    }
+
+    #[Test]
+    public function supportDateFormatsAppendsToConfiguratorFormats(): void
+    {
+        $configurator = new class implements MapperBuilderConfigurator {
+            public function configureMapperBuilder(MapperBuilder $builder): MapperBuilder
+            {
+                return $builder->supportDateFormats('m.d.Y');
+            }
+        };
+
+        $mapper = $this->builder([
+            'support_date_formats'   => ['d/m/Y'],
+            'allow_superfluous_keys' => false,
+            'configurators'          => [$configurator],
+        ])->mapper();
+
+        $mdy = $mapper->map('array{date: DateTimeImmutable}', [
+            'date' => '09.08.2026',
+        ]);
+
+        self::assertSame('2026-09-08', $mdy['date']->format('Y-m-d'));
+
+        $dmy = $mapper->map('array{date: DateTimeImmutable}', [
+            'date' => '08/09/2026',
+        ]);
+
+        self::assertSame('2026-09-08', $dmy['date']->format('Y-m-d'));
+    }
+
+    #[Test]
+    public function configuratorDateFormatsAreTheBaseWhenConfigurationIsEmpty(): void
+    {
+        $configurator = new class implements MapperBuilderConfigurator {
+            public function configureMapperBuilder(MapperBuilder $builder): MapperBuilder
+            {
+                return $builder->supportDateFormats('m.d.Y');
+            }
+        };
+
+        $mapper = $this->builder([
+            'support_date_formats'   => [],
+            'allow_superfluous_keys' => false,
+            'configurators'          => [$configurator],
+        ])->mapper();
+
+        $mdy = $mapper->map('array{date: DateTimeImmutable}', [
+            'date' => '09.08.2026',
+        ]);
+
+        self::assertSame('2026-09-08', $mdy['date']->format('Y-m-d'));
+
+        $this->expectException(MappingError::class);
+
+        $mapper->map('array{date: DateTimeImmutable}', [
+            'date' => '2026-09-08T12:30:00+00:00',
+        ]);
+    }
+
+    #[Test]
+    public function rejectsBlankDateFormatString(): void
+    {
+        $this->expectException(InvalidConfigValueException::class);
+
+        $this->builder([
+            'support_date_formats'   => [''],
+            'allow_superfluous_keys' => false,
+        ]);
+    }
+
+    #[Test]
+    public function rejectsWhitespaceDateFormatString(): void
+    {
+        $this->expectException(InvalidConfigValueException::class);
+
+        $this->builder([
+            'support_date_formats'   => ['   '],
+            'allow_superfluous_keys' => false,
+        ]);
+    }
+
+    #[Test]
     public function cacheDirCreatesMapperWithFileSystemCache(): void
     {
         $cacheDir = $this->createTempDir();

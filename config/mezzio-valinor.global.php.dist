@@ -42,7 +42,11 @@ return [
             // Treat missing keys as null instead of raising an error
             'allow_undefined_values'     => false,
 
-            // Additional date formats beyond RFC 3339 and timestamp.
+            // Additional date formats appended to those already supported by the
+            // configured builder. This includes formats set by configurators; if no
+            // configurator replaces them, Valinor's default RFC 3339 / timestamp
+            // formats are preserved as well. Use an empty list to keep the builder's
+            // current formats unchanged.
             // Example: ['Y-m-d', 'd/m/Y H:i:s']
             'support_date_formats'       => [],
 

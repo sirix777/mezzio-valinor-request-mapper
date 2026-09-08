@@ -248,7 +248,7 @@ return [
 | `allow_scalar_value_casting` | `bool` | `true` | Allow automatic scalar type casting (e.g. `int` → `string`) |
 | `allow_permissive_types` | `bool` | `false` | Allow `mixed` type to accept any value |
 | `allow_undefined_values` | `bool` | `false` | Fill missing keys with `null` instead of failing |
-| `support_date_formats` | `list<string>` | `[]` | Additional date formats for `DateTimeInterface` mapping |
+| `support_date_formats` | `list<string>` | `[]` | Additional date formats appended to those already supported by the configured builder. If no configurator replaces them, Valinor's default RFC 3339 / timestamp formats are preserved; otherwise the configurator's list is the base |
 
 ### Cache
 

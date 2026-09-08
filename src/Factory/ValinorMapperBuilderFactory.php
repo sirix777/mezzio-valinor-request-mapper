@@ -15,6 +15,8 @@ use Psr\Container\NotFoundExceptionInterface;
 use Sirix\ContainerResolver\ConfigReader;
 use Sirix\ContainerResolver\ContainerResolver;
 
+use function array_unique;
+use function array_values;
 use function is_a;
 use function is_string;
 
@@ -72,8 +74,12 @@ final readonly class ValinorMapperBuilderFactory
             $builder = $builder->allowUndefinedValues();
         }
 
-        foreach ($configReader->nonEmptyStringList('support_date_formats', default: []) as $format) {
-            $builder = $builder->supportDateFormats($format);
+        $configuredFormats = $configReader->nonEmptyStringList('support_date_formats', default: []);
+
+        if ([] !== $configuredFormats) {
+            $formats = array_values(array_unique([...$builder->supportedDateFormats(), ...$configuredFormats]));
+
+            $builder = $builder->supportDateFormats(...$formats);
         }
 
         return $builder;
