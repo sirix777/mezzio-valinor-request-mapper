@@ -21,7 +21,7 @@ This package reads `#[MapRequest]` attributes on route handlers and maps request
 ## Requirements
 
 - PHP `~8.2 || ~8.3 || ~8.4 || ~8.5`
-- `cuyz/valinor ^2.0`
+- `cuyz/valinor ^2.4`
 - `mezzio/mezzio-router ^3.15 || ^4.1`
 - PSR-17 `ResponseFactoryInterface` and `StreamFactoryInterface` services
 - `sirix/mezzio-routing-contracts ^1.0`
