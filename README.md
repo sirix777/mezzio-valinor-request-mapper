@@ -38,7 +38,7 @@ composer require sirix/mezzio-valinor-request-mapper
 
 ### Required service registration
 
-`ConfigProvider` is required. It registers the `TreeMapper`,
+`ConfigProvider` is required. It registers the `MapperBuilder`, `TreeMapper`,
 `DefaultMappingErrorResponder`, `MappingErrorResponderResolver`, and
 `ValinorRequestMapperMiddleware` services.
 
@@ -257,11 +257,11 @@ When `cache_dir` is set, Valinor caches compiled reflection data for mapped DTO 
 - **Production**: set `cache_dir` and leave `cache_watch` disabled (default)
 - **Development**: set `cache_watch: true` so cache invalidates automatically when PHP files change
 
-To pre-warm the cache during deployment, use a CLI script:
+To pre-warm the cache during deployment, use the same `MapperBuilder` service
+that runtime uses, so the cache keys match exactly:
 
 ```php
-$mapperBuilder = (new \CuyZ\Valinor\MapperBuilder())
-    ->withCache(new \CuyZ\Valinor\Cache\FileSystemCache('path/to/cache-dir'));
+$mapperBuilder = $container->get(\CuyZ\Valinor\MapperBuilder::class);
 
 $mapperBuilder->warmupCacheFor(
     \App\Domain\CreateUserRequest::class,
@@ -269,6 +269,19 @@ $mapperBuilder->warmupCacheFor(
     // ...
 );
 ```
+
+`$container` is the application container already configured with this
+package's `ConfigProvider`. Warm up with the same PHP version, configuration,
+and installed dependencies that the deployed runtime will use, and update the
+cache directory together with each release. When `cache_watch` is disabled
+(the production default), the cache is not invalidated automatically when PHP
+files change.
+
+This warmup example applies to the mapper built from the registered
+`MapperBuilder` service. If your application overrides `TreeMapper::class`
+with a custom implementation, that mapper may use a different builder or no
+builder at all; the package does not guarantee cache-key compatibility with
+arbitrary `TreeMapper` overrides.
 
 ### Mapper configurators
 

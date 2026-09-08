@@ -349,6 +349,7 @@ final class ValinorRequestMapperMiddlewareFactoryTest extends TestCase
                 }
 
                 return match ($id) {
+                    MapperBuilder::class                     => (new MapperBuilder())->allowSuperfluousKeys()->allowScalarValueCasting(),
                     TreeMapper::class                        => (new ValinorTreeMapperFactory())($this),
                     DefaultMappingErrorResponder::class      => (new DefaultMappingErrorResponderFactory())($this),
                     MappingErrorResponderInterface::class    => $this->get(DefaultMappingErrorResponder::class),
@@ -363,6 +364,7 @@ final class ValinorRequestMapperMiddlewareFactoryTest extends TestCase
             {
                 return array_key_exists($id, $this->services)
                     || in_array($id, [
+                        MapperBuilder::class,
                         TreeMapper::class,
                         DefaultMappingErrorResponder::class,
                         MappingErrorResponderInterface::class,

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.0.0] - unreleased
 
+### Added
+
+- `MapperBuilder` service factory (`ValinorMapperBuilderFactory`) so that cache warmup and runtime mapping use the same configured builder and cache keys.
+
+### Changed
+
+- `ConfigProvider` now registers the `MapperBuilder` service in addition to `TreeMapper`.
+- `ValinorTreeMapperFactory` now delegates to the configured `MapperBuilder` service instead of building the builder itself.
+
 ### Fixed
 
 - Lower bound of `cuyz/valinor` raised from `^2.0` to `^2.4`; previous constraint allowed versions that do not provide the `CuyZ\Valinor\Mapper\Http\HttpRequest` API and `MapperBuilderConfigurator` used by this package.

@@ -45,6 +45,14 @@ return [
             // Additional date formats beyond RFC 3339 and timestamp.
             // Example: ['Y-m-d', 'd/m/Y H:i:s']
             'support_date_formats'       => [],
+
+            // Path to the Valinor cache directory. Must be outside the public
+            // web root. When null, no file-system cache is used.
+            'cache_dir'                  => null,
+
+            // Watch PHP files for changes and invalidate the cache automatically.
+            // Enable in development; disable in production.
+            'cache_watch'                => false,
         ],
     ],
 ];
