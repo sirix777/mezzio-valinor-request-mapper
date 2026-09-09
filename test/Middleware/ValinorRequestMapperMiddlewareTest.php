@@ -33,9 +33,11 @@ use Sirix\Mezzio\Valinor\Error\DefaultMappingErrorResponder;
 use Sirix\Mezzio\Valinor\Error\MappingErrorContext;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderInterface;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderResolver;
+use Sirix\Mezzio\Valinor\Error\RequestInputError;
 use Sirix\Mezzio\Valinor\Exception\InvalidMapRequestConfiguration;
 use Sirix\Mezzio\Valinor\Mapping\HandlerTargetResolver;
 use Sirix\Mezzio\Valinor\Mapping\HttpMethodNormalizer;
+use Sirix\Mezzio\Valinor\Mapping\HttpRequestSourceFactory;
 use Sirix\Mezzio\Valinor\Mapping\MappingPlanResolver;
 use Sirix\Mezzio\Valinor\Mapping\MapRequestOptionsParser;
 use Sirix\Mezzio\Valinor\Mapping\MapRequestResolver;
@@ -44,6 +46,7 @@ use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\CreateBodyRequest;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\PaginationRequest;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\RequiredRequest;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\SearchRequest;
+use stdClass;
 
 use function json_decode;
 
@@ -630,6 +633,173 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
     }
 
     #[Test]
+    public function rejectsObjectParsedBodyBeforeMappingAndPassesInputErrorToResponder(): void
+    {
+        $responder = new class implements MappingErrorResponderInterface {
+            public ?MappingErrorContext $context = null;
+
+            public function respond(MappingErrorContext $context): ResponseInterface
+            {
+                $this->context = $context;
+
+                return new JsonResponse([
+                    'handled' => true,
+                ], StatusCodeInterface::STATUS_CONFLICT);
+            }
+        };
+        $mapCount   = 0;
+        $middleware = $this->middleware($this->spyMapper($mapCount), $responder);
+        $request    = (new ServerRequest())
+            ->withMethod(RequestMethodInterface::METHOD_POST)
+            ->withParsedBody(new stdClass())
+        ;
+
+        $handler = new #[MapRequest(body: RequiredRequest::class, output: 'form')]
+        class implements MiddlewareInterface, RequestHandlerInterface {
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                return $this->handle($request);
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                return new EmptyResponse();
+            }
+        };
+
+        $called  = false;
+        $request = $this->withMatchedRoute($request, $handler, methods: [RequestMethodInterface::METHOD_POST]);
+        $next    = new class($called) implements RequestHandlerInterface {
+            public function __construct(public bool &$called) {}
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                $this->called = true;
+
+                return new EmptyResponse();
+            }
+        };
+
+        $response = $middleware->process($request, $next);
+
+        self::assertSame(StatusCodeInterface::STATUS_CONFLICT, $response->getStatusCode());
+        self::assertSame(0, $mapCount);
+        self::assertFalse($next->called);
+        self::assertInstanceOf(MappingErrorContext::class, $responder->context);
+        $context = $responder->context;
+        self::assertInstanceOf(RequestInputError::class, $context->error);
+        self::assertSame('unsupported_parsed_body', $context->error->reason);
+        self::assertSame('body', $context->error->inputSource);
+        self::assertSame(RequiredRequest::class, $context->dtoClass);
+        self::assertSame('body', $context->source);
+        self::assertSame('form', $context->requestAttributeKey);
+    }
+
+    #[Test]
+    public function nullParsedBodyIsMappedAsAnEmptyArrayInsteadOfAnInputError(): void
+    {
+        $middleware = $this->defaultMiddleware();
+        $request    = (new ServerRequest())->withMethod(RequestMethodInterface::METHOD_POST);
+
+        $handler = new #[MapRequest(body: RequiredRequest::class)]
+        class implements MiddlewareInterface, RequestHandlerInterface {
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                return $this->handle($request);
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                return new EmptyResponse();
+            }
+        };
+
+        $response = $this->processRoute($middleware, $request, $handler, methods: [RequestMethodInterface::METHOD_POST]);
+        $body     = json_decode((string) $response->getBody(), true);
+
+        self::assertSame(StatusCodeInterface::STATUS_UNPROCESSABLE_ENTITY, $response->getStatusCode());
+        self::assertArrayHasKey('name', $body['messages']);
+        self::assertSame(null, $request->getParsedBody());
+    }
+
+    #[Test]
+    public function queryAndRouteMappingsDoNotReadAnUnsupportedParsedBody(): void
+    {
+        $middleware = $this->defaultMiddleware();
+        $handler    = new class implements MiddlewareInterface, RequestHandlerInterface {
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                return $this->handle($request);
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                return new JsonResponse([
+                    'query' => $request->getAttribute('query'),
+                    'route' => $request->getAttribute('route'),
+                ]);
+            }
+        };
+        $route = new Route('/example/{name}', $handler, [RequestMethodInterface::METHOD_GET]);
+        $route->setOptions([
+            'valinor_mappings' => [[
+                'query'   => PaginationRequest::class,
+                'output'  => 'query',
+                'methods' => [],
+            ], [
+                'route'   => RequiredRequest::class,
+                'output'  => 'route',
+                'methods' => [],
+            ]],
+        ]);
+        $request = (new ServerRequest())
+            ->withMethod(RequestMethodInterface::METHOD_GET)
+            ->withParsedBody(new stdClass())
+            ->withQueryParams([
+                'page' => '2',
+            ])
+            ->withAttribute(RouteResult::class, RouteResult::fromRoute($route, [
+                'name' => 'Ada',
+            ]))
+        ;
+
+        $response = $middleware->process($request, $this->nextHandler($handler));
+        $body     = json_decode((string) $response->getBody(), true);
+
+        self::assertSame(2, $body['query']['page']);
+        self::assertSame('Ada', $body['route']['name']);
+    }
+
+    #[Test]
+    public function doesNotCatchRuntimeExceptionsThrownByTheMapper(): void
+    {
+        $mapper = $this->createMock(TreeMapper::class);
+        $mapper->method('map')->willThrowException(new RuntimeException('Application mapper failure.'));
+        $middleware = $this->middleware($mapper);
+        $request    = $this->request(RequestMethodInterface::METHOD_POST, [
+            'name' => 'Ada',
+        ]);
+
+        $handler = new #[MapRequest(body: RequiredRequest::class)]
+        class implements MiddlewareInterface, RequestHandlerInterface {
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                return $this->handle($request);
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                return new EmptyResponse();
+            }
+        };
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Application mapper failure.');
+
+        $this->processRoute($middleware, $request, $handler, methods: [RequestMethodInterface::METHOD_POST]);
+    }
+
+    #[Test]
     public function detectsOutputCollisionBetweenBodyAndQueryBeforeMapping(): void
     {
         $middleware = $this->defaultMiddleware();
@@ -1048,6 +1218,7 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
                 ),
                 new HttpMethodNormalizer(),
             ),
+            new HttpRequestSourceFactory(),
         );
     }
 

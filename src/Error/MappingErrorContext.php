@@ -15,7 +15,7 @@ final readonly class MappingErrorContext
      * @param 'body'|'query'|'route'|'source' $source
      */
     public function __construct(
-        public MappingError $error,
+        public MappingError|RequestInputError $error,
         public ServerRequestInterface $request,
         public MapRequest $mapRequest,
         public string $dtoClass,

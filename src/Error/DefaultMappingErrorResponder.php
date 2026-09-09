@@ -19,15 +19,19 @@ final readonly class DefaultMappingErrorResponder implements MappingErrorRespond
 
     public function respond(MappingErrorContext $context): ResponseInterface
     {
-        $formatted = $context->error->messages()->formatWith();
+        if ($context->error instanceof RequestInputError) {
+            $messages = [
+                '' => [$context->error->getMessage()],
+            ];
+        } else {
+            $messages = [];
 
-        $messages = [];
+            foreach ($context->error->messages()->formatWith() as $message) {
+                $path = '*root*' === $message->path() ? '' : $message->path();
 
-        foreach ($formatted as $message) {
-            $path = '*root*' === $message->path() ? '' : $message->path();
-
-            $messages[$path] ??= [];
-            $messages[$path][] = (string) $message;
+                $messages[$path] ??= [];
+                $messages[$path][] = (string) $message;
+            }
         }
 
         $body = json_encode([

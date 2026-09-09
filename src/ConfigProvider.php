@@ -8,6 +8,7 @@ use CuyZ\Valinor\Mapper\TreeMapper;
 use CuyZ\Valinor\MapperBuilder;
 use Sirix\Mezzio\Valinor\Error\DefaultMappingErrorResponder;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderInterface;
+use Sirix\Mezzio\Valinor\Mapping\HttpRequestSourceFactory;
 use Sirix\Mezzio\Valinor\Mapping\MappingPlanResolver;
 
 final class ConfigProvider
@@ -19,16 +20,19 @@ final class ConfigProvider
     {
         return [
             'dependencies' => [
-                'factories' => [
-                    MapperBuilder::class                             => Factory\ValinorMapperBuilderFactory::class,
-                    TreeMapper::class                                => Factory\ValinorTreeMapperFactory::class,
-                    MappingPlanResolver::class                       => Factory\MappingPlanResolverFactory::class,
-                    DefaultMappingErrorResponder::class              => Factory\DefaultMappingErrorResponderFactory::class,
-                    Error\MappingErrorResponderResolver::class       => Factory\MappingErrorResponderResolverFactory::class,
-                    Middleware\ValinorRequestMapperMiddleware::class => Factory\ValinorRequestMapperMiddlewareFactory::class,
+                'factories'  => [
+                    MapperBuilder::class                              => Factory\ValinorMapperBuilderFactory::class,
+                    TreeMapper::class                                 => Factory\ValinorTreeMapperFactory::class,
+                    MappingPlanResolver::class                        => Factory\MappingPlanResolverFactory::class,
+                    DefaultMappingErrorResponder::class               => Factory\DefaultMappingErrorResponderFactory::class,
+                    Error\MappingErrorResponderResolver::class        => Factory\MappingErrorResponderResolverFactory::class,
+                    Middleware\ValinorRequestMapperMiddleware::class  => Factory\ValinorRequestMapperMiddlewareFactory::class,
                 ],
-                'aliases'   => [
+                'aliases'    => [
                     MappingErrorResponderInterface::class => DefaultMappingErrorResponder::class,
+                ],
+                'invokables' => [
+                    HttpRequestSourceFactory::class => HttpRequestSourceFactory::class,
                 ],
             ],
         ];

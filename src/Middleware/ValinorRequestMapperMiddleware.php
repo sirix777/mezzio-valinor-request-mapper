@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sirix\Mezzio\Valinor\Middleware;
 
-use CuyZ\Valinor\Mapper\Http\HttpRequest;
 use CuyZ\Valinor\Mapper\MappingError;
 use CuyZ\Valinor\Mapper\TreeMapper;
 use Mezzio\Router\RouteResult;
@@ -14,7 +13,8 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Sirix\Mezzio\Valinor\Error\MappingErrorContext;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderResolver;
-use Sirix\Mezzio\Valinor\Mapping\MappingOperation;
+use Sirix\Mezzio\Valinor\Error\RequestInputError;
+use Sirix\Mezzio\Valinor\Mapping\HttpRequestSourceFactory;
 use Sirix\Mezzio\Valinor\Mapping\MappingPlanResolver;
 
 final readonly class ValinorRequestMapperMiddleware implements MiddlewareInterface
@@ -23,6 +23,7 @@ final readonly class ValinorRequestMapperMiddleware implements MiddlewareInterfa
         private TreeMapper $mapper,
         private MappingErrorResponderResolver $errorResponderResolver,
         private MappingPlanResolver $mappingPlanResolver,
+        private HttpRequestSourceFactory $httpRequestSourceFactory,
     ) {}
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
@@ -43,10 +44,10 @@ final readonly class ValinorRequestMapperMiddleware implements MiddlewareInterfa
 
         foreach ($operations as $operation) {
             try {
-                $httpRequest = $this->createHttpRequest($request, $routeParams, $operation);
+                $httpRequest = $this->httpRequestSourceFactory->create($request, $routeParams, $operation->source);
                 $dto         = $this->mapper->map($operation->dtoClass, $httpRequest);
                 $request     = $request->withAttribute($operation->requestAttributeKey, $dto);
-            } catch (MappingError $e) {
+            } catch (MappingError|RequestInputError $e) {
                 return $this->errorResponderResolver
                     ->resolve($operation->mapRequest->errorResponder)
                     ->respond(new MappingErrorContext(
@@ -62,34 +63,5 @@ final readonly class ValinorRequestMapperMiddleware implements MiddlewareInterfa
         }
 
         return $handler->handle($request);
-    }
-
-    /**
-     * @param array<string, mixed> $routeParams
-     */
-    private function createHttpRequest(ServerRequestInterface $request, array $routeParams, MappingOperation $operation): HttpRequest
-    {
-        if ('source' === $operation->source) {
-            return HttpRequest::fromPsr($request, $routeParams);
-        }
-
-        if ('body' === $operation->source) {
-            return new HttpRequest(
-                bodyValues: (array) $request->getParsedBody(),
-                requestObject: $request,
-            );
-        }
-
-        if ('query' === $operation->source) {
-            return new HttpRequest(
-                queryParameters: $request->getQueryParams(),
-                requestObject: $request,
-            );
-        }
-
-        return new HttpRequest(
-            routeParameters: $routeParams,
-            requestObject: $request,
-        );
     }
 }
