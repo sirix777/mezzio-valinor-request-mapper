@@ -280,8 +280,8 @@ return [
 | `cache_dir` | `?string` | `null` | Path to cache directory. When set, Valinor caches compiled type metadata via `FileSystemCache` |
 | `cache_watch` | `bool` | `false` | Wrap cache with `FileWatchingCache` to auto-invalidate when PHP files change (use in dev) |
 | `configurators` | `array<string\|MapperBuilderConfigurator>` | `[]` | Services or class-strings applied via `configureWith()` |
-| `allow_superfluous_keys` | `bool` | `true` | Allow extra keys in input that are not mapped |
-| `allow_scalar_value_casting` | `bool` | `true` | Allow automatic scalar type casting (e.g. `int` → `string`) |
+| `allow_superfluous_keys` | `bool` | `true` | Allow extra keys in input that are not mapped. For HTTP request mapping, extra top-level keys in body/query/route are still ignored; this flag primarily affects direct array mapping through the registered `TreeMapper` |
+| `allow_scalar_value_casting` | `bool` | `true` | Allow automatic scalar type casting (e.g. `int` → `string`). For HTTP mapping, strings from query/route parameters are always cast to target scalar types; this flag mainly controls body/array mapping behavior |
 | `allow_permissive_types` | `bool` | `false` | Allow `mixed` type to accept any value |
 | `allow_undefined_values` | `bool` | `false` | Fill missing keys with `null` instead of failing |
 | `support_date_formats` | `list<string>` | `[]` | Additional date formats appended to those already supported by the configured builder. If no configurator replaces them, Valinor's default RFC 3339 / timestamp formats are preserved; otherwise the configurator's list is the base |

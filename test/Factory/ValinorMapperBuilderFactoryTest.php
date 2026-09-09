@@ -122,7 +122,7 @@ final class ValinorMapperBuilderFactoryTest extends TestCase
     }
 
     #[Test]
-    public function allowSuperfluousKeysIsFalse(): void
+    public function arrayMappingFailsWithSuperfluousKeysWhenFlagIsFalse(): void
     {
         $mapper = $this->builder([
             'allow_superfluous_keys' => false,
@@ -137,7 +137,7 @@ final class ValinorMapperBuilderFactoryTest extends TestCase
     }
 
     #[Test]
-    public function allowSuperfluousKeysIsTrue(): void
+    public function arrayMappingAllowsSuperfluousKeysWhenFlagIsTrue(): void
     {
         $mapper = $this->builder([
             'allow_superfluous_keys' => true,
@@ -152,7 +152,7 @@ final class ValinorMapperBuilderFactoryTest extends TestCase
     }
 
     #[Test]
-    public function allowScalarValueCastingConvertsIntToString(): void
+    public function arrayMappingCastsIntToStringWhenFlagIsTrue(): void
     {
         $mapper = $this->builder([
             'allow_scalar_value_casting' => true,
@@ -167,7 +167,7 @@ final class ValinorMapperBuilderFactoryTest extends TestCase
     }
 
     #[Test]
-    public function allowScalarValueCastingFalseThrowsOnTypeMismatch(): void
+    public function arrayMappingThrowsOnTypeMismatchWhenFlagIsFalse(): void
     {
         $mapper = $this->builder([
             'allow_scalar_value_casting' => false,
