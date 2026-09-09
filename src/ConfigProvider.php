@@ -8,9 +8,13 @@ use CuyZ\Valinor\Mapper\TreeMapper;
 use CuyZ\Valinor\MapperBuilder;
 use Sirix\Mezzio\Valinor\Error\DefaultMappingErrorResponder;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderInterface;
+use Sirix\Mezzio\Valinor\Mapping\HandlerTargetResolver;
+use Sirix\Mezzio\Valinor\Mapping\HttpMethodNormalizer;
 use Sirix\Mezzio\Valinor\Mapping\HttpRequestSourceFactory;
 use Sirix\Mezzio\Valinor\Mapping\InputEncodingValidator;
 use Sirix\Mezzio\Valinor\Mapping\MappingPlanResolver;
+use Sirix\Mezzio\Valinor\Mapping\MapRequestOptionsParser;
+use Sirix\Mezzio\Valinor\Mapping\MapRequestResolver;
 
 final class ConfigProvider
 {
@@ -25,6 +29,7 @@ final class ConfigProvider
                     MapperBuilder::class                              => Factory\ValinorMapperBuilderFactory::class,
                     TreeMapper::class                                 => Factory\ValinorTreeMapperFactory::class,
                     MappingPlanResolver::class                        => Factory\MappingPlanResolverFactory::class,
+                    MapRequestResolver::class                         => Factory\MapRequestResolverFactory::class,
                     HttpRequestSourceFactory::class                   => Factory\HttpRequestSourceFactoryFactory::class,
                     DefaultMappingErrorResponder::class               => Factory\DefaultMappingErrorResponderFactory::class,
                     Error\MappingErrorResponderResolver::class        => Factory\MappingErrorResponderResolverFactory::class,
@@ -34,7 +39,10 @@ final class ConfigProvider
                     MappingErrorResponderInterface::class => DefaultMappingErrorResponder::class,
                 ],
                 'invokables' => [
-                    InputEncodingValidator::class => InputEncodingValidator::class,
+                    HandlerTargetResolver::class   => HandlerTargetResolver::class,
+                    InputEncodingValidator::class  => InputEncodingValidator::class,
+                    MapRequestOptionsParser::class => MapRequestOptionsParser::class,
+                    HttpMethodNormalizer::class    => HttpMethodNormalizer::class,
                 ],
             ],
         ];

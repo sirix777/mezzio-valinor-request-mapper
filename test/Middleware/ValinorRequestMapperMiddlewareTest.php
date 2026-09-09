@@ -45,6 +45,7 @@ use Sirix\Mezzio\Valinor\Mapping\MapRequestResolver;
 use Sirix\Mezzio\Valinor\Middleware\ValinorRequestMapperMiddleware;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\CreateBodyRequest;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\PaginationRequest;
+use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\RequestObjectRequest;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\RequiredRequest;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\SearchRequest;
 use stdClass;
@@ -1178,6 +1179,97 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
         $this->expectExceptionMessage('valinor_mappings: expected list<map<string, mixed>>.');
 
         $middleware->process($request, $this->nextHandler($handler));
+    }
+
+    #[Test]
+    public function dtoWithServerRequestInterfaceSeesAttributeFromPreviousOperation(): void
+    {
+        $middleware = $this->defaultMiddleware();
+        $request    = $this->request(RequestMethodInterface::METHOD_POST, [
+            'name' => 'Ada',
+        ]);
+
+        $handler = new #[MapRequest(body: RequiredRequest::class, output: 'first')]
+        #[MapRequest(body: RequestObjectRequest::class, output: 'second')]
+        class implements MiddlewareInterface, RequestHandlerInterface {
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                return $this->handle($request);
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                /** @var RequestObjectRequest $second */
+                $second = $request->getAttribute('second');
+
+                return new JsonResponse([
+                    'first_name'  => $second->requestObject->getAttribute('first')->name,
+                    'second_name' => $second->name,
+                ]);
+            }
+        };
+
+        $response = $this->processRoute($middleware, $request, $handler, methods: [RequestMethodInterface::METHOD_POST]);
+        $body     = json_decode((string) $response->getBody(), true);
+
+        self::assertSame('Ada', $body['first_name']);
+        self::assertSame('Ada', $body['second_name']);
+    }
+
+    #[Test]
+    public function repeatedCallsDoNotLeakAttributesBetweenRequests(): void
+    {
+        $middleware = $this->defaultMiddleware();
+
+        $handler = new #[MapRequest(body: RequiredRequest::class)]
+        class implements MiddlewareInterface, RequestHandlerInterface {
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                return $this->handle($request);
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                return new EmptyResponse();
+            }
+        };
+
+        $route = new Route('/example', $handler, [RequestMethodInterface::METHOD_POST]);
+
+        $next = new class implements RequestHandlerInterface {
+            public ?ServerRequestInterface $firstRequest  = null;
+            public ?ServerRequestInterface $secondRequest = null;
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                if (! $this->firstRequest instanceof ServerRequestInterface) {
+                    $this->firstRequest = $request;
+                } else {
+                    $this->secondRequest = $request;
+                }
+
+                return new EmptyResponse();
+            }
+        };
+
+        $first = $this->request(RequestMethodInterface::METHOD_POST, [
+            'name' => 'first',
+        ])
+            ->withAttribute(RouteResult::class, RouteResult::fromRoute($route, []))
+        ;
+        $second = $this->request(RequestMethodInterface::METHOD_POST, [
+            'name' => 'second',
+        ])
+            ->withAttribute(RouteResult::class, RouteResult::fromRoute($route, []))
+        ;
+
+        $middleware->process($first, $next);
+        self::assertNotNull($next->firstRequest);
+        self::assertSame('first', $next->firstRequest->getAttribute(RequiredRequest::class)->name);
+
+        $middleware->process($second, $next);
+        self::assertNotNull($next->secondRequest);
+        self::assertSame('second', $next->secondRequest->getAttribute(RequiredRequest::class)->name);
     }
 
     private function defaultMapper(): TreeMapper

@@ -10,6 +10,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionFunction;
+use WeakMap;
 
 use function array_is_list;
 use function class_exists;
@@ -35,14 +36,28 @@ final readonly class HandlerTargetResolver
 
     private const MIDDLEWARE_PIPE = 'Laminas\Stratigility\MiddlewarePipe';
 
+    /** @var WeakMap<object, ?HandlerTarget> */
+    private WeakMap $cache;
+
+    public function __construct()
+    {
+        $this->cache = new WeakMap();
+    }
+
     public function resolve(object|string $middleware): ?HandlerTarget
     {
-        if (is_object($middleware) && $this->isKnownWrapper($middleware)) {
-            return $this->resolveKnownWrapper($middleware);
-        }
-
         if (is_object($middleware)) {
-            return $this->resolveObject($middleware);
+            if ($this->cache->offsetExists($middleware)) {
+                return $this->cache->offsetGet($middleware);
+            }
+
+            $target = $this->isKnownWrapper($middleware)
+                ? $this->resolveKnownWrapper($middleware)
+                : $this->resolveObject($middleware);
+
+            $this->cache->offsetSet($middleware, $target);
+
+            return $target;
         }
 
         return $this->resolveClassString($middleware);

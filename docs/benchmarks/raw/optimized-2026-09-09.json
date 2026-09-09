@@ -1,0 +1,57 @@
+{
+    "versions": {
+        "php": "8.2.33",
+        "valinor": "2.6.0",
+        "mezzio_router": "4.2.0",
+        "opcache_cli": false
+    },
+    "params": {
+        "iterations": 10000,
+        "warmup": 1000,
+        "samples": 5
+    },
+    "scenarios": [
+        {
+            "name": "No RouteResult passthrough",
+            "lifecycle": "reuse",
+            "median_us_per_op": 0.502,
+            "peak_memory_bytes": 4194304
+        },
+        {
+            "name": "Reflection via direct handler object",
+            "lifecycle": "reuse",
+            "median_us_per_op": 7.169,
+            "peak_memory_bytes": 4194304
+        },
+        {
+            "name": "Reflection via lazy FQCN handler",
+            "lifecycle": "reuse",
+            "median_us_per_op": 7.152,
+            "peak_memory_bytes": 4194304
+        },
+        {
+            "name": "Route options single DTO",
+            "lifecycle": "reuse",
+            "median_us_per_op": 7.836,
+            "peak_memory_bytes": 4194304
+        },
+        {
+            "name": "Three operations with different outputs",
+            "lifecycle": "reuse",
+            "median_us_per_op": 22.89,
+            "peak_memory_bytes": 4194304
+        },
+        {
+            "name": "Repeated calls reusing middleware and builder",
+            "lifecycle": "reuse",
+            "median_us_per_op": 7.174,
+            "peak_memory_bytes": 4194304
+        },
+        {
+            "name": "New middleware/resolvers/builder per iteration with file cache",
+            "lifecycle": "new-each-iteration",
+            "median_us_per_op": 65.528,
+            "peak_memory_bytes": 33554432
+        }
+    ]
+}

@@ -4,21 +4,31 @@ declare(strict_types=1);
 
 namespace Sirix\Mezzio\Valinor\Mapping;
 
+use Mezzio\Router\Route;
 use Mezzio\Router\RouteResult;
 use ReflectionClass;
 use Sirix\Mezzio\Valinor\Attribute\MapRequest;
+use WeakMap;
 
 use function array_key_exists;
 
 /**
  * @internal
  */
-final readonly class MapRequestResolver
+final class MapRequestResolver
 {
+    /** @var WeakMap<Route, RouteMetadataEntry> */
+    private readonly WeakMap $routeCache;
+
+    /** @var array<string, list<MapRequest>> */
+    private array $reflectionCache = [];
+
     public function __construct(
-        private HandlerTargetResolver $handlerTargetResolver,
-        private MapRequestOptionsParser $mapRequestOptionsParser,
-    ) {}
+        private readonly HandlerTargetResolver $handlerTargetResolver,
+        private readonly MapRequestOptionsParser $mapRequestOptionsParser,
+    ) {
+        $this->routeCache = new WeakMap();
+    }
 
     /**
      * @return list<MapRequest>
@@ -31,21 +41,47 @@ final readonly class MapRequestResolver
             return [];
         }
 
-        $options = $matchedRoute->getOptions();
+        $options  = $matchedRoute->getOptions();
+        $hasKey   = array_key_exists('valinor_mappings', $options);
+        $snapshot = $hasKey ? $options['valinor_mappings'] : null;
 
-        if (array_key_exists('valinor_mappings', $options)) {
-            $valinorMappings = $options['valinor_mappings'];
+        $entry = $this->routeCache->offsetExists($matchedRoute)
+            ? $this->routeCache->offsetGet($matchedRoute)
+            : null;
 
-            if ([] !== $valinorMappings) {
-                return $this->mapRequestOptionsParser->parse($valinorMappings);
+        if ($entry instanceof RouteMetadataEntry
+            && $entry->hasKey === $hasKey
+            && $entry->snapshot === $snapshot
+        ) {
+            return $entry->mapRequests;
+        }
+
+        $mapRequests = $this->resolveMapRequests($matchedRoute, $hasKey, $snapshot);
+
+        $this->routeCache->offsetSet($matchedRoute, new RouteMetadataEntry(
+            $hasKey,
+            $snapshot,
+            $mapRequests,
+        ));
+
+        return $mapRequests;
+    }
+
+    /**
+     * @return list<MapRequest>
+     */
+    private function resolveMapRequests(Route $matchedRoute, bool $hasKey, mixed $snapshot): array
+    {
+        if ($hasKey) {
+            if ([] !== $snapshot) {
+                return $this->mapRequestOptionsParser->parse($snapshot);
             }
 
             // Empty payload [] falls back to reflection metadata (plan 02).
         }
 
         $handler = $matchedRoute->getMiddleware();
-
-        $target = $this->handlerTargetResolver->resolve($handler);
+        $target  = $this->handlerTargetResolver->resolve($handler);
 
         if (! $target instanceof HandlerTarget) {
             return [];
@@ -59,19 +95,28 @@ final readonly class MapRequestResolver
      */
     private function resolveFromReflection(HandlerTarget $target): array
     {
-        $refClass = new ReflectionClass($target->className);
+        $refClass   = new ReflectionClass($target->className);
+        $className  = $refClass->getName();
+        $methodName = $target->methodName ?? '';
+        $cacheKey   = $className . '::' . $methodName;
 
-        $result = [];
+        if (array_key_exists($cacheKey, $this->reflectionCache)) {
+            return $this->reflectionCache[$cacheKey];
+        }
+
+        $result   = [];
 
         foreach ($refClass->getAttributes(MapRequest::class) as $refAttr) {
             $result[] = $refAttr->newInstance();
         }
 
-        if (null !== $target->methodName && $refClass->hasMethod($target->methodName)) {
-            foreach ($refClass->getMethod($target->methodName)->getAttributes(MapRequest::class) as $refAttr) {
+        if ('' !== $methodName && $refClass->hasMethod($methodName)) {
+            foreach ($refClass->getMethod($methodName)->getAttributes(MapRequest::class) as $refAttr) {
                 $result[] = $refAttr->newInstance();
             }
         }
+
+        $this->reflectionCache[$cacheKey] = $result;
 
         return $result;
     }

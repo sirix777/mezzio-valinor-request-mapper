@@ -8,23 +8,23 @@ use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Sirix\ContainerResolver\ContainerResolver;
-use Sirix\Mezzio\Valinor\Mapping\HttpMethodNormalizer;
-use Sirix\Mezzio\Valinor\Mapping\MappingPlanResolver;
+use Sirix\Mezzio\Valinor\Mapping\HandlerTargetResolver;
+use Sirix\Mezzio\Valinor\Mapping\MapRequestOptionsParser;
 use Sirix\Mezzio\Valinor\Mapping\MapRequestResolver;
 
-final readonly class MappingPlanResolverFactory
+final readonly class MapRequestResolverFactory
 {
     /**
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
-    public function __invoke(ContainerInterface $container): MappingPlanResolver
+    public function __invoke(ContainerInterface $container): MapRequestResolver
     {
         $resolver = ContainerResolver::forFactory($container, self::class);
 
-        return new MappingPlanResolver(
-            $resolver->get(MapRequestResolver::class),
-            $resolver->get(HttpMethodNormalizer::class),
+        return new MapRequestResolver(
+            $resolver->get(HandlerTargetResolver::class),
+            $resolver->get(MapRequestOptionsParser::class),
         );
     }
 }

@@ -16,12 +16,17 @@ use Sirix\Mezzio\Valinor\Factory\DefaultMappingErrorResponderFactory;
 use Sirix\Mezzio\Valinor\Factory\HttpRequestSourceFactoryFactory;
 use Sirix\Mezzio\Valinor\Factory\MappingErrorResponderResolverFactory;
 use Sirix\Mezzio\Valinor\Factory\MappingPlanResolverFactory;
+use Sirix\Mezzio\Valinor\Factory\MapRequestResolverFactory;
 use Sirix\Mezzio\Valinor\Factory\ValinorMapperBuilderFactory;
 use Sirix\Mezzio\Valinor\Factory\ValinorRequestMapperMiddlewareFactory;
 use Sirix\Mezzio\Valinor\Factory\ValinorTreeMapperFactory;
+use Sirix\Mezzio\Valinor\Mapping\HandlerTargetResolver;
+use Sirix\Mezzio\Valinor\Mapping\HttpMethodNormalizer;
 use Sirix\Mezzio\Valinor\Mapping\HttpRequestSourceFactory;
 use Sirix\Mezzio\Valinor\Mapping\InputEncodingValidator;
 use Sirix\Mezzio\Valinor\Mapping\MappingPlanResolver;
+use Sirix\Mezzio\Valinor\Mapping\MapRequestOptionsParser;
+use Sirix\Mezzio\Valinor\Mapping\MapRequestResolver;
 use Sirix\Mezzio\Valinor\Middleware\ValinorRequestMapperMiddleware;
 
 final class ConfigProviderTest extends TestCase
@@ -44,12 +49,12 @@ final class ConfigProviderTest extends TestCase
             $config['dependencies']['factories'][MappingPlanResolver::class] ?? null,
         );
         self::assertSame(
-            HttpRequestSourceFactoryFactory::class,
-            $config['dependencies']['factories'][HttpRequestSourceFactory::class] ?? null,
+            MapRequestResolverFactory::class,
+            $config['dependencies']['factories'][MapRequestResolver::class] ?? null,
         );
         self::assertSame(
-            InputEncodingValidator::class,
-            $config['dependencies']['invokables'][InputEncodingValidator::class] ?? null,
+            HttpRequestSourceFactoryFactory::class,
+            $config['dependencies']['factories'][HttpRequestSourceFactory::class] ?? null,
         );
         self::assertSame(
             ValinorRequestMapperMiddlewareFactory::class,
@@ -66,6 +71,29 @@ final class ConfigProviderTest extends TestCase
         self::assertSame(
             MappingErrorResponderResolverFactory::class,
             $config['dependencies']['factories'][MappingErrorResponderResolver::class] ?? null,
+        );
+    }
+
+    #[Test]
+    public function registersExpectedInvokables(): void
+    {
+        $config = (new ConfigProvider())();
+
+        self::assertSame(
+            HandlerTargetResolver::class,
+            $config['dependencies']['invokables'][HandlerTargetResolver::class] ?? null,
+        );
+        self::assertSame(
+            InputEncodingValidator::class,
+            $config['dependencies']['invokables'][InputEncodingValidator::class] ?? null,
+        );
+        self::assertSame(
+            MapRequestOptionsParser::class,
+            $config['dependencies']['invokables'][MapRequestOptionsParser::class] ?? null,
+        );
+        self::assertSame(
+            HttpMethodNormalizer::class,
+            $config['dependencies']['invokables'][HttpMethodNormalizer::class] ?? null,
         );
     }
 }

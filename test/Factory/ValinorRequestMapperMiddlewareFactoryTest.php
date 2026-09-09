@@ -33,11 +33,16 @@ use Sirix\Mezzio\Valinor\Error\MappingErrorResponderResolver;
 use Sirix\Mezzio\Valinor\Factory\DefaultMappingErrorResponderFactory;
 use Sirix\Mezzio\Valinor\Factory\MappingErrorResponderResolverFactory;
 use Sirix\Mezzio\Valinor\Factory\MappingPlanResolverFactory;
+use Sirix\Mezzio\Valinor\Factory\MapRequestResolverFactory;
 use Sirix\Mezzio\Valinor\Factory\ValinorRequestMapperMiddlewareFactory;
 use Sirix\Mezzio\Valinor\Factory\ValinorTreeMapperFactory;
+use Sirix\Mezzio\Valinor\Mapping\HandlerTargetResolver;
+use Sirix\Mezzio\Valinor\Mapping\HttpMethodNormalizer;
 use Sirix\Mezzio\Valinor\Mapping\HttpRequestSourceFactory;
 use Sirix\Mezzio\Valinor\Mapping\InputEncodingValidator;
 use Sirix\Mezzio\Valinor\Mapping\MappingPlanResolver;
+use Sirix\Mezzio\Valinor\Mapping\MapRequestOptionsParser;
+use Sirix\Mezzio\Valinor\Mapping\MapRequestResolver;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\ProblemDetailsResponder;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\RequiredRequest;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\UnregisteredResponder;
@@ -356,6 +361,10 @@ final class ValinorRequestMapperMiddlewareFactoryTest extends TestCase
                     MapperBuilder::class                      => (new MapperBuilder())->allowSuperfluousKeys()->allowScalarValueCasting(),
                     TreeMapper::class                         => (new ValinorTreeMapperFactory())($this),
                     MappingPlanResolver::class                => (new MappingPlanResolverFactory())($this),
+                    MapRequestResolver::class                 => (new MapRequestResolverFactory())($this),
+                    HandlerTargetResolver::class              => new HandlerTargetResolver(),
+                    MapRequestOptionsParser::class            => new MapRequestOptionsParser(),
+                    HttpMethodNormalizer::class               => new HttpMethodNormalizer(),
                     InputEncodingValidator::class             => new InputEncodingValidator(),
                     HttpRequestSourceFactory::class           => new HttpRequestSourceFactory($this->get(InputEncodingValidator::class)),
                     DefaultMappingErrorResponder::class       => (new DefaultMappingErrorResponderFactory())($this),
@@ -374,6 +383,10 @@ final class ValinorRequestMapperMiddlewareFactoryTest extends TestCase
                         MapperBuilder::class,
                         TreeMapper::class,
                         MappingPlanResolver::class,
+                        MapRequestResolver::class,
+                        HandlerTargetResolver::class,
+                        MapRequestOptionsParser::class,
+                        HttpMethodNormalizer::class,
                         InputEncodingValidator::class,
                         HttpRequestSourceFactory::class,
                         DefaultMappingErrorResponder::class,

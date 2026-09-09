@@ -191,6 +191,39 @@ final class MappingPlanResolverTest extends TestCase
     }
 
     #[Test]
+    public function doesNotStickToTheFirstHttpMethodOnTheSameRoute(): void
+    {
+        $handler = new #[MapRequest(body: RequiredRequest::class, methods: [RequestMethodInterface::METHOD_POST])]
+        #[MapRequest(query: PaginationRequest::class, methods: [RequestMethodInterface::METHOD_GET])]
+        #[MapRequest(route: SearchRequest::class, methods: [RequestMethodInterface::METHOD_HEAD])]
+        class implements RequestHandlerInterface {
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                return new EmptyResponse();
+            }
+        };
+
+        $route = new Route('/example', new RequestHandlerMiddleware($handler), [
+            RequestMethodInterface::METHOD_GET,
+            RequestMethodInterface::METHOD_POST,
+            RequestMethodInterface::METHOD_HEAD,
+        ]);
+        $routeResult = RouteResult::fromRoute($route, []);
+
+        foreach ([
+            [RequestMethodInterface::METHOD_GET, 'query'],
+            [RequestMethodInterface::METHOD_POST, 'body'],
+            [RequestMethodInterface::METHOD_HEAD, 'route'],
+            [RequestMethodInterface::METHOD_GET, 'query'],
+        ] as [$method, $source]) {
+            $operations = $this->resolver->resolve($routeResult, $method);
+
+            self::assertCount(1, $operations);
+            self::assertSame($source, $operations[0]->source);
+        }
+    }
+
+    #[Test]
     public function throwsWhenSameOutputBecomesActiveForSameMethod(): void
     {
         $handler = new #[MapRequest(body: RequiredRequest::class, output: 'dto', methods: [RequestMethodInterface::METHOD_POST])]
