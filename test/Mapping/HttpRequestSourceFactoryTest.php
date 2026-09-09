@@ -10,10 +10,18 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Sirix\Mezzio\Valinor\Error\RequestInputError;
 use Sirix\Mezzio\Valinor\Mapping\HttpRequestSourceFactory;
+use Sirix\Mezzio\Valinor\Mapping\InputEncodingValidator;
 use stdClass;
 
 final class HttpRequestSourceFactoryTest extends TestCase
 {
+    private HttpRequestSourceFactory $factory;
+
+    protected function setUp(): void
+    {
+        $this->factory = new HttpRequestSourceFactory(new InputEncodingValidator());
+    }
+
     /** @param 'body'|'source' $source */
     #[Test]
     #[DataProvider('unsupportedParsedBodySources')]
@@ -22,7 +30,7 @@ final class HttpRequestSourceFactoryTest extends TestCase
         $request = (new ServerRequest())->withParsedBody($parsedBody);
 
         try {
-            (new HttpRequestSourceFactory())->create($request, [
+            $this->factory->create($request, [
                 'id' => '42',
             ], $source);
             self::fail('Expected RequestInputError to be thrown.');
@@ -52,7 +60,7 @@ final class HttpRequestSourceFactoryTest extends TestCase
     {
         $request = new ServerRequest();
 
-        $httpRequest = (new HttpRequestSourceFactory())->create($request, [
+        $httpRequest = $this->factory->create($request, [
             'id' => '42',
         ], 'source');
 
@@ -76,7 +84,7 @@ final class HttpRequestSourceFactoryTest extends TestCase
             ])
         ;
 
-        $httpRequest = (new HttpRequestSourceFactory())->create($request, [
+        $httpRequest = $this->factory->create($request, [
             'id' => '42',
         ], 'source');
 
@@ -106,7 +114,7 @@ final class HttpRequestSourceFactoryTest extends TestCase
             ])
         ;
 
-        $httpRequest = (new HttpRequestSourceFactory())->create($request, [
+        $httpRequest = $this->factory->create($request, [
             'id' => '42',
         ], $source);
 
@@ -122,5 +130,130 @@ final class HttpRequestSourceFactoryTest extends TestCase
         yield 'query' => ['query'];
 
         yield 'route' => ['route'];
+    }
+
+    #[Test]
+    public function rejectsInvalidUtf8InBodyValues(): void
+    {
+        $request = (new ServerRequest())->withParsedBody([
+            'name' => "\xB1\x31",
+        ]);
+
+        try {
+            $this->factory->create($request, [], 'body');
+            self::fail('Expected RequestInputError to be thrown.');
+        } catch (RequestInputError $error) {
+            self::assertSame('invalid_utf8', $error->reason);
+            self::assertSame('body', $error->inputSource);
+        }
+    }
+
+    #[Test]
+    public function rejectsInvalidUtf8InQueryParameters(): void
+    {
+        $request = (new ServerRequest())->withQueryParams([
+            'page' => "\xB1\x31",
+        ]);
+
+        try {
+            $this->factory->create($request, [], 'query');
+            self::fail('Expected RequestInputError to be thrown.');
+        } catch (RequestInputError $error) {
+            self::assertSame('invalid_utf8', $error->reason);
+            self::assertSame('query', $error->inputSource);
+        }
+    }
+
+    #[Test]
+    public function rejectsInvalidUtf8InRouteParameters(): void
+    {
+        $request = new ServerRequest();
+
+        try {
+            $this->factory->create($request, [
+                'name' => "\xB1\x31",
+            ], 'route');
+            self::fail('Expected RequestInputError to be thrown.');
+        } catch (RequestInputError $error) {
+            self::assertSame('invalid_utf8', $error->reason);
+            self::assertSame('route', $error->inputSource);
+        }
+    }
+
+    #[Test]
+    public function validatesSourceModeInRouteQueryBodyOrder(): void
+    {
+        $request = (new ServerRequest())
+            ->withQueryParams([
+                'page' => "\xB1\x31",
+            ])
+            ->withParsedBody([
+                'name' => "\xB1\x31",
+            ])
+        ;
+
+        try {
+            $this->factory->create($request, [
+                'name' => "\xB1\x31",
+            ], 'source');
+            self::fail('Expected RequestInputError to be thrown.');
+        } catch (RequestInputError $error) {
+            self::assertSame('invalid_utf8', $error->reason);
+            self::assertSame('route', $error->inputSource);
+        }
+    }
+
+    #[Test]
+    public function unsupportedParsedBodyIsReportedBeforeEncodingValidation(): void
+    {
+        $request = (new ServerRequest())->withParsedBody(new stdClass());
+
+        try {
+            $this->factory->create($request, [], 'body');
+            self::fail('Expected RequestInputError to be thrown.');
+        } catch (RequestInputError $error) {
+            self::assertSame('unsupported_parsed_body', $error->reason);
+            self::assertSame('body', $error->inputSource);
+        }
+    }
+
+    #[Test]
+    public function querySourceDoesNotValidateAnIndependentBody(): void
+    {
+        $request = (new ServerRequest())
+            ->withParsedBody([
+                'name' => "\xB1\x31",
+            ])
+            ->withQueryParams([
+                'page' => '2',
+            ])
+        ;
+
+        $httpRequest = $this->factory->create($request, [], 'query');
+
+        self::assertSame([
+            'page' => '2',
+        ], $httpRequest->queryParameters);
+        self::assertSame([], $httpRequest->bodyValues);
+    }
+
+    #[Test]
+    public function bodySourceDoesNotValidateAnIndependentQuery(): void
+    {
+        $request = (new ServerRequest())
+            ->withParsedBody([
+                'name' => 'Ada',
+            ])
+            ->withQueryParams([
+                'page' => "\xB1\x31",
+            ])
+        ;
+
+        $httpRequest = $this->factory->create($request, [], 'body');
+
+        self::assertSame([
+            'name' => 'Ada',
+        ], $httpRequest->bodyValues);
+        self::assertSame([], $httpRequest->queryParameters);
     }
 }

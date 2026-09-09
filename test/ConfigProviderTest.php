@@ -13,12 +13,14 @@ use Sirix\Mezzio\Valinor\Error\DefaultMappingErrorResponder;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderInterface;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderResolver;
 use Sirix\Mezzio\Valinor\Factory\DefaultMappingErrorResponderFactory;
+use Sirix\Mezzio\Valinor\Factory\HttpRequestSourceFactoryFactory;
 use Sirix\Mezzio\Valinor\Factory\MappingErrorResponderResolverFactory;
 use Sirix\Mezzio\Valinor\Factory\MappingPlanResolverFactory;
 use Sirix\Mezzio\Valinor\Factory\ValinorMapperBuilderFactory;
 use Sirix\Mezzio\Valinor\Factory\ValinorRequestMapperMiddlewareFactory;
 use Sirix\Mezzio\Valinor\Factory\ValinorTreeMapperFactory;
 use Sirix\Mezzio\Valinor\Mapping\HttpRequestSourceFactory;
+use Sirix\Mezzio\Valinor\Mapping\InputEncodingValidator;
 use Sirix\Mezzio\Valinor\Mapping\MappingPlanResolver;
 use Sirix\Mezzio\Valinor\Middleware\ValinorRequestMapperMiddleware;
 
@@ -41,7 +43,14 @@ final class ConfigProviderTest extends TestCase
             MappingPlanResolverFactory::class,
             $config['dependencies']['factories'][MappingPlanResolver::class] ?? null,
         );
-        self::assertSame(HttpRequestSourceFactory::class, $config['dependencies']['invokables'][HttpRequestSourceFactory::class] ?? null);
+        self::assertSame(
+            HttpRequestSourceFactoryFactory::class,
+            $config['dependencies']['factories'][HttpRequestSourceFactory::class] ?? null,
+        );
+        self::assertSame(
+            InputEncodingValidator::class,
+            $config['dependencies']['invokables'][InputEncodingValidator::class] ?? null,
+        );
         self::assertSame(
             ValinorRequestMapperMiddlewareFactory::class,
             $config['dependencies']['factories'][ValinorRequestMapperMiddleware::class] ?? null,

@@ -36,6 +36,7 @@ use Sirix\Mezzio\Valinor\Factory\MappingPlanResolverFactory;
 use Sirix\Mezzio\Valinor\Factory\ValinorRequestMapperMiddlewareFactory;
 use Sirix\Mezzio\Valinor\Factory\ValinorTreeMapperFactory;
 use Sirix\Mezzio\Valinor\Mapping\HttpRequestSourceFactory;
+use Sirix\Mezzio\Valinor\Mapping\InputEncodingValidator;
 use Sirix\Mezzio\Valinor\Mapping\MappingPlanResolver;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\ProblemDetailsResponder;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\RequiredRequest;
@@ -355,7 +356,8 @@ final class ValinorRequestMapperMiddlewareFactoryTest extends TestCase
                     MapperBuilder::class                      => (new MapperBuilder())->allowSuperfluousKeys()->allowScalarValueCasting(),
                     TreeMapper::class                         => (new ValinorTreeMapperFactory())($this),
                     MappingPlanResolver::class                => (new MappingPlanResolverFactory())($this),
-                    HttpRequestSourceFactory::class           => new HttpRequestSourceFactory(),
+                    InputEncodingValidator::class             => new InputEncodingValidator(),
+                    HttpRequestSourceFactory::class           => new HttpRequestSourceFactory($this->get(InputEncodingValidator::class)),
                     DefaultMappingErrorResponder::class       => (new DefaultMappingErrorResponderFactory())($this),
                     MappingErrorResponderInterface::class     => $this->get(DefaultMappingErrorResponder::class),
                     MappingErrorResponderResolver::class      => (new MappingErrorResponderResolverFactory())($this),
@@ -372,6 +374,7 @@ final class ValinorRequestMapperMiddlewareFactoryTest extends TestCase
                         MapperBuilder::class,
                         TreeMapper::class,
                         MappingPlanResolver::class,
+                        InputEncodingValidator::class,
                         HttpRequestSourceFactory::class,
                         DefaultMappingErrorResponder::class,
                         MappingErrorResponderInterface::class,

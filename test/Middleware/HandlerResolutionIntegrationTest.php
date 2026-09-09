@@ -31,6 +31,7 @@ use Sirix\Mezzio\Valinor\Error\MappingErrorResponderResolver;
 use Sirix\Mezzio\Valinor\Mapping\HandlerTargetResolver;
 use Sirix\Mezzio\Valinor\Mapping\HttpMethodNormalizer;
 use Sirix\Mezzio\Valinor\Mapping\HttpRequestSourceFactory;
+use Sirix\Mezzio\Valinor\Mapping\InputEncodingValidator;
 use Sirix\Mezzio\Valinor\Mapping\MappingPlanResolver;
 use Sirix\Mezzio\Valinor\Mapping\MapRequestOptionsParser;
 use Sirix\Mezzio\Valinor\Mapping\MapRequestResolver;
@@ -473,7 +474,7 @@ final class HandlerResolutionIntegrationTest extends TestCase
                 ),
                 new HttpMethodNormalizer(),
             ),
-            new HttpRequestSourceFactory(),
+            new HttpRequestSourceFactory(new InputEncodingValidator()),
         );
     }
 
