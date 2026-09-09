@@ -12,25 +12,18 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use Sirix\Mezzio\Valinor\Attribute\MapRequest;
 use Sirix\Mezzio\Valinor\Error\MappingErrorContext;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderResolver;
-use Sirix\Mezzio\Valinor\Mapping\HttpMethodNormalizer;
-use Sirix\Mezzio\Valinor\Mapping\MapRequestResolver;
-
-use function in_array;
+use Sirix\Mezzio\Valinor\Mapping\MappingOperation;
+use Sirix\Mezzio\Valinor\Mapping\MappingPlanResolver;
 
 final readonly class ValinorRequestMapperMiddleware implements MiddlewareInterface
 {
-    private HttpMethodNormalizer $httpMethodNormalizer;
-
     public function __construct(
         private TreeMapper $mapper,
         private MappingErrorResponderResolver $errorResponderResolver,
-        private MapRequestResolver $mapRequestResolver,
-    ) {
-        $this->httpMethodNormalizer = new HttpMethodNormalizer();
-    }
+        private MappingPlanResolver $mappingPlanResolver,
+    ) {}
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
@@ -40,78 +33,29 @@ final readonly class ValinorRequestMapperMiddleware implements MiddlewareInterfa
             return $handler->handle($request);
         }
 
-        $mapRequests = $this->resolveMapRequests($routeResult, $request->getMethod());
+        $operations = $this->mappingPlanResolver->resolve($routeResult, $request->getMethod());
 
-        if ([] === $mapRequests) {
+        if ([] === $operations) {
             return $handler->handle($request);
         }
 
         $routeParams = $routeResult->getMatchedParams();
 
-        foreach ($mapRequests as $mapRequest) {
+        foreach ($operations as $operation) {
             try {
-                if (null !== $mapRequest->source) {
-                    $dtoClass            = $mapRequest->source;
-                    $source              = 'source';
-                    $requestAttributeKey = $mapRequest->output ?? $dtoClass;
-                    $httpRequest         = HttpRequest::fromPsr($request, $routeParams);
-                    $dto                 = $this->mapper->map($dtoClass, $httpRequest);
-                    $request             = $request->withAttribute($requestAttributeKey, $dto);
-
-                    continue;
-                }
-
-                if (null !== $mapRequest->body) {
-                    $dtoClass            = $mapRequest->body;
-                    $source              = 'body';
-                    $requestAttributeKey = $mapRequest->output ?? $dtoClass;
-                    $dto                 = $this->mapper->map(
-                        $dtoClass,
-                        new HttpRequest(
-                            bodyValues: (array) $request->getParsedBody(),
-                            requestObject: $request,
-                        ),
-                    );
-                    $request = $request->withAttribute($requestAttributeKey, $dto);
-                }
-
-                if (null !== $mapRequest->query) {
-                    $dtoClass            = $mapRequest->query;
-                    $source              = 'query';
-                    $requestAttributeKey = $mapRequest->output ?? $dtoClass;
-                    $dto                 = $this->mapper->map(
-                        $dtoClass,
-                        new HttpRequest(
-                            queryParameters: $request->getQueryParams(),
-                            requestObject: $request,
-                        ),
-                    );
-                    $request = $request->withAttribute($requestAttributeKey, $dto);
-                }
-
-                if (null !== $mapRequest->route) {
-                    $dtoClass            = $mapRequest->route;
-                    $source              = 'route';
-                    $requestAttributeKey = $mapRequest->output ?? $dtoClass;
-                    $dto                 = $this->mapper->map(
-                        $dtoClass,
-                        new HttpRequest(
-                            routeParameters: $routeParams,
-                            requestObject: $request,
-                        ),
-                    );
-                    $request = $request->withAttribute($requestAttributeKey, $dto);
-                }
+                $httpRequest = $this->createHttpRequest($request, $routeParams, $operation);
+                $dto         = $this->mapper->map($operation->dtoClass, $httpRequest);
+                $request     = $request->withAttribute($operation->requestAttributeKey, $dto);
             } catch (MappingError $e) {
                 return $this->errorResponderResolver
-                    ->resolve($mapRequest->errorResponder)
+                    ->resolve($operation->mapRequest->errorResponder)
                     ->respond(new MappingErrorContext(
                         $e,
                         $request,
-                        $mapRequest,
-                        $dtoClass,
-                        $source,
-                        $requestAttributeKey,
+                        $operation->mapRequest,
+                        $operation->dtoClass,
+                        $operation->source,
+                        $operation->requestAttributeKey,
                     ))
                 ;
             }
@@ -121,32 +65,31 @@ final readonly class ValinorRequestMapperMiddleware implements MiddlewareInterfa
     }
 
     /**
-     * @return list<MapRequest>
+     * @param array<string, mixed> $routeParams
      */
-    private function resolveMapRequests(RouteResult $routeResult, string $httpMethod): array
+    private function createHttpRequest(ServerRequestInterface $request, array $routeParams, MappingOperation $operation): HttpRequest
     {
-        return $this->filterByMethod(
-            $this->mapRequestResolver->resolve($routeResult),
-            $httpMethod,
-        );
-    }
-
-    /**
-     * @param list<MapRequest> $mapRequests
-     *
-     * @return list<MapRequest>
-     */
-    private function filterByMethod(array $mapRequests, string $httpMethod): array
-    {
-        $httpMethod = $this->httpMethodNormalizer->normalize($httpMethod);
-        $result     = [];
-
-        foreach ($mapRequests as $mapRequest) {
-            if ([] === $mapRequest->methods || in_array($httpMethod, $mapRequest->methods, true)) {
-                $result[] = $mapRequest;
-            }
+        if ('source' === $operation->source) {
+            return HttpRequest::fromPsr($request, $routeParams);
         }
 
-        return $result;
+        if ('body' === $operation->source) {
+            return new HttpRequest(
+                bodyValues: (array) $request->getParsedBody(),
+                requestObject: $request,
+            );
+        }
+
+        if ('query' === $operation->source) {
+            return new HttpRequest(
+                queryParameters: $request->getQueryParams(),
+                requestObject: $request,
+            );
+        }
+
+        return new HttpRequest(
+            routeParameters: $routeParams,
+            requestObject: $request,
+        );
     }
 }

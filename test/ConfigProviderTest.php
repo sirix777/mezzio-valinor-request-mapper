@@ -14,9 +14,11 @@ use Sirix\Mezzio\Valinor\Error\MappingErrorResponderInterface;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderResolver;
 use Sirix\Mezzio\Valinor\Factory\DefaultMappingErrorResponderFactory;
 use Sirix\Mezzio\Valinor\Factory\MappingErrorResponderResolverFactory;
+use Sirix\Mezzio\Valinor\Factory\MappingPlanResolverFactory;
 use Sirix\Mezzio\Valinor\Factory\ValinorMapperBuilderFactory;
 use Sirix\Mezzio\Valinor\Factory\ValinorRequestMapperMiddlewareFactory;
 use Sirix\Mezzio\Valinor\Factory\ValinorTreeMapperFactory;
+use Sirix\Mezzio\Valinor\Mapping\MappingPlanResolver;
 use Sirix\Mezzio\Valinor\Middleware\ValinorRequestMapperMiddleware;
 
 final class ConfigProviderTest extends TestCase
@@ -33,6 +35,10 @@ final class ConfigProviderTest extends TestCase
         self::assertSame(
             ValinorTreeMapperFactory::class,
             $config['dependencies']['factories'][TreeMapper::class] ?? null,
+        );
+        self::assertSame(
+            MappingPlanResolverFactory::class,
+            $config['dependencies']['factories'][MappingPlanResolver::class] ?? null,
         );
         self::assertSame(
             ValinorRequestMapperMiddlewareFactory::class,

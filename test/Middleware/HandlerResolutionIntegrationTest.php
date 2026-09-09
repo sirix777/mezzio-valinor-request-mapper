@@ -29,6 +29,8 @@ use Sirix\ContainerResolver\ContainerResolver;
 use Sirix\Mezzio\Valinor\Error\DefaultMappingErrorResponder;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderResolver;
 use Sirix\Mezzio\Valinor\Mapping\HandlerTargetResolver;
+use Sirix\Mezzio\Valinor\Mapping\HttpMethodNormalizer;
+use Sirix\Mezzio\Valinor\Mapping\MappingPlanResolver;
 use Sirix\Mezzio\Valinor\Mapping\MapRequestOptionsParser;
 use Sirix\Mezzio\Valinor\Mapping\MapRequestResolver;
 use Sirix\Mezzio\Valinor\Middleware\ValinorRequestMapperMiddleware;
@@ -463,9 +465,12 @@ final class HandlerResolutionIntegrationTest extends TestCase
                 ),
                 ContainerResolver::forContext($this->createContainer([]), self::class),
             ),
-            new MapRequestResolver(
-                new HandlerTargetResolver(),
-                new MapRequestOptionsParser(),
+            new MappingPlanResolver(
+                new MapRequestResolver(
+                    new HandlerTargetResolver(),
+                    new MapRequestOptionsParser(),
+                ),
+                new HttpMethodNormalizer(),
             ),
         );
     }

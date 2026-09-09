@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Rector\Config\RectorConfig;
 use Rector\DeadCode\Rector\ClassMethod\RemoveEmptyClassMethodRector;
+use Rector\DeadCode\Rector\ClassMethod\RemoveUnusedPublicMethodParameterRector;
 use Rector\Php55\Rector\String_\StringClassNameToClassConstantRector;
 use Rector\Php74\Rector\Closure\ClosureToArrowFunctionRector;
 use Rector\Set\ValueObject\LevelSetList;
@@ -27,5 +28,8 @@ return static function(RectorConfig $rectorConfig): void {
 
     $rectorConfig->skip([
         StringClassNameToClassConstantRector::class,
+        RemoveUnusedPublicMethodParameterRector::class => [
+            __DIR__ . '/src/Factory/MappingPlanResolverFactory.php',
+        ],
     ]);
 };

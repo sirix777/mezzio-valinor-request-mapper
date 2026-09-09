@@ -32,8 +32,10 @@ use Sirix\Mezzio\Valinor\Error\MappingErrorResponderInterface;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderResolver;
 use Sirix\Mezzio\Valinor\Factory\DefaultMappingErrorResponderFactory;
 use Sirix\Mezzio\Valinor\Factory\MappingErrorResponderResolverFactory;
+use Sirix\Mezzio\Valinor\Factory\MappingPlanResolverFactory;
 use Sirix\Mezzio\Valinor\Factory\ValinorRequestMapperMiddlewareFactory;
 use Sirix\Mezzio\Valinor\Factory\ValinorTreeMapperFactory;
+use Sirix\Mezzio\Valinor\Mapping\MappingPlanResolver;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\ProblemDetailsResponder;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\RequiredRequest;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\UnregisteredResponder;
@@ -351,6 +353,7 @@ final class ValinorRequestMapperMiddlewareFactoryTest extends TestCase
                 return match ($id) {
                     MapperBuilder::class                     => (new MapperBuilder())->allowSuperfluousKeys()->allowScalarValueCasting(),
                     TreeMapper::class                        => (new ValinorTreeMapperFactory())($this),
+                    MappingPlanResolver::class               => (new MappingPlanResolverFactory())($this),
                     DefaultMappingErrorResponder::class      => (new DefaultMappingErrorResponderFactory())($this),
                     MappingErrorResponderInterface::class    => $this->get(DefaultMappingErrorResponder::class),
                     MappingErrorResponderResolver::class     => (new MappingErrorResponderResolverFactory())($this),
@@ -366,6 +369,7 @@ final class ValinorRequestMapperMiddlewareFactoryTest extends TestCase
                     || in_array($id, [
                         MapperBuilder::class,
                         TreeMapper::class,
+                        MappingPlanResolver::class,
                         DefaultMappingErrorResponder::class,
                         MappingErrorResponderInterface::class,
                         MappingErrorResponderResolver::class,
