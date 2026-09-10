@@ -50,6 +50,16 @@ final readonly class BenchmarkRouteRequest
     public function __construct(public string $id) {}
 }
 
+final readonly class BenchmarkLargeBodyRequest
+{
+    public function __construct(public string $name) {}
+}
+
+final readonly class BenchmarkLargeSourceRequest
+{
+    public function __construct(public string $id, public string $page, public string $name) {}
+}
+
 #[MapRequest(body: BenchmarkBodyRequest::class)]
 final class BenchmarkDirectHandler implements RequestHandlerInterface
 {
@@ -72,6 +82,36 @@ final class BenchmarkLazyHandler implements RequestHandlerInterface
 #[MapRequest(query: BenchmarkQueryRequest::class, output: 'query')]
 #[MapRequest(route: BenchmarkRouteRequest::class, output: 'route')]
 final class BenchmarkMultiHandler implements RequestHandlerInterface
+{
+    public function handle(ServerRequestInterface $request): ResponseInterface
+    {
+        return new EmptyResponse();
+    }
+}
+
+#[MapRequest(body: BenchmarkLargeBodyRequest::class)]
+final class BenchmarkLargeBodyHandler implements RequestHandlerInterface
+{
+    public function handle(ServerRequestInterface $request): ResponseInterface
+    {
+        return new EmptyResponse();
+    }
+}
+
+#[MapRequest(body: BenchmarkLargeBodyRequest::class, output: 'first')]
+#[MapRequest(body: BenchmarkLargeBodyRequest::class, output: 'second')]
+#[MapRequest(body: BenchmarkLargeBodyRequest::class, output: 'third')]
+final class BenchmarkThreeLargeBodyHandler implements RequestHandlerInterface
+{
+    public function handle(ServerRequestInterface $request): ResponseInterface
+    {
+        return new EmptyResponse();
+    }
+}
+
+#[MapRequest(body: BenchmarkLargeBodyRequest::class, output: 'body')]
+#[MapRequest(source: BenchmarkLargeSourceRequest::class, output: 'source')]
+final class BenchmarkBodyAndSourceHandler implements RequestHandlerInterface
 {
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
@@ -164,6 +204,100 @@ function makeRequest(string $method, array $body = [], array $query = [], array 
     }
 
     return $request;
+}
+
+/** @return array<string, string> */
+function largeFlatPayload(): array
+{
+    $payload = ['name' => 'Ada'];
+
+    for ($field = 0; $field < 10000; ++$field) {
+        $payload['field_' . $field] = 'value-' . $field;
+    }
+
+    return $payload;
+}
+
+/** @return array<string, array<string, string>|string> */
+function largeNestedPayload(): array
+{
+    $payload = ['name' => 'Ada'];
+
+    for ($group = 0; $group < 200; ++$group) {
+        $values = [];
+
+        for ($field = 0; $field < 100; ++$field) {
+            $values['field_' . $field] = 'value-' . $group . '-' . $field;
+        }
+
+        $payload['group_' . $group] = $values;
+    }
+
+    return $payload;
+}
+
+/**
+ * @param array<mixed> $payload
+ * @return array{fields: int, strings: int, approximate_payload_bytes: int}
+ */
+function payloadMetadata(array $payload): array
+{
+    $fields  = 0;
+    $strings = 0;
+    $stack   = [$payload];
+
+    while ([] !== $stack) {
+        $values = array_pop($stack);
+
+        foreach ($values as $value) {
+            ++$fields;
+
+            if (is_string($value)) {
+                ++$strings;
+                continue;
+            }
+
+            if (is_array($value)) {
+                $stack[] = $value;
+            }
+        }
+    }
+
+    return [
+        'fields'                    => $fields,
+        'strings'                   => $strings,
+        'approximate_payload_bytes' => strlen((string) json_encode($payload, JSON_THROW_ON_ERROR)),
+    ];
+}
+
+/** @param array<mixed> $body */
+function largePayloadScenario(
+    string $name,
+    RequestHandlerInterface $handler,
+    array $body,
+    int $iterations,
+    int $warmup,
+    int $samples,
+    array $query = [],
+    array $routeParams = [],
+): array {
+    [$middleware] = createServices();
+    $route = new Route('/example/{id}', new RequestHandlerMiddleware($handler), [RequestMethodInterface::METHOD_POST]);
+    $request = (new ServerRequest())
+        ->withMethod(RequestMethodInterface::METHOD_POST)
+        ->withParsedBody($body)
+        ->withQueryParams($query)
+        ->withAttribute(RouteResult::class, RouteResult::fromRoute($route, $routeParams))
+    ;
+
+    return array_merge(
+        [
+            'name'      => $name,
+            'lifecycle' => 'reuse',
+            'input'     => payloadMetadata($body),
+        ],
+        measure(static fn () => $middleware->process($request, $handler), $iterations, $warmup, $samples),
+    );
 }
 
 /**
@@ -412,6 +546,58 @@ function runScenario(int $scenario, int $iterations, int $warmup, int $samples, 
                 removeScenarioCacheDirectory($scenarioCacheDir);
             }
 
+        case 8:
+            return largePayloadScenario(
+                'Large flat body, one operation',
+                new BenchmarkLargeBodyHandler(),
+                largeFlatPayload(),
+                $iterations,
+                $warmup,
+                $samples,
+            );
+
+        case 9:
+            return largePayloadScenario(
+                'Large flat body, three operations',
+                new BenchmarkThreeLargeBodyHandler(),
+                largeFlatPayload(),
+                $iterations,
+                $warmup,
+                $samples,
+            );
+
+        case 10:
+            return largePayloadScenario(
+                'Large nested body, one operation',
+                new BenchmarkLargeBodyHandler(),
+                largeNestedPayload(),
+                $iterations,
+                $warmup,
+                $samples,
+            );
+
+        case 11:
+            return largePayloadScenario(
+                'Large nested body, three operations',
+                new BenchmarkThreeLargeBodyHandler(),
+                largeNestedPayload(),
+                $iterations,
+                $warmup,
+                $samples,
+            );
+
+        case 12:
+            return largePayloadScenario(
+                'Large body plus combined source',
+                new BenchmarkBodyAndSourceHandler(),
+                largeFlatPayload(),
+                $iterations,
+                $warmup,
+                $samples,
+                ['page' => '2'],
+                ['id' => '42'],
+            );
+
         default:
             throw new \InvalidArgumentException("Unknown scenario: {$scenario}");
     }
@@ -480,7 +666,7 @@ function main(): void
 
     $results = [];
 
-    foreach (range(1, 7) as $id) {
+    foreach (range(1, 12) as $id) {
         $command = [
             PHP_BINARY,
             __FILE__,

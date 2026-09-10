@@ -36,7 +36,7 @@ final readonly class HandlerTargetResolver
 
     private const MIDDLEWARE_PIPE = 'Laminas\Stratigility\MiddlewarePipe';
 
-    /** @var WeakMap<object, ?HandlerTarget> */
+    /** @var WeakMap<object, HandlerTargetCacheEntry> */
     private WeakMap $cache;
 
     public function __construct()
@@ -48,14 +48,16 @@ final readonly class HandlerTargetResolver
     {
         if (is_object($middleware)) {
             if ($this->cache->offsetExists($middleware)) {
-                return $this->cache->offsetGet($middleware);
+                return $this->cache->offsetGet($middleware)->target;
             }
 
             $target = $this->isKnownWrapper($middleware)
                 ? $this->resolveKnownWrapper($middleware)
                 : $this->resolveObject($middleware);
 
-            $this->cache->offsetSet($middleware, $target);
+            // WeakMap::offsetExists() reports false for a null value. Store an
+            // entry object so that unsupported targets are negative-cache hits.
+            $this->cache->offsetSet($middleware, new HandlerTargetCacheEntry($target));
 
             return $target;
         }

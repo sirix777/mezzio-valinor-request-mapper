@@ -1,70 +1,37 @@
 # Request mapper benchmark
 
-This benchmark compares the middleware/resolver path before and after the
-middleware refactor and metadata caching introduced in plan 10.
+The runner measures the complete warmed middleware path. Each mapped scenario
+calls `TreeMapper::map()` as well as resolving the handler target, mapping plan,
+and selected HTTP input. It is not a resolver-only benchmark.
 
-It does **not** benchmark Valinor mapping itself; it measures the per-request
-overhead of resolving the handler target and building the mapping plan.
+The large-payload scenarios exercise the request-scoped input snapshot:
 
-## Reproduction and provenance
+| Scenario | Input |
+| --- | --- |
+| Large flat body, one operation | 10,001 fields / strings, about 252 KiB JSON |
+| Large flat body, three operations | same body mapped three times |
+| Large nested body, one operation | 20,201 fields, 20,001 strings, about 496 KiB JSON |
+| Large nested body, three operations | same body mapped three times |
+| Large body plus combined source | flat body plus one route and query value |
 
-The optimized result was produced by the current runner with:
+Every raw result contains the precise field count, string count, approximate
+JSON payload size, median CPU time, and peak memory.
+
+## Reproduction
+
+Run the same command from clean worktrees at the two revisions being compared,
+then retain both JSON files alongside their commit SHA:
 
 ```sh
-php benchmarks/request-mapper.php --iterations=10000 --warmup=1000 --samples=5 \
-  > docs/benchmarks/raw/optimized-2026-09-09.json
+php benchmarks/request-mapper.php --iterations=20 --warmup=5 --samples=3 \
+  > docs/benchmarks/raw/<sha>.json
 ```
 
-The exact JSON produced by that command is stored in
-[`raw/optimized-2026-09-09.json`](raw/optimized-2026-09-09.json).
+The runner creates a separate process for every scenario, so its peak-memory
+value is scenario-local. Scenario 7 accepts `--cache-dir` as an existing
+writable parent; it creates and removes only a randomly named child directory.
 
-The baseline values below are **historical**, from the pre-plan-10 revision
-`8c96f448a57a2b8b01ba51835356a40a9b58d9ad`. That revision predates this runner,
-so its figures must not be presented as reproducible by the current runner. New
-comparisons should run the same runner and parameters on both checked-out
-revisions and retain both raw JSON files.
-
-For scenario 7, `--cache-dir` is an existing writable **parent** directory;
-the runner creates and removes only its own random child directory. It never
-removes the supplied directory or its existing contents.
-
-## Environment
-
-| Component        | Version |
-|------------------|---------|
-| PHP              | 8.2.33  |
-| cuyz/valinor     | 2.6.0   |
-| mezzio/mezzio-router | 4.2.0 |
-| OPcache (CLI)    | disabled |
-
-## Parameters
-
-- Iterations: `10000`
-- Warmup: `1000`
-- Samples: `5`
-- Reported value: median microseconds per operation
-
-## Results
-
-| Scenario                                          | Lifecycle                | Historical baseline (us/op) | Optimized (us/op) | Change  |
-|---------------------------------------------------|--------------------------|-----------------:|------------------:|--------:|
-| No RouteResult passthrough                        | reuse                    | 0.516            | 0.502             | -2.7%   |
-| Reflection via direct handler object              | reuse                    | 9.649            | 7.169             | -25.7%  |
-| Reflection via lazy FQCN handler                  | reuse                    | 9.474            | 7.152             | -24.5%  |
-| Route options single DTO                          | reuse                    | 8.649            | 7.836             | -9.4%   |
-| Three operations with different outputs           | reuse                    | 29.734           | 22.890            | -23.0%  |
-| Repeated calls reusing middleware and builder     | reuse                    | 9.493            | 7.174             | -24.4%  |
-| New middleware/resolvers/builder per iteration with file cache | new-each-iteration | 69.391 | 65.528 | -5.6%   |
-
-Peak memory did not change between runs (4 MiB for reuse scenarios, 32 MiB for
-new-each-iteration).
-
-## Observations
-
-- The largest wins come from caching `HandlerTarget` and `MapRequest` metadata
-  across requests, which removes repeated reflection for handlers that are reused
-  by the application container.
-- Scenarios that construct fresh resolvers every iteration benefit less because
-  the caches live on the resolver instances and are rebuilt each time.
-- The passthrough path is slightly faster because route metadata resolution is
-  also skipped when there is no `RouteResult`.
+[`raw/working-tree-2026-09-10.json`](raw/working-tree-2026-09-10.json) is a
+non-comparative smoke-run of the current implementation. It deliberately does
+not replace a two-revision comparison: commit the change first, rerun the
+command at both exact SHAs, and name the resulting files after those SHAs.

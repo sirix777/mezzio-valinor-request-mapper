@@ -40,11 +40,12 @@ final readonly class ValinorRequestMapperMiddleware implements MiddlewareInterfa
             return $handler->handle($request);
         }
 
-        $routeParams = $routeResult->getMatchedParams();
+        $routeParams  = $routeResult->getMatchedParams();
+        $inputContext = $this->httpRequestSourceFactory->createContext($request, $routeParams);
 
         foreach ($operations as $operation) {
             try {
-                $httpRequest = $this->httpRequestSourceFactory->create($request, $routeParams, $operation->source);
+                $httpRequest = $inputContext->create($request, $operation->source);
                 $dto         = $this->mapper->map($operation->dtoClass, $httpRequest);
                 $request     = $request->withAttribute($operation->requestAttributeKey, $dto);
             } catch (MappingError|RequestInputError $e) {

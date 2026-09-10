@@ -12,6 +12,10 @@ use Sirix\Mezzio\Valinor\Error\RequestInputError;
 use Sirix\Mezzio\Valinor\Mapping\HttpRequestSourceFactory;
 use Sirix\Mezzio\Valinor\Mapping\InputEncodingValidator;
 use stdClass;
+use WeakReference;
+
+use function gc_collect_cycles;
+use function str_repeat;
 
 final class HttpRequestSourceFactoryTest extends TestCase
 {
@@ -255,5 +259,96 @@ final class HttpRequestSourceFactoryTest extends TestCase
             'name' => 'Ada',
         ], $httpRequest->bodyValues);
         self::assertSame([], $httpRequest->queryParameters);
+    }
+
+    #[Test]
+    public function contextValidatesEachSourceOnlyOnceAndCreatesFreshHttpRequests(): void
+    {
+        $factory = new HttpRequestSourceFactory(new InputEncodingValidator());
+        $request = new CountingServerRequest(
+            queryParams: [
+                'page' => '2',
+            ],
+            parsedBody: [
+                'name' => 'Ada',
+            ],
+        );
+        $context = $factory->createContext($request, [
+            'id' => '42',
+        ]);
+
+        $first  = $context->create($request, 'body');
+        $second = $context->create($request, 'body');
+        $source = $context->create($request, 'source');
+
+        self::assertNotSame($first, $second);
+        self::assertSame($request, $first->requestObject);
+        self::assertSame($request, $second->requestObject);
+        self::assertSame($request, $source->requestObject);
+        self::assertSame(1, $request->parsedBodyReads);
+        self::assertSame(1, $request->queryParameterReads);
+    }
+
+    #[Test]
+    public function contextRetainsSourceErrorPriority(): void
+    {
+        $factory = new HttpRequestSourceFactory(new InputEncodingValidator());
+        $request = (new ServerRequest())
+            ->withQueryParams([
+                'page' => "\xB1\x31",
+            ])
+            ->withParsedBody([
+                'name' => "\xB1\x31",
+            ])
+        ;
+
+        try {
+            $factory->createContext($request, [
+                'id' => "\xB1\x31",
+            ])->create($request, 'source');
+            self::fail('Expected RequestInputError to be thrown.');
+        } catch (RequestInputError $error) {
+            self::assertSame('route', $error->inputSource);
+        }
+    }
+
+    #[Test]
+    public function factoryDoesNotRetainACompletedContextOrRequest(): void
+    {
+        $factory = new HttpRequestSourceFactory(new InputEncodingValidator());
+        $request = (new ServerRequest())->withParsedBody([
+            'name' => str_repeat('x', 10000),
+        ]);
+        $reference   = WeakReference::create($request);
+        $context     = $factory->createContext($request, []);
+        $httpRequest = $context->create($request, 'body');
+
+        unset($httpRequest, $context, $request);
+        gc_collect_cycles();
+
+        self::assertNull($reference->get());
+    }
+}
+
+final class CountingServerRequest extends ServerRequest
+{
+    public int $parsedBodyReads = 0;
+
+    public int $queryParameterReads = 0;
+
+    /** @return null|array<mixed>|object */
+    public function getParsedBody(): mixed
+    {
+        ++$this->parsedBodyReads;
+
+        return parent::getParsedBody();
+    }
+
+    /** @return array<mixed> */
+    public function getQueryParams(): array
+    {
+        ++$this->queryParameterReads;
+
+        return parent::getQueryParams();
     }
 }

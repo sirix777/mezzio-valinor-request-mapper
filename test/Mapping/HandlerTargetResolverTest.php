@@ -17,6 +17,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use ReflectionProperty;
 use RuntimeException;
 use Sirix\Mezzio\Valinor\Mapping\HandlerTargetResolver;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\AttributedMiddleware;
@@ -27,6 +28,11 @@ use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\InvokableHandler;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\LazyLoadingMiddlewareHandler;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\LazyLoadingRequestHandler;
 use stdClass;
+use WeakMap;
+use WeakReference;
+
+use function gc_collect_cycles;
+use function get_object_vars;
 
 final class HandlerTargetResolverTest extends TestCase
 {
@@ -192,6 +198,62 @@ final class HandlerTargetResolverTest extends TestCase
     }
 
     #[Test]
+    public function positiveObjectTargetIsReturnedFromCache(): void
+    {
+        $handler = new AttributedRequestHandler();
+        $first   = $this->resolver->resolve($handler);
+        $second  = $this->resolver->resolve($handler);
+
+        self::assertNotNull($first);
+        self::assertSame($first, $second);
+    }
+
+    #[Test]
+    public function negativeObjectTargetsAreCachedAsNonNullEntries(): void
+    {
+        $pipe      = new MiddlewarePipe();
+        $decorator = new CallableMiddlewareDecorator(
+            static fn (ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface => new JsonResponse([]),
+        );
+        $unrelated = new stdClass();
+
+        foreach ([$pipe, $decorator, $unrelated] as $target) {
+            self::assertNull($this->resolver->resolve($target));
+            self::assertTrue($this->cache()->offsetExists($target));
+            $entry = $this->cache()->offsetGet($target);
+            self::assertSame([
+                'target' => null,
+            ], get_object_vars($entry));
+            self::assertNull($this->resolver->resolve($target));
+        }
+    }
+
+    #[Test]
+    public function cacheDoesNotKeepObjectTargetsAlive(): void
+    {
+        $pipe       = new MiddlewarePipe();
+        $decorator  = new CallableMiddlewareDecorator(static fn (): ResponseInterface => new JsonResponse([]));
+        $unrelated  = new stdClass();
+        $references = [
+            WeakReference::create($pipe),
+            WeakReference::create($decorator),
+            WeakReference::create($unrelated),
+        ];
+
+        $this->resolver->resolve($pipe);
+        $this->resolver->resolve($decorator);
+        $this->resolver->resolve($unrelated);
+        unset($pipe, $decorator, $unrelated);
+        gc_collect_cycles();
+
+        foreach ($references as $reference) {
+            self::assertNull($reference->get());
+        }
+
+        self::assertCount(0, $this->cache());
+    }
+
+    #[Test]
     public function lazyLoadingMiddlewareWithRequestHandlerResolvesToHandle(): void
     {
         $lazy = new LazyLoadingMiddleware($this->createMock(MiddlewareContainer::class), LazyLoadingRequestHandler::class);
@@ -280,6 +342,14 @@ final class HandlerTargetResolverTest extends TestCase
         self::assertNotNull($target);
         self::assertSame($handler::class, $target->className);
         self::assertSame('process', $target->methodName);
+    }
+
+    /** @return WeakMap<object, object> */
+    private function cache(): WeakMap
+    {
+        $property = new ReflectionProperty($this->resolver, 'cache');
+
+        return $property->getValue($this->resolver);
     }
 }
 
