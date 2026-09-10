@@ -74,6 +74,7 @@
             "@cs-check",
             "@rector",
             "@phpstan",
+            "@analyse-deps",
             "@test"
         ],
         "cs-check": "php tools/php-cs-fixer/vendor/bin/php-cs-fixer fix --dry-run -vvv --diff",

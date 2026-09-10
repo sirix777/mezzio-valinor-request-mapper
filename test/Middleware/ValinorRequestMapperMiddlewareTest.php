@@ -44,10 +44,13 @@ use Sirix\Mezzio\Valinor\Mapping\MapRequestOptionsParser;
 use Sirix\Mezzio\Valinor\Mapping\MapRequestResolver;
 use Sirix\Mezzio\Valinor\Middleware\ValinorRequestMapperMiddleware;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\CreateBodyRequest;
+use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\IntIdRouteRequest;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\PaginationRequest;
+use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\PositiveIdRouteRequest;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\RequestObjectRequest;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\RequiredRequest;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\SearchRequest;
+use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\StatusRouteRequest;
 use stdClass;
 
 use function json_decode;
@@ -563,6 +566,39 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
     }
 
     #[Test]
+    public function noopOnUnmatchedRouteResultAndDoesNotCallMapper(): void
+    {
+        $mapCount   = 0;
+        $spyMapper  = $this->spyMapper($mapCount);
+        $middleware = $this->middleware($spyMapper);
+
+        $request = (new ServerRequest())
+            ->withMethod(RequestMethodInterface::METHOD_GET)
+            ->withAttribute(
+                RouteResult::class,
+                RouteResult::fromRouteFailure([RequestMethodInterface::METHOD_GET]),
+            )
+        ;
+
+        $called = false;
+        $next   = new class($called) implements RequestHandlerInterface {
+            public function __construct(public bool &$called) {}
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                $this->called = true;
+
+                return new EmptyResponse();
+            }
+        };
+
+        $middleware->process($request, $next);
+
+        self::assertTrue($next->called);
+        self::assertSame(0, $mapCount);
+    }
+
+    #[Test]
     public function returnsErrorResponseOnMappingFailure(): void
     {
         $middleware = $this->middleware($this->defaultMapper(), $this->defaultResponder());
@@ -632,6 +668,100 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
         self::assertSame('body', $responder->context->source);
         self::assertSame('form', $responder->context->requestAttributeKey);
         self::assertSame($request->getMethod(), $responder->context->request->getMethod());
+    }
+
+    #[Test]
+    public function mappingErrorContextForQuerySource(): void
+    {
+        $responder  = $this->captureResponder();
+        $middleware = $this->middleware($this->defaultMapper(), $responder);
+        $request    = $this->request(RequestMethodInterface::METHOD_GET, null, []);
+
+        $handler = new #[MapRequest(query: PaginationRequest::class, output: 'pagination')]
+        class implements MiddlewareInterface, RequestHandlerInterface {
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                return $this->handle($request);
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                return new EmptyResponse();
+            }
+        };
+
+        $this->processRoute($middleware, $request, $handler, methods: [RequestMethodInterface::METHOD_GET]);
+
+        self::assertInstanceOf(MappingErrorContext::class, $responder->context);
+        self::assertSame(PaginationRequest::class, $responder->context->dtoClass);
+        self::assertSame('query', $responder->context->source);
+        self::assertSame('pagination', $responder->context->requestAttributeKey);
+        self::assertInstanceOf(MapRequest::class, $responder->context->mapRequest);
+    }
+
+    #[Test]
+    public function mappingErrorContextForRouteSource(): void
+    {
+        $responder  = $this->captureResponder();
+        $middleware = $this->middleware($this->defaultMapper(), $responder);
+        $request    = $this->request(RequestMethodInterface::METHOD_GET);
+
+        $handler = new #[MapRequest(route: IntIdRouteRequest::class, output: 'route')]
+        class implements MiddlewareInterface, RequestHandlerInterface {
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                return $this->handle($request);
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                return new EmptyResponse();
+            }
+        };
+
+        $this->processRoute(
+            $middleware,
+            $request,
+            $handler,
+            routeParams: [
+                'id' => 'not-an-int',
+            ],
+            path: '/example/{id}',
+            methods: [RequestMethodInterface::METHOD_GET],
+        );
+
+        self::assertInstanceOf(MappingErrorContext::class, $responder->context);
+        self::assertSame(IntIdRouteRequest::class, $responder->context->dtoClass);
+        self::assertSame('route', $responder->context->source);
+        self::assertSame('route', $responder->context->requestAttributeKey);
+    }
+
+    #[Test]
+    public function mappingErrorContextForCombinedSourceMode(): void
+    {
+        $responder  = $this->captureResponder();
+        $middleware = $this->middleware($this->permissiveMapper(), $responder);
+        $request    = $this->request(RequestMethodInterface::METHOD_GET);
+
+        $handler = new #[MapRequest(source: SearchRequest::class, output: 'search')]
+        class implements MiddlewareInterface, RequestHandlerInterface {
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                return $this->handle($request);
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                return new EmptyResponse();
+            }
+        };
+
+        $this->processRoute($middleware, $request, $handler, methods: [RequestMethodInterface::METHOD_GET]);
+
+        self::assertInstanceOf(MappingErrorContext::class, $responder->context);
+        self::assertSame(SearchRequest::class, $responder->context->dtoClass);
+        self::assertSame('source', $responder->context->source);
+        self::assertSame('search', $responder->context->requestAttributeKey);
     }
 
     #[Test]
@@ -1272,9 +1402,208 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
         self::assertSame('second', $next->secondRequest->getAttribute(RequiredRequest::class)->name);
     }
 
+    #[Test]
+    public function mapsRouteOnlyDto(): void
+    {
+        $middleware = $this->defaultMiddleware();
+
+        $handler = new #[MapRequest(route: IntIdRouteRequest::class)]
+        class implements MiddlewareInterface, RequestHandlerInterface {
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                return $this->handle($request);
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                return new JsonResponse($request->getAttribute(IntIdRouteRequest::class));
+            }
+        };
+
+        $response = $this->processRoute(
+            $middleware,
+            $this->request(RequestMethodInterface::METHOD_GET),
+            $handler,
+            routeParams: [
+                'id' => '-5',
+            ],
+            path: '/example/{id}',
+            methods: [RequestMethodInterface::METHOD_GET],
+        );
+
+        $body = json_decode((string) $response->getBody(), true);
+
+        self::assertSame(-5, $body['id']);
+    }
+
+    #[Test]
+    public function routeOnlyFailureProduces422ThroughResponder(): void
+    {
+        $middleware = $this->defaultMiddleware();
+
+        $handler = new #[MapRequest(route: PositiveIdRouteRequest::class)]
+        class implements MiddlewareInterface, RequestHandlerInterface {
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                return $this->handle($request);
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                return new EmptyResponse();
+            }
+        };
+
+        $response = $this->processRoute(
+            $middleware,
+            $this->request(RequestMethodInterface::METHOD_GET),
+            $handler,
+            routeParams: [
+                'id' => '-5',
+            ],
+            path: '/example/{id}',
+            methods: [RequestMethodInterface::METHOD_GET],
+        );
+
+        self::assertSame(StatusCodeInterface::STATUS_UNPROCESSABLE_ENTITY, $response->getStatusCode());
+
+        $body = json_decode((string) $response->getBody(), true);
+
+        self::assertSame('Mapping failed', $body['error']);
+        self::assertArrayHasKey('id', $body['messages']);
+    }
+
+    #[Test]
+    public function mapsRouteOnlyEnumDto(): void
+    {
+        $middleware = $this->defaultMiddleware();
+
+        $handler = new #[MapRequest(route: StatusRouteRequest::class)]
+        class implements MiddlewareInterface, RequestHandlerInterface {
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                return $this->handle($request);
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                return new JsonResponse($request->getAttribute(StatusRouteRequest::class));
+            }
+        };
+
+        $response = $this->processRoute(
+            $middleware,
+            $this->request(RequestMethodInterface::METHOD_GET),
+            $handler,
+            routeParams: [
+                'status' => 'active',
+            ],
+            path: '/example/{status}',
+            methods: [RequestMethodInterface::METHOD_GET],
+        );
+
+        $body = json_decode((string) $response->getBody(), true);
+
+        self::assertSame('active', $body['status']);
+    }
+
+    #[Test]
+    public function routeOnlyEnumFailureProduces422ThroughResponder(): void
+    {
+        $middleware = $this->defaultMiddleware();
+
+        $handler = new #[MapRequest(route: StatusRouteRequest::class)]
+        class implements MiddlewareInterface, RequestHandlerInterface {
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                return $this->handle($request);
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                return new EmptyResponse();
+            }
+        };
+
+        $response = $this->processRoute(
+            $middleware,
+            $this->request(RequestMethodInterface::METHOD_GET),
+            $handler,
+            routeParams: [
+                'status' => 'invalid',
+            ],
+            path: '/example/{status}',
+            methods: [RequestMethodInterface::METHOD_GET],
+        );
+
+        self::assertSame(StatusCodeInterface::STATUS_UNPROCESSABLE_ENTITY, $response->getStatusCode());
+
+        $body = json_decode((string) $response->getBody(), true);
+
+        self::assertSame('Mapping failed', $body['error']);
+        self::assertArrayHasKey('status', $body['messages']);
+    }
+
+    #[Test]
+    public function responderExceptionIsNotCaughtByMiddleware(): void
+    {
+        $responder = new class implements MappingErrorResponderInterface {
+            public function respond(MappingErrorContext $context): ResponseInterface
+            {
+                throw new RuntimeException('Responder failure.');
+            }
+        };
+        $middleware = $this->middleware($this->defaultMapper(), $responder);
+        $request    = $this->request(RequestMethodInterface::METHOD_POST, []);
+
+        $handler = new #[MapRequest(body: RequiredRequest::class)]
+        class implements MiddlewareInterface, RequestHandlerInterface {
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                return $this->handle($request);
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                return new EmptyResponse();
+            }
+        };
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Responder failure.');
+
+        $this->processRoute($middleware, $request, $handler, methods: [RequestMethodInterface::METHOD_POST]);
+    }
+
+    /**
+     * @return MappingErrorResponderInterface&object{context: null|MappingErrorContext}
+     */
+    private function captureResponder(): MappingErrorResponderInterface
+    {
+        return new class implements MappingErrorResponderInterface {
+            public ?MappingErrorContext $context = null;
+
+            public function respond(MappingErrorContext $context): ResponseInterface
+            {
+                $this->context = $context;
+
+                return new EmptyResponse();
+            }
+        };
+    }
+
     private function defaultMapper(): TreeMapper
     {
         return (new MapperBuilder())->mapper();
+    }
+
+    private function permissiveMapper(): TreeMapper
+    {
+        return (new MapperBuilder())
+            ->allowPermissiveTypes()
+            ->allowSuperfluousKeys()
+            ->mapper()
+        ;
     }
 
     private function defaultMiddleware(): ValinorRequestMapperMiddleware

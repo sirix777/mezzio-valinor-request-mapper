@@ -13,12 +13,19 @@ env:
     FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-    qa:
+    tests:
+        name: Tests (PHP ${{ matrix.php-version }}, router ${{ matrix.router }})
         runs-on: ubuntu-latest
         strategy:
             fail-fast: false
             matrix:
                 php-version: ["8.2", "8.3", "8.4", "8.5"]
+                router: ["^3.15", "^4.1"]
+                include:
+                    - php-version: "8.2"
+                      router: "^4.1"
+                      intl: true
+
         steps:
             - uses: actions/checkout@v5
 
@@ -27,18 +34,113 @@ jobs:
               with:
                   php-version: ${{ matrix.php-version }}
                   coverage: none
+                  extensions: ${{ matrix.intl && 'intl' || '' }}
 
             - name: Validate composer.json
               run: composer validate --strict --no-check-lock
 
             - name: Install dependencies
-              run: composer install
+              run: composer update "mezzio/mezzio-router:${{ matrix.router }}" --with-all-dependencies --no-interaction --prefer-dist --no-plugins --no-scripts
+
+            - name: Show installed versions
+              run: |
+                  composer show cuyz/valinor
+                  composer show mezzio/mezzio-router
+
+            - name: Run tests
+              run: composer test
+
+    tests-lowest:
+        name: Tests lowest (PHP 8.2, Valinor 2.4.0, router ${{ matrix.router }})
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                router: ["3.15.0", "4.1.0"]
+
+        steps:
+            - uses: actions/checkout@v5
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: "8.2"
+                  coverage: none
+
+            - name: Validate composer.json
+              run: composer validate --strict --no-check-lock
+
+            - name: Install lowest dependencies
+              run: composer update 'cuyz/valinor:2.4.0' "mezzio/mezzio-router:${{ matrix.router }}" --prefer-lowest --prefer-stable --with-all-dependencies --no-interaction --prefer-dist --no-plugins --no-scripts
+
+            - name: Show installed versions
+              run: |
+                  composer show cuyz/valinor
+                  composer show mezzio/mezzio-router
+
+            - name: Run tests
+              run: composer test
+
+    tests-no-intl:
+        name: Tests without intl (PHP 8.2, router ^4.1)
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+
+            - name: Setup PHP without intl
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: "8.2"
+                  coverage: none
+                  extensions: :intl
+
+            - name: Confirm intl state
+              run: |
+                  php -r "echo 'intl loaded: ' . (extension_loaded('intl') ? 'yes' : 'no') . PHP_EOL;"
+
+            - name: Validate composer.json
+              run: composer validate --strict --no-check-lock
+
+            - name: Install dependencies
+              run: composer update "mezzio/mezzio-router:^4.1" --with-all-dependencies --no-interaction --prefer-dist --no-plugins --no-scripts
+
+            - name: Show installed versions
+              run: |
+                  composer show cuyz/valinor
+                  composer show mezzio/mezzio-router
+
+            - name: Run encoding and responder tests
+              run: vendor/bin/phpunit --colors=always --testdox --filter 'Encoding|Responder|Utf8|InvalidUtf8|DefaultMappingError'
+
+    qa:
+        name: QA (PHP 8.2)
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: "8.2"
+                  coverage: none
+
+            - name: Validate composer.json
+              run: composer validate --strict
+
+            - name: Install root dependencies
+              run: composer install --no-interaction --prefer-dist
+
+            - name: Install tool namespaces
+              run: composer bin all install --no-interaction
 
             - name: Run cs-check
               run: composer cs-check
 
+            - name: Run rector
+              run: composer rector
+
             - name: Run phpstan
               run: composer phpstan
 
-            - name: Run phpunit
-              run: composer test
+            - name: Run dependency analysis
+              run: composer analyse-deps

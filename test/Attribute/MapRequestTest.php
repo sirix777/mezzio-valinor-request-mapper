@@ -269,4 +269,24 @@ final class MapRequestTest extends TestCase
             'methods' => ['POST('],
         ]];
     }
+
+    #[Test]
+    public function multipleDefaultsCanBeMergedIntoSingleValinorMappingsPayload(): void
+    {
+        $classLevel  = new MapRequest(query: self::class, output: 'class');
+        $methodLevel = new MapRequest(body: TestCase::class, output: 'method');
+
+        $defaults = [
+            'valinor_mappings' => [
+                ...$classLevel->getDefaults()['valinor_mappings'],
+                ...$methodLevel->getDefaults()['valinor_mappings'],
+            ],
+        ];
+
+        self::assertCount(2, $defaults['valinor_mappings']);
+        self::assertSame(self::class, $defaults['valinor_mappings'][0]['query']);
+        self::assertSame(TestCase::class, $defaults['valinor_mappings'][1]['body']);
+        self::assertSame('class', $defaults['valinor_mappings'][0]['output']);
+        self::assertSame('method', $defaults['valinor_mappings'][1]['output']);
+    }
 }
