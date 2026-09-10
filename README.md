@@ -39,8 +39,10 @@ composer require sirix/mezzio-valinor-request-mapper
 ### Required service registration
 
 `ConfigProvider` is required. It registers the `MapperBuilder`, `TreeMapper`,
-`DefaultMappingErrorResponder`, `MappingErrorResponderResolver`, and
-`ValinorRequestMapperMiddleware` services.
+default responder, middleware, and the internal services that discover route
+metadata, build mapping plans, and construct Valinor HTTP input. Obtain the
+middleware from the container; manually constructing it requires all four of
+its dependencies and is intended only for custom integration.
 
 In a standard Mezzio application it is discovered automatically by
 `laminas/laminas-component-installer`.
@@ -62,9 +64,13 @@ $aggregator = new ConfigAggregator([
 
 ### 1) Standalone Mezzio (without `sirix/mezzio-routing-attributes`)
 
-Register middleware globally after route matching and before dispatch:
+Run the application's body parser first, then route matching, then this
+middleware, and finally dispatch. A body parser (for example Mezzio's
+`BodyParamsMiddleware`) is an application dependency: this package neither
+installs nor configures one.
 
 ```php
+$app->pipe(\Mezzio\Middleware\BodyParamsMiddleware::class);
 $app->pipe(\Mezzio\Router\Middleware\RouteMiddleware::class);
 $app->pipe(\Sirix\Mezzio\Valinor\Middleware\ValinorRequestMapperMiddleware::class);
 $app->pipe(\Mezzio\Router\Middleware\DispatchMiddleware::class);
@@ -100,13 +106,19 @@ $route->setOptions([
     'valinor_mappings' => [
         [
             'body' => CreateOrderRequest::class,
+            'output' => 'createOrder',
+            'methods' => ['POST'],
         ],
     ],
 ]);
 ```
 
-An empty `valinor_mappings => []` falls back to reflection; a missing key also
-falls back. Any non-empty invalid payload raises a configuration error.
+Any non-empty `valinor_mappings` value takes precedence over reflection and
+must be a list of maps using only `body`, `query`, `route`, `source`, `output`,
+`methods`, and `errorResponder`. An empty list (`[]`) or a missing key falls
+back to reflection. A non-empty invalid payload raises
+`InvalidMapRequestConfiguration`; it is a configuration failure, not a 422
+mapping response.
 
 Discovery reflects the **declared route handler**, not the service instance the
 container may return. If you register a service under an FQCN but the container
@@ -197,25 +209,69 @@ final class CreateUserHandler implements RequestHandlerInterface
 ## Attribute API
 
 ```php
-new MapRequest(
-    body: ?string,   // class-string DTO from parsed body
-    query: ?string,  // class-string DTO from query params
-    route: ?string,  // class-string DTO from route params
-    source: ?string, // class-string DTO from combined request sources
-    output: ?string, // request attribute key, defaults to DTO FQCN
-    methods: array,  // HTTP methods filter
-    errorResponder: ?string, // class-string<MappingErrorResponderInterface>
-);
+final readonly class MapRequest
+{
+    public function __construct(
+        ?string $body = null,           // DTO class from parsed body
+        ?string $query = null,          // DTO class from query parameters
+        ?string $route = null,          // DTO class from route parameters
+        ?string $source = null,         // DTO class using all HTTP sources
+        ?string $output = null,         // request attribute key; defaults to DTO class
+        array $methods = [],            // HTTP method filter
+        ?string $errorResponder = null, // responder service class
+    ) {}
+}
 ```
 
 Rules:
 
-- `source` is mutually exclusive with `body/query/route`
+- at least one source is required; `source` is mutually exclusive with
+  `body/query/route`
+- source, output, and responder strings must be non-empty and have no leading
+  or trailing whitespace
 - if `output` is omitted, mapped DTO is stored under its class name
 - `methods = []` means any HTTP method
-- `methods` are normalized (`post`, `Post` -> `POST`)
+- non-empty `methods` must be a list of non-empty HTTP tokens; they are
+  normalized (`post`, `Post` -> `POST`)
 - `errorResponder` is resolved only from the container when mapping fails; when it is not registered, the default responder is used
 - if multiple `#[MapRequest]` attributes match current method, all of them are applied in declaration order; class-level mappings run before method-level mappings
+- active operations must have distinct effective output keys. For example, two
+  sources that map the same DTO need separate `output` values; the package no
+  longer lets a later operation overwrite an earlier DTO.
+
+For example, this is valid because the output keys differ:
+
+```php
+#[MapRequest(query: PaginationRequest::class, output: 'pagination')]
+#[MapRequest(body: CreateOrderRequest::class, output: 'createOrder')]
+final class OrdersHandler implements RequestHandlerInterface
+{
+    // ...
+}
+```
+
+## HTTP input contract
+
+Only the source selected by an operation is read. Body parsing and input
+validation happen before Valinor receives the data; the original PSR-7 request
+is never changed.
+
+| Mapping source | Data supplied to Valinor | Preconditions |
+| --- | --- | --- |
+| `body` | `ServerRequestInterface::getParsedBody()` | must be `array` or `null` (`null` becomes an empty array) |
+| `query` | `getQueryParams()` | parsed body is not read |
+| `route` | matched route parameters | parsed body is not read |
+| `source` | route, query, and body | body must be `array` or `null`; use explicit `FromBody`, `FromQuery`, and `FromRoute` attributes |
+
+String keys and values in each selected source, including nested native arrays,
+must be valid UTF-8. Invalid input produces a safe `RequestInputError` and the
+default 422 response; it is not repaired or passed to Valinor. Binary payloads
+belong in uploaded files or application-specific middleware instead.
+
+With `source`, a constructor argument without a `From*` attribute is ambiguous
+when the same field exists in more than one HTTP source. Valinor reports that
+collision as a mapping error; specify the source explicitly rather than relying
+on an implicit priority.
 
 ## Combined mapping (`source`)
 
@@ -288,7 +344,12 @@ return [
 
 ### Cache
 
-When `cache_dir` is set, Valinor caches compiled reflection data for mapped DTO types, significantly reducing first-request latency.
+When `cache_dir` is set, Valinor caches compiled reflection data for mapped DTO
+types. This package separately keeps only handler and mapping metadata in
+memory. Under PHP-FPM that metadata lives for one request; persistent workers
+reuse it while their `WeakMap` entries can be released with routes and wrappers.
+Changing loaded PHP attributes requires a worker restart; `cache_watch` is a
+Valinor file-cache watcher, not an attribute watcher.
 
 - **Production**: set `cache_dir` and leave `cache_watch` disabled (default)
 - **Development**: set `cache_watch: true` so cache invalidates automatically when PHP files change
@@ -330,9 +391,11 @@ arbitrary `TreeMapper` overrides.
 
 On a mapping failure, the middleware delegates to
 `MappingErrorResponderInterface`. The responder receives a
-`MappingErrorContext` with the Valinor `MappingError`, the current PSR-7
-request, the `MapRequest` attribute, DTO class, mapping source (`body`,
-`query`, `route`, or `source`), and the request attribute key.
+`MappingErrorContext` whose `error` is either Valinor `MappingError` or this
+package's `RequestInputError`, plus the current PSR-7 request, `MapRequest`,
+DTO class, mapping source (`body`, `query`, `route`, or `source`), and request
+attribute key. For `RequestInputError`, inspect `reason` and `inputSource`
+instead of calling Valinor's `messages()`.
 
 The package registers `MappingErrorResponderInterface` to the built-in
 `DefaultMappingErrorResponder`. Override that service in your container to
@@ -340,15 +403,13 @@ change the application-wide response contract:
 
 ```php
 use Fig\Http\Message\StatusCodeInterface;
+use CuyZ\Valinor\Mapper\MappingError;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Sirix\Mezzio\Valinor\Error\MappingErrorContext;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderInterface;
-
-use function json_encode;
-
-use const JSON_THROW_ON_ERROR;
+use Sirix\Mezzio\Valinor\Error\RequestInputError;
 
 final class ProblemDetailsResponder implements MappingErrorResponderInterface
 {
@@ -359,17 +420,29 @@ final class ProblemDetailsResponder implements MappingErrorResponderInterface
 
     public function respond(MappingErrorContext $context): ResponseInterface
     {
-        $body = json_encode([
-            'type' => 'https://example.test/problems/validation-error',
-            'title' => 'Validation failed',
-            'status' => StatusCodeInterface::STATUS_UNPROCESSABLE_ENTITY,
-            'errors' => array_map(
+        if ($context->error instanceof RequestInputError) {
+            $errors = [[
+                'code' => $context->error->reason,
+                'detail' => $context->error->getMessage(),
+                'source' => $context->error->inputSource,
+            ]];
+        } else {
+            /** @var MappingError $error */
+            $error = $context->error;
+            $errors = array_map(
                 static fn ($message): array => [
                     'code' => $message->code(),
                     'detail' => (string) $message,
                 ],
-                [...$context->error->messages()],
-            ),
+                [...$error->messages()],
+            );
+        }
+
+        $body = json_encode([
+            'type' => 'https://example.test/problems/validation-error',
+            'title' => 'Validation failed',
+            'status' => StatusCodeInterface::STATUS_UNPROCESSABLE_ENTITY,
+            'errors' => $errors,
         ], JSON_THROW_ON_ERROR);
 
         return $this->responseFactory
@@ -438,16 +511,19 @@ response contract is fixed:
 }
 ```
 
-It always returns status `422` and `Content-Type: application/json`. To change
-the response contract, register an implementation of
-`MappingErrorResponderInterface`. See the [2.0 migration guide](docs/MIGRATION-2.0.md)
-for constructor and configuration changes.
+It always returns status `422` and `Content-Type: application/json`, including
+for `RequestInputError`. To change the response contract, register an
+implementation of `MappingErrorResponderInterface`. See the
+[3.0 migration guide](docs/MIGRATION-3.0.md); applications upgrading from 1.x
+should first follow the [2.0 guide](docs/MIGRATION-2.0.md).
 
 ## Notes and caveats
 
 - Middleware requires `RouteResult` attribute (it is a no-op when route is not matched yet).
 - With `sirix/mezzio-routing-attributes`, middleware can be added per-route automatically via attribute scanning.
-- For body mapping, malformed body structures can still fail at Valinor level and return configured mapping error response.
+- Parsed body values other than `array` or `null` return a `RequestInputError`
+  before mapping. Other type or validation failures remain Valinor mapping
+  errors.
 - When using a custom `output`, ensure downstream code reads the same request key.
 
 ## Release checklist

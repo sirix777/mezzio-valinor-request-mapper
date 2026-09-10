@@ -5,21 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.0.0] - unreleased
+## [3.0.0] - Unreleased
 
 ### Added
 
-- `MapperBuilder` service factory (`ValinorMapperBuilderFactory`) so that cache warmup and runtime mapping use the same configured builder and cache keys.
+- Configured `MapperBuilder` service, shared by runtime mapping and cache warmup.
+- `RequestInputError` for invalid request input, delivered to existing responders
+  through `MappingErrorContext` alongside Valinor `MappingError`.
+- Explicit `valinor_mappings` route metadata for aliases and route pipelines.
+- Metadata caches for resolved handler targets and mapping definitions; request
+  data and DTOs are not cached.
 
 ### Changed
 
-- `ConfigProvider` now registers the `MapperBuilder` service in addition to `TreeMapper`.
-- `ValinorTreeMapperFactory` now delegates to the configured `MapperBuilder` service instead of building the builder itself.
+- `ConfigProvider` registers the configured `MapperBuilder`, mapping-plan, and
+  HTTP-input services needed by the middleware.
+- Direct middleware construction requires mapping-plan and HTTP-input
+  dependencies in addition to the mapper and responder resolver.
+- Request-handler discovery uses the method actually dispatched (`process`,
+  `handle`, or `__invoke`); class attributes precede attributes on that method.
+- `MapRequest` attributes and non-empty `valinor_mappings` are validated
+  strictly; invalid configuration throws `InvalidMapRequestConfiguration`.
+- Concurrent active mappings must use unique effective request-attribute keys.
+- `body` and `source` accept only array or null parsed bodies; unsupported
+  bodies and invalid UTF-8 in selected body/query/route strings return the
+  fixed safe 422 input-error response.
+- HTTP mapping retains Valinor HTTP semantics: top-level extra HTTP fields are
+  ignored even when `allow_superfluous_keys` is false, and query/route strings
+  are cast to target scalars even when scalar casting is disabled for arrays.
+- Configured date formats extend the builder's current formats after
+  configurators, preserving order while removing duplicates.
+- Cache warmup must use the registered `MapperBuilder`; Valinor file-cache
+  watching does not reload loaded handler attributes in persistent workers.
 
 ### Fixed
 
 - Lower bound of `cuyz/valinor` raised from `^2.0` to `^2.4`; previous constraint allowed versions that do not provide the `CuyZ\Valinor\Mapper\Http\HttpRequest` API and `MapperBuilderConfigurator` used by this package.
-- `support_date_formats` no longer replaces previously supported formats; configured formats are now appended to the builder's existing list (including formats set by configurators and Valinor's default RFC 3339 / timestamp formats), with duplicates removed.
+
+### Removed
+
+- Implicit attribute discovery for aliases and arbitrary handlers inside route
+  pipelines; provide explicit route metadata instead.
+- Last-write-wins behavior for colliding mapping output keys.
 
 ## [2.0.0] - 2026-08-28
 

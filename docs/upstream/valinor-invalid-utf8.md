@@ -73,5 +73,5 @@ not reached for HTTP input.
 
 - Without `ext-intl` the reproduction may instead produce a `MappingError`,
   because Valinor falls back to a non-intl formatter that tolerates the bytes.
-- The issue is filed here for reference only; no upstream issue is created
-  automatically by this package.
+- This is a local reproduction kept for reference; it is not an upstream issue
+  and no upstream issue is created automatically by this package.
