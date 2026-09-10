@@ -5,10 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.0.0] - Unreleased
+## [3.0.0] - 2026-09-10
 
 ### Added
 
+- `MapRequest` implements `AggregatingRouteAttributeModifierInterface`, which retains class- and method-level mappings and adds `ValinorRequestMapperMiddleware` once per route.
 - Configured `MapperBuilder` service, shared by runtime mapping and cache warmup.
 - `RequestInputError` for invalid request input, delivered to existing responders
   through `MappingErrorContext` alongside Valinor `MappingError`.
@@ -18,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The optional routing-attributes integration requires `sirix/mezzio-routing-contracts ^1.2` and rejects `sirix/mezzio-routing-attributes <1.4.0` when both packages are installed.
 - `ConfigProvider` registers the configured `MapperBuilder`, mapping-plan, and
   HTTP-input services needed by the middleware.
 - Direct middleware construction requires mapping-plan and HTTP-input

@@ -8,7 +8,7 @@ use Fig\Http\Message\RequestMethodInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Sirix\Mezzio\Routing\Contracts\RouteAttributeModifierInterface;
+use Sirix\Mezzio\Routing\Contracts\AggregatingRouteAttributeModifierInterface;
 use Sirix\Mezzio\Valinor\Attribute\MapRequest;
 use Sirix\Mezzio\Valinor\Error\DefaultMappingErrorResponder;
 use Sirix\Mezzio\Valinor\Exception\InvalidMapRequestConfiguration;
@@ -17,23 +17,33 @@ use Sirix\Mezzio\Valinor\Middleware\ValinorRequestMapperMiddleware;
 final class MapRequestTest extends TestCase
 {
     #[Test]
-    public function implementsRouteAttributeModifierInterface(): void
+    public function implementsAggregatingRouteAttributeModifierInterface(): void
     {
         $attr = new MapRequest(body: self::class);
 
-        self::assertInstanceOf(RouteAttributeModifierInterface::class, $attr);
+        self::assertInstanceOf(AggregatingRouteAttributeModifierInterface::class, $attr);
     }
 
     #[Test]
-    public function getMiddlewareReturnsMapperMiddleware(): void
+    public function getMiddlewareReturnsNoLegacyMiddleware(): void
     {
         $attr = new MapRequest(body: self::class);
 
-        self::assertSame([ValinorRequestMapperMiddleware::class], $attr->getMiddleware());
+        self::assertSame([], $attr->getMiddleware());
     }
 
     #[Test]
-    public function getDefaultsContainsAllFields(): void
+    public function getUniqueMiddlewareReturnsMapperMiddleware(): void
+    {
+        $attr = new MapRequest(body: self::class);
+
+        self::assertSame([
+            'sirix.mezzio.valinor.request-mapper' => ValinorRequestMapperMiddleware::class,
+        ], $attr->getUniqueMiddleware());
+    }
+
+    #[Test]
+    public function mergeDefaultsContainsAllFields(): void
     {
         $attr = new MapRequest(
             body: self::class,
@@ -44,7 +54,7 @@ final class MapRequestTest extends TestCase
             errorResponder: DefaultMappingErrorResponder::class,
         );
 
-        $defaults = $attr->getDefaults();
+        $defaults = $attr->mergeDefaults([]);
 
         self::assertArrayHasKey('valinor_mappings', $defaults);
         $mapping = $defaults['valinor_mappings'][0];
@@ -276,12 +286,7 @@ final class MapRequestTest extends TestCase
         $classLevel  = new MapRequest(query: self::class, output: 'class');
         $methodLevel = new MapRequest(body: TestCase::class, output: 'method');
 
-        $defaults = [
-            'valinor_mappings' => [
-                ...$classLevel->getDefaults()['valinor_mappings'],
-                ...$methodLevel->getDefaults()['valinor_mappings'],
-            ],
-        ];
+        $defaults = $methodLevel->mergeDefaults($classLevel->mergeDefaults([]));
 
         self::assertCount(2, $defaults['valinor_mappings']);
         self::assertSame(self::class, $defaults['valinor_mappings'][0]['query']);

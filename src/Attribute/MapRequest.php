@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sirix\Mezzio\Valinor\Attribute;
 
 use Attribute;
-use Sirix\Mezzio\Routing\Contracts\RouteAttributeModifierInterface;
+use Sirix\Mezzio\Routing\Contracts\AggregatingRouteAttributeModifierInterface;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderInterface;
 use Sirix\Mezzio\Valinor\Exception\InvalidMapRequestConfiguration;
 use Sirix\Mezzio\Valinor\Mapping\HttpMethodNormalizer;
@@ -15,7 +15,7 @@ use function sprintf;
 use function trim;
 
 #[Attribute(Attribute::TARGET_CLASS | Attribute::TARGET_METHOD | Attribute::IS_REPEATABLE)]
-final readonly class MapRequest implements RouteAttributeModifierInterface
+final readonly class MapRequest implements AggregatingRouteAttributeModifierInterface
 {
     /** @var null|class-string */
     public ?string $body;
@@ -86,23 +86,43 @@ final readonly class MapRequest implements RouteAttributeModifierInterface
 
     public function getMiddleware(): array
     {
-        return [ValinorRequestMapperMiddleware::class];
+        return [];
     }
 
     public function getDefaults(): array
     {
+        return [];
+    }
+
+    public function mergeDefaults(array $defaults): array
+    {
+        $mappings   = $defaults['valinor_mappings'] ?? [];
+        $mappings[] = $this->mapping();
+
         return [
-            'valinor_mappings' => [
-                [
-                    'body'           => $this->body,
-                    'query'          => $this->query,
-                    'route'          => $this->route,
-                    'source'         => $this->source,
-                    'output'         => $this->output,
-                    'errorResponder' => $this->errorResponder,
-                    'methods'        => $this->methods,
-                ],
-            ],
+            ...$defaults,
+            'valinor_mappings' => $mappings,
+        ];
+    }
+
+    public function getUniqueMiddleware(): array
+    {
+        return [
+            'sirix.mezzio.valinor.request-mapper' => ValinorRequestMapperMiddleware::class,
+        ];
+    }
+
+    /** @return array<string, null|list<string>|string> */
+    private function mapping(): array
+    {
+        return [
+            'body'           => $this->body,
+            'query'          => $this->query,
+            'route'          => $this->route,
+            'source'         => $this->source,
+            'output'         => $this->output,
+            'errorResponder' => $this->errorResponder,
+            'methods'        => $this->methods,
         ];
     }
 

@@ -127,9 +127,8 @@ attributes of the actual instance, provide `valinor_mappings` explicitly.
 
 ### 2) With `sirix/mezzio-routing-attributes`
 
-If your app uses `sirix/mezzio-routing-attributes` and it scans/collects route attribute modifiers,
-`MapRequest` is discovered as a `RouteAttributeModifierInterface` implementation and
-`ValinorRequestMapperMiddleware` is attached to matching routes automatically.
+If your app uses `sirix/mezzio-routing-attributes ^1.4` and it scans/collects route attribute modifiers,
+`MapRequest` is discovered as an `AggregatingRouteAttributeModifierInterface` implementation. Class- and method-level mappings accumulate in declaration order, while `ValinorRequestMapperMiddleware` is attached once to each matching route.
 
 In this mode you usually do **not** need to register
 `\Sirix\Mezzio\Valinor\Middleware\ValinorRequestMapperMiddleware::class`
