@@ -39,6 +39,9 @@ jobs:
             - name: Validate composer.json
               run: composer validate --strict --no-check-lock
 
+            - name: Generate lock file
+              run: composer update --no-install --no-interaction --prefer-dist --no-plugins --no-scripts
+
             - name: Install dependencies
               run: composer update "mezzio/mezzio-router:${{ matrix.router }}" --with-all-dependencies --no-interaction --prefer-dist --no-plugins --no-scripts
 
@@ -69,6 +72,9 @@ jobs:
 
             - name: Validate composer.json
               run: composer validate --strict --no-check-lock
+
+            - name: Generate lock file
+              run: composer update --no-install --no-interaction --prefer-dist --no-plugins --no-scripts
 
             - name: Install lowest dependencies
               run: composer update 'cuyz/valinor:2.4.0' "mezzio/mezzio-router:${{ matrix.router }}" --prefer-lowest --prefer-stable --with-all-dependencies --no-interaction --prefer-dist --no-plugins --no-scripts
@@ -101,6 +107,9 @@ jobs:
             - name: Validate composer.json
               run: composer validate --strict --no-check-lock
 
+            - name: Generate lock file
+              run: composer update --no-install --no-interaction --prefer-dist --no-plugins --no-scripts
+
             - name: Install dependencies
               run: composer update "mezzio/mezzio-router:^4.1" --with-all-dependencies --no-interaction --prefer-dist --no-plugins --no-scripts
 
@@ -126,6 +135,9 @@ jobs:
 
             - name: Validate composer.json
               run: composer validate --strict
+
+            - name: Generate lock file
+              run: composer update --no-install --no-interaction --prefer-dist --no-plugins --no-scripts
 
             - name: Install root dependencies
               run: composer install --no-interaction --prefer-dist
