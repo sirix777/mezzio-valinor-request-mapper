@@ -18,7 +18,6 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use Sirix\ContainerResolver\ContainerResolver;
 use Sirix\Mezzio\Routing\Attributes\Attribute\Post;
 use Sirix\Mezzio\Routing\Attributes\AttributeRouteProvider;
 use Sirix\Mezzio\Routing\Attributes\Cache\NullRouteRegistrarCache;
@@ -41,16 +40,9 @@ use Sirix\Mezzio\Routing\Attributes\ServiceMiddlewareResolver;
 use Sirix\Mezzio\Valinor\Attribute\MapRequest;
 use Sirix\Mezzio\Valinor\Error\MappingErrorContext;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderInterface;
-use Sirix\Mezzio\Valinor\Error\MappingErrorResponderResolver;
 use Sirix\Mezzio\Valinor\Exception\InvalidMapRequestConfiguration;
-use Sirix\Mezzio\Valinor\Mapping\HandlerTargetResolver;
-use Sirix\Mezzio\Valinor\Mapping\HttpMethodNormalizer;
-use Sirix\Mezzio\Valinor\Mapping\HttpRequestSourceFactory;
-use Sirix\Mezzio\Valinor\Mapping\InputEncodingValidator;
-use Sirix\Mezzio\Valinor\Mapping\MappingPlanResolver;
-use Sirix\Mezzio\Valinor\Mapping\MapRequestOptionsParser;
-use Sirix\Mezzio\Valinor\Mapping\MapRequestResolver;
 use Sirix\Mezzio\Valinor\Middleware\ValinorRequestMapperMiddleware;
+use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\RequestMapperMiddlewareBuilder;
 
 use function is_file;
 use function sys_get_temp_dir;
@@ -198,14 +190,11 @@ final class RoutingAttributesMapRequestIntegrationTest extends TestCase
         $container = new IntegrationContainer([
             $handlerClass => $handler,
         ]);
-        $container->set(ValinorRequestMapperMiddleware::class, new ValinorRequestMapperMiddleware(
+        $container->set(ValinorRequestMapperMiddleware::class, RequestMapperMiddlewareBuilder::build(
             (new MapperBuilder())->allowSuperfluousKeys()->mapper(),
-            new MappingErrorResponderResolver($responder, ContainerResolver::forContext($container, self::class)),
-            new MappingPlanResolver(
-                new MapRequestResolver(new HandlerTargetResolver(), new MapRequestOptionsParser()),
-                new HttpMethodNormalizer(),
-            ),
-            new HttpRequestSourceFactory(new InputEncodingValidator()),
+            $responder,
+            $container,
+            self::class,
         ));
 
         $collector = new IntegrationRouteCollector();

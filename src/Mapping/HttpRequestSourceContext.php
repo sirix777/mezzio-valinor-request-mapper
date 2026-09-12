@@ -30,7 +30,7 @@ final class HttpRequestSourceContext
     public function __construct(
         private readonly ServerRequestInterface $request,
         private readonly array $routeParams,
-        private readonly InputEncodingValidator $inputEncodingValidator,
+        private readonly InputEncodingValidatorInterface $inputEncodingValidator,
     ) {}
 
     /** @param 'body'|'query'|'route'|'source' $source */
@@ -62,8 +62,9 @@ final class HttpRequestSourceContext
             throw RequestInputError::unsupportedParsedBody();
         }
 
-        $this->bodyValues = $parsedBody ?? [];
-        $this->inputEncodingValidator->assertValid($this->bodyValues, 'body');
+        $bodyValues = $parsedBody ?? [];
+        $this->inputEncodingValidator->assertValid($bodyValues, 'body');
+        $this->bodyValues = $bodyValues;
 
         return $this->bodyValues;
     }
@@ -72,8 +73,9 @@ final class HttpRequestSourceContext
     private function queryParameters(): array
     {
         if (null === $this->queryParameters) {
-            $this->queryParameters = $this->request->getQueryParams();
-            $this->inputEncodingValidator->assertValid($this->queryParameters, 'query');
+            $queryParameters = $this->request->getQueryParams();
+            $this->inputEncodingValidator->assertValid($queryParameters, 'query');
+            $this->queryParameters = $queryParameters;
         }
 
         return $this->queryParameters;
@@ -83,8 +85,8 @@ final class HttpRequestSourceContext
     private function routeParameters(): array
     {
         if (null === $this->validatedRouteParams) {
+            $this->inputEncodingValidator->assertValid($this->routeParams, 'route');
             $this->validatedRouteParams = $this->routeParams;
-            $this->inputEncodingValidator->assertValid($this->validatedRouteParams, 'route');
         }
 
         return $this->validatedRouteParams;

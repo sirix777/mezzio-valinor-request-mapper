@@ -1,0 +1,2885 @@
+{
+    "schema": "sirix-mezzio-valinor-compare/1",
+    "created_at": "2026-09-12T15:49:33Z",
+    "baseline": "048b55856c732500d1c0a22da60651488859f42c",
+    "optimized": "6d1419fb599ba4a44a9e5ef59c63e6d069de6f59",
+    "params": {
+        "batches_per_revision": 4,
+        "order": [
+            "048b55856c732500d1c0a22da60651488859f42c",
+            "6d1419fb599ba4a44a9e5ef59c63e6d069de6f59",
+            "6d1419fb599ba4a44a9e5ef59c63e6d069de6f59",
+            "048b55856c732500d1c0a22da60651488859f42c",
+            "048b55856c732500d1c0a22da60651488859f42c",
+            "6d1419fb599ba4a44a9e5ef59c63e6d069de6f59",
+            "6d1419fb599ba4a44a9e5ef59c63e6d069de6f59",
+            "048b55856c732500d1c0a22da60651488859f42c"
+        ],
+        "iterations": 500,
+        "warmup": 100,
+        "samples": 7
+    },
+    "environment": {
+        "php": "8.2.33",
+        "opcache_cli": false
+    },
+    "provenance": {
+        "harness_sha256": "0227e397b19e3b14468c33e2d4106b394c46d36866811b6e004a167b1b769569",
+        "orchestrator_sha256": "2f19c9878b57f0bc59220e7254c8e3bc67b3aa5865cf55b9ee26d09001dbfc9d",
+        "lock_sha256": "e04a55cef397878dafe421bb5bd49b7f26eccef5b744f15613e35252940dc5bc",
+        "lock_source": "source repository composer.lock (untracked, recorded by SHA-256)",
+        "worker": {
+            "revision": "048b55856c732500d1c0a22da60651488859f42c",
+            "harness_sha256": "0227e397b19e3b14468c33e2d4106b394c46d36866811b6e004a167b1b769569",
+            "lock_sha256": "e04a55cef397878dafe421bb5bd49b7f26eccef5b744f15613e35252940dc5bc",
+            "versions": {
+                "php": "8.2.33",
+                "opcache_cli": false,
+                "locked_packages": {
+                    "cuyz/valinor": "2.6.0",
+                    "fig/http-message-util": "1.1.5",
+                    "mezzio/mezzio-router": "4.2.0",
+                    "psr/container": "2.0.2",
+                    "psr/http-factory": "1.1.0",
+                    "psr/http-message": "2.0",
+                    "psr/http-server-handler": "1.0.2",
+                    "psr/http-server-middleware": "1.0.2",
+                    "sirix/container-resolver": "1.0.0",
+                    "sirix/mezzio-routing-contracts": "1.2.2",
+                    "webmozart/assert": "2.4.1"
+                },
+                "locked_packages_dev": {
+                    "bamarni/composer-bin-plugin": "1.9.1",
+                    "laminas/laminas-diactoros": "3.8.0",
+                    "laminas/laminas-escaper": "2.18.0",
+                    "laminas/laminas-httphandlerrunner": "2.13.0",
+                    "laminas/laminas-stratigility": "4.3.1",
+                    "mezzio/mezzio": "3.28.1",
+                    "mezzio/mezzio-template": "3.0.0",
+                    "myclabs/deep-copy": "1.14.0",
+                    "nikic/php-parser": "v5.8.0",
+                    "phar-io/manifest": "2.0.4",
+                    "phar-io/version": "3.2.1",
+                    "phpunit/php-code-coverage": "11.0.12",
+                    "phpunit/php-file-iterator": "5.1.1",
+                    "phpunit/php-invoker": "5.0.1",
+                    "phpunit/php-text-template": "4.0.1",
+                    "phpunit/php-timer": "7.0.1",
+                    "phpunit/phpunit": "11.5.56",
+                    "sebastian/cli-parser": "3.0.2",
+                    "sebastian/code-unit": "3.0.3",
+                    "sebastian/code-unit-reverse-lookup": "4.0.1",
+                    "sebastian/comparator": "6.3.3",
+                    "sebastian/complexity": "4.0.1",
+                    "sebastian/diff": "6.0.2",
+                    "sebastian/environment": "7.2.1",
+                    "sebastian/exporter": "6.3.2",
+                    "sebastian/global-state": "7.0.2",
+                    "sebastian/lines-of-code": "3.0.1",
+                    "sebastian/object-enumerator": "6.0.1",
+                    "sebastian/object-reflector": "4.0.1",
+                    "sebastian/recursion-context": "6.0.3",
+                    "sebastian/type": "5.1.3",
+                    "sebastian/version": "5.0.2",
+                    "sirix/mezzio-routing-attributes": "1.4.2",
+                    "staabm/side-effects-detector": "1.0.5",
+                    "theseer/tokenizer": "1.3.1"
+                }
+            }
+        }
+    },
+    "batches": [
+        {
+            "batch": 1,
+            "label": "baseline",
+            "revision": "048b55856c732500d1c0a22da60651488859f42c",
+            "harness_sha256": "0227e397b19e3b14468c33e2d4106b394c46d36866811b6e004a167b1b769569",
+            "lock_sha256": "e04a55cef397878dafe421bb5bd49b7f26eccef5b744f15613e35252940dc5bc",
+            "result": {
+                "batch": 1,
+                "params": {
+                    "iterations": 500,
+                    "warmup": 100,
+                    "samples": 7
+                },
+                "provenance": {
+                    "revision": "048b55856c732500d1c0a22da60651488859f42c",
+                    "harness_sha256": "0227e397b19e3b14468c33e2d4106b394c46d36866811b6e004a167b1b769569",
+                    "lock_sha256": "e04a55cef397878dafe421bb5bd49b7f26eccef5b744f15613e35252940dc5bc",
+                    "versions": {
+                        "php": "8.2.33",
+                        "opcache_cli": false,
+                        "locked_packages": {
+                            "cuyz/valinor": "2.6.0",
+                            "fig/http-message-util": "1.1.5",
+                            "mezzio/mezzio-router": "4.2.0",
+                            "psr/container": "2.0.2",
+                            "psr/http-factory": "1.1.0",
+                            "psr/http-message": "2.0",
+                            "psr/http-server-handler": "1.0.2",
+                            "psr/http-server-middleware": "1.0.2",
+                            "sirix/container-resolver": "1.0.0",
+                            "sirix/mezzio-routing-contracts": "1.2.2",
+                            "webmozart/assert": "2.4.1"
+                        },
+                        "locked_packages_dev": {
+                            "bamarni/composer-bin-plugin": "1.9.1",
+                            "laminas/laminas-diactoros": "3.8.0",
+                            "laminas/laminas-escaper": "2.18.0",
+                            "laminas/laminas-httphandlerrunner": "2.13.0",
+                            "laminas/laminas-stratigility": "4.3.1",
+                            "mezzio/mezzio": "3.28.1",
+                            "mezzio/mezzio-template": "3.0.0",
+                            "myclabs/deep-copy": "1.14.0",
+                            "nikic/php-parser": "v5.8.0",
+                            "phar-io/manifest": "2.0.4",
+                            "phar-io/version": "3.2.1",
+                            "phpunit/php-code-coverage": "11.0.12",
+                            "phpunit/php-file-iterator": "5.1.1",
+                            "phpunit/php-invoker": "5.0.1",
+                            "phpunit/php-text-template": "4.0.1",
+                            "phpunit/php-timer": "7.0.1",
+                            "phpunit/phpunit": "11.5.56",
+                            "sebastian/cli-parser": "3.0.2",
+                            "sebastian/code-unit": "3.0.3",
+                            "sebastian/code-unit-reverse-lookup": "4.0.1",
+                            "sebastian/comparator": "6.3.3",
+                            "sebastian/complexity": "4.0.1",
+                            "sebastian/diff": "6.0.2",
+                            "sebastian/environment": "7.2.1",
+                            "sebastian/exporter": "6.3.2",
+                            "sebastian/global-state": "7.0.2",
+                            "sebastian/lines-of-code": "3.0.1",
+                            "sebastian/object-enumerator": "6.0.1",
+                            "sebastian/object-reflector": "4.0.1",
+                            "sebastian/recursion-context": "6.0.3",
+                            "sebastian/type": "5.1.3",
+                            "sebastian/version": "5.0.2",
+                            "sirix/mezzio-routing-attributes": "1.4.2",
+                            "staabm/side-effects-detector": "1.0.5",
+                            "theseer/tokenizer": "1.3.1"
+                        }
+                    }
+                },
+                "scenarios": [
+                    {
+                        "name": "No RouteResult passthrough",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 0.504,
+                        "min_us_per_op": 0.484,
+                        "max_us_per_op": 0.514,
+                        "samples_us_per_op": [
+                            0.514,
+                            0.497,
+                            0.504,
+                            0.506,
+                            0.485,
+                            0.484,
+                            0.511
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Reflection via direct handler object",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 8.023,
+                        "min_us_per_op": 7.798,
+                        "max_us_per_op": 8.601,
+                        "samples_us_per_op": [
+                            8.023,
+                            7.834,
+                            8.601,
+                            7.879,
+                            8.175,
+                            8.198,
+                            7.798
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Reflection via lazy FQCN handler",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 8.149,
+                        "min_us_per_op": 7.839,
+                        "max_us_per_op": 8.451,
+                        "samples_us_per_op": [
+                            7.839,
+                            8.451,
+                            8.149,
+                            8.174,
+                            8.35,
+                            7.984,
+                            7.914
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Route options single DTO",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 7.718,
+                        "min_us_per_op": 7.531,
+                        "max_us_per_op": 8.798,
+                        "samples_us_per_op": [
+                            8.798,
+                            7.718,
+                            7.724,
+                            8.14,
+                            7.67,
+                            7.605,
+                            7.531
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Three operations with different outputs",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 22.964,
+                        "min_us_per_op": 22.669,
+                        "max_us_per_op": 23.228,
+                        "samples_us_per_op": [
+                            22.775,
+                            23.228,
+                            22.669,
+                            23.033,
+                            23.114,
+                            22.727,
+                            22.964
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Repeated calls reusing middleware and builder",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 7.866,
+                        "min_us_per_op": 7.562,
+                        "max_us_per_op": 8.525,
+                        "samples_us_per_op": [
+                            8.525,
+                            7.866,
+                            7.901,
+                            7.955,
+                            7.841,
+                            7.714,
+                            7.562
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "New middleware/resolvers/builder per iteration with file cache",
+                        "lifecycle": "new-each-iteration",
+                        "median_us_per_op": 68.759,
+                        "min_us_per_op": 67.495,
+                        "max_us_per_op": 69.456,
+                        "samples_us_per_op": [
+                            67.495,
+                            68.046,
+                            69.404,
+                            69.456,
+                            68.759,
+                            67.699,
+                            69.049
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large flat body, one operation",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1375.384,
+                        "min_us_per_op": 1367.254,
+                        "max_us_per_op": 1404.301,
+                        "samples_us_per_op": [
+                            1404.301,
+                            1403.691,
+                            1375.399,
+                            1375.384,
+                            1371.594,
+                            1367.254,
+                            1368.611
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large flat body, three operations",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 4004.356,
+                        "min_us_per_op": 3814.354,
+                        "max_us_per_op": 4057.067,
+                        "samples_us_per_op": [
+                            4006.081,
+                            3902.538,
+                            4033.281,
+                            3814.354,
+                            4004.356,
+                            4057.067,
+                            3978.751
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large nested body, one operation",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 20201,
+                            "strings": 20001,
+                            "approximate_payload_bytes": 507704
+                        },
+                        "median_us_per_op": 2505.368,
+                        "min_us_per_op": 2347.527,
+                        "max_us_per_op": 2528.567,
+                        "samples_us_per_op": [
+                            2505.368,
+                            2497.77,
+                            2528.567,
+                            2527.481,
+                            2517.963,
+                            2443.792,
+                            2347.527
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large nested body, three operations",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 20201,
+                            "strings": 20001,
+                            "approximate_payload_bytes": 507704
+                        },
+                        "median_us_per_op": 7338.637,
+                        "min_us_per_op": 7116.436,
+                        "max_us_per_op": 7510.216,
+                        "samples_us_per_op": [
+                            7438.497,
+                            7230.332,
+                            7333.439,
+                            7510.216,
+                            7506.535,
+                            7338.637,
+                            7116.436
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large body plus combined source",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 2597.403,
+                        "min_us_per_op": 2548.504,
+                        "max_us_per_op": 2748.873,
+                        "samples_us_per_op": [
+                            2548.816,
+                            2667.875,
+                            2548.504,
+                            2573.924,
+                            2597.403,
+                            2598.399,
+                            2748.873
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Input source context, body only",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1237.469,
+                        "min_us_per_op": 1139.773,
+                        "max_us_per_op": 1246.478,
+                        "samples_us_per_op": [
+                            1139.773,
+                            1143.21,
+                            1240.74,
+                            1237.469,
+                            1236.094,
+                            1239.65,
+                            1246.478
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Input source context, combined source",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1155.596,
+                        "min_us_per_op": 1133.864,
+                        "max_us_per_op": 1263.585,
+                        "samples_us_per_op": [
+                            1262.043,
+                            1263.585,
+                            1133.864,
+                            1195.688,
+                            1149.787,
+                            1155.596,
+                            1148.448
+                        ],
+                        "peak_memory_bytes": 4194304
+                    }
+                ]
+            }
+        },
+        {
+            "batch": 2,
+            "label": "optimized",
+            "revision": "6d1419fb599ba4a44a9e5ef59c63e6d069de6f59",
+            "harness_sha256": "0227e397b19e3b14468c33e2d4106b394c46d36866811b6e004a167b1b769569",
+            "lock_sha256": "e04a55cef397878dafe421bb5bd49b7f26eccef5b744f15613e35252940dc5bc",
+            "result": {
+                "batch": 2,
+                "params": {
+                    "iterations": 500,
+                    "warmup": 100,
+                    "samples": 7
+                },
+                "provenance": {
+                    "revision": "6d1419fb599ba4a44a9e5ef59c63e6d069de6f59",
+                    "harness_sha256": "0227e397b19e3b14468c33e2d4106b394c46d36866811b6e004a167b1b769569",
+                    "lock_sha256": "e04a55cef397878dafe421bb5bd49b7f26eccef5b744f15613e35252940dc5bc",
+                    "versions": {
+                        "php": "8.2.33",
+                        "opcache_cli": false,
+                        "locked_packages": {
+                            "cuyz/valinor": "2.6.0",
+                            "fig/http-message-util": "1.1.5",
+                            "mezzio/mezzio-router": "4.2.0",
+                            "psr/container": "2.0.2",
+                            "psr/http-factory": "1.1.0",
+                            "psr/http-message": "2.0",
+                            "psr/http-server-handler": "1.0.2",
+                            "psr/http-server-middleware": "1.0.2",
+                            "sirix/container-resolver": "1.0.0",
+                            "sirix/mezzio-routing-contracts": "1.2.2",
+                            "webmozart/assert": "2.4.1"
+                        },
+                        "locked_packages_dev": {
+                            "bamarni/composer-bin-plugin": "1.9.1",
+                            "laminas/laminas-diactoros": "3.8.0",
+                            "laminas/laminas-escaper": "2.18.0",
+                            "laminas/laminas-httphandlerrunner": "2.13.0",
+                            "laminas/laminas-stratigility": "4.3.1",
+                            "mezzio/mezzio": "3.28.1",
+                            "mezzio/mezzio-template": "3.0.0",
+                            "myclabs/deep-copy": "1.14.0",
+                            "nikic/php-parser": "v5.8.0",
+                            "phar-io/manifest": "2.0.4",
+                            "phar-io/version": "3.2.1",
+                            "phpunit/php-code-coverage": "11.0.12",
+                            "phpunit/php-file-iterator": "5.1.1",
+                            "phpunit/php-invoker": "5.0.1",
+                            "phpunit/php-text-template": "4.0.1",
+                            "phpunit/php-timer": "7.0.1",
+                            "phpunit/phpunit": "11.5.56",
+                            "sebastian/cli-parser": "3.0.2",
+                            "sebastian/code-unit": "3.0.3",
+                            "sebastian/code-unit-reverse-lookup": "4.0.1",
+                            "sebastian/comparator": "6.3.3",
+                            "sebastian/complexity": "4.0.1",
+                            "sebastian/diff": "6.0.2",
+                            "sebastian/environment": "7.2.1",
+                            "sebastian/exporter": "6.3.2",
+                            "sebastian/global-state": "7.0.2",
+                            "sebastian/lines-of-code": "3.0.1",
+                            "sebastian/object-enumerator": "6.0.1",
+                            "sebastian/object-reflector": "4.0.1",
+                            "sebastian/recursion-context": "6.0.3",
+                            "sebastian/type": "5.1.3",
+                            "sebastian/version": "5.0.2",
+                            "sirix/mezzio-routing-attributes": "1.4.2",
+                            "staabm/side-effects-detector": "1.0.5",
+                            "theseer/tokenizer": "1.3.1"
+                        }
+                    }
+                },
+                "scenarios": [
+                    {
+                        "name": "No RouteResult passthrough",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 0.474,
+                        "min_us_per_op": 0.459,
+                        "max_us_per_op": 0.514,
+                        "samples_us_per_op": [
+                            0.459,
+                            0.47,
+                            0.474,
+                            0.466,
+                            0.484,
+                            0.514,
+                            0.506
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Reflection via direct handler object",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 7.634,
+                        "min_us_per_op": 7.508,
+                        "max_us_per_op": 7.685,
+                        "samples_us_per_op": [
+                            7.599,
+                            7.602,
+                            7.634,
+                            7.635,
+                            7.667,
+                            7.685,
+                            7.508
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Reflection via lazy FQCN handler",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 8.228,
+                        "min_us_per_op": 7.77,
+                        "max_us_per_op": 8.508,
+                        "samples_us_per_op": [
+                            7.809,
+                            7.77,
+                            8.094,
+                            8.508,
+                            8.228,
+                            8.242,
+                            8.288
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Route options single DTO",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 7.73,
+                        "min_us_per_op": 7.584,
+                        "max_us_per_op": 7.842,
+                        "samples_us_per_op": [
+                            7.73,
+                            7.842,
+                            7.776,
+                            7.584,
+                            7.734,
+                            7.708,
+                            7.676
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Three operations with different outputs",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 25.042,
+                        "min_us_per_op": 23.962,
+                        "max_us_per_op": 26.101,
+                        "samples_us_per_op": [
+                            26.101,
+                            23.962,
+                            24.666,
+                            25.235,
+                            25.723,
+                            24.923,
+                            25.042
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Repeated calls reusing middleware and builder",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 8.595,
+                        "min_us_per_op": 8.346,
+                        "max_us_per_op": 8.755,
+                        "samples_us_per_op": [
+                            8.346,
+                            8.568,
+                            8.755,
+                            8.714,
+                            8.606,
+                            8.595,
+                            8.579
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "New middleware/resolvers/builder per iteration with file cache",
+                        "lifecycle": "new-each-iteration",
+                        "median_us_per_op": 68.57,
+                        "min_us_per_op": 66.431,
+                        "max_us_per_op": 72.965,
+                        "samples_us_per_op": [
+                            66.431,
+                            68.285,
+                            66.788,
+                            69.773,
+                            70.521,
+                            72.965,
+                            68.57
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large flat body, one operation",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1326.641,
+                        "min_us_per_op": 1307.204,
+                        "max_us_per_op": 1355.089,
+                        "samples_us_per_op": [
+                            1347.691,
+                            1307.204,
+                            1316.694,
+                            1330.875,
+                            1312.297,
+                            1326.641,
+                            1355.089
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large flat body, three operations",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1646.624,
+                        "min_us_per_op": 1584.926,
+                        "max_us_per_op": 1705.722,
+                        "samples_us_per_op": [
+                            1637.737,
+                            1634.476,
+                            1646.624,
+                            1675.559,
+                            1703.631,
+                            1705.722,
+                            1584.926
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large nested body, one operation",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 20201,
+                            "strings": 20001,
+                            "approximate_payload_bytes": 507704
+                        },
+                        "median_us_per_op": 2309.567,
+                        "min_us_per_op": 2283.362,
+                        "max_us_per_op": 2464.91,
+                        "samples_us_per_op": [
+                            2460.367,
+                            2355.401,
+                            2309.567,
+                            2290.818,
+                            2286.432,
+                            2283.362,
+                            2464.91
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large nested body, three operations",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 20201,
+                            "strings": 20001,
+                            "approximate_payload_bytes": 507704
+                        },
+                        "median_us_per_op": 2328.221,
+                        "min_us_per_op": 2301.908,
+                        "max_us_per_op": 2487.156,
+                        "samples_us_per_op": [
+                            2324.876,
+                            2487.156,
+                            2448.939,
+                            2301.908,
+                            2328.221,
+                            2469.739,
+                            2304.033
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large body plus combined source",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1393.568,
+                        "min_us_per_op": 1381.597,
+                        "max_us_per_op": 1411.97,
+                        "samples_us_per_op": [
+                            1411.97,
+                            1385.477,
+                            1384.258,
+                            1399.25,
+                            1381.597,
+                            1393.568,
+                            1393.852
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Input source context, body only",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1095.297,
+                        "min_us_per_op": 1090.677,
+                        "max_us_per_op": 1104.349,
+                        "samples_us_per_op": [
+                            1104.349,
+                            1093.226,
+                            1093.707,
+                            1090.677,
+                            1099.189,
+                            1095.396,
+                            1095.297
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Input source context, combined source",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1182.156,
+                        "min_us_per_op": 1172.31,
+                        "max_us_per_op": 1185.693,
+                        "samples_us_per_op": [
+                            1172.31,
+                            1182.156,
+                            1182.623,
+                            1182.888,
+                            1180.712,
+                            1185.693,
+                            1179.909
+                        ],
+                        "peak_memory_bytes": 4194304
+                    }
+                ]
+            }
+        },
+        {
+            "batch": 3,
+            "label": "optimized",
+            "revision": "6d1419fb599ba4a44a9e5ef59c63e6d069de6f59",
+            "harness_sha256": "0227e397b19e3b14468c33e2d4106b394c46d36866811b6e004a167b1b769569",
+            "lock_sha256": "e04a55cef397878dafe421bb5bd49b7f26eccef5b744f15613e35252940dc5bc",
+            "result": {
+                "batch": 3,
+                "params": {
+                    "iterations": 500,
+                    "warmup": 100,
+                    "samples": 7
+                },
+                "provenance": {
+                    "revision": "6d1419fb599ba4a44a9e5ef59c63e6d069de6f59",
+                    "harness_sha256": "0227e397b19e3b14468c33e2d4106b394c46d36866811b6e004a167b1b769569",
+                    "lock_sha256": "e04a55cef397878dafe421bb5bd49b7f26eccef5b744f15613e35252940dc5bc",
+                    "versions": {
+                        "php": "8.2.33",
+                        "opcache_cli": false,
+                        "locked_packages": {
+                            "cuyz/valinor": "2.6.0",
+                            "fig/http-message-util": "1.1.5",
+                            "mezzio/mezzio-router": "4.2.0",
+                            "psr/container": "2.0.2",
+                            "psr/http-factory": "1.1.0",
+                            "psr/http-message": "2.0",
+                            "psr/http-server-handler": "1.0.2",
+                            "psr/http-server-middleware": "1.0.2",
+                            "sirix/container-resolver": "1.0.0",
+                            "sirix/mezzio-routing-contracts": "1.2.2",
+                            "webmozart/assert": "2.4.1"
+                        },
+                        "locked_packages_dev": {
+                            "bamarni/composer-bin-plugin": "1.9.1",
+                            "laminas/laminas-diactoros": "3.8.0",
+                            "laminas/laminas-escaper": "2.18.0",
+                            "laminas/laminas-httphandlerrunner": "2.13.0",
+                            "laminas/laminas-stratigility": "4.3.1",
+                            "mezzio/mezzio": "3.28.1",
+                            "mezzio/mezzio-template": "3.0.0",
+                            "myclabs/deep-copy": "1.14.0",
+                            "nikic/php-parser": "v5.8.0",
+                            "phar-io/manifest": "2.0.4",
+                            "phar-io/version": "3.2.1",
+                            "phpunit/php-code-coverage": "11.0.12",
+                            "phpunit/php-file-iterator": "5.1.1",
+                            "phpunit/php-invoker": "5.0.1",
+                            "phpunit/php-text-template": "4.0.1",
+                            "phpunit/php-timer": "7.0.1",
+                            "phpunit/phpunit": "11.5.56",
+                            "sebastian/cli-parser": "3.0.2",
+                            "sebastian/code-unit": "3.0.3",
+                            "sebastian/code-unit-reverse-lookup": "4.0.1",
+                            "sebastian/comparator": "6.3.3",
+                            "sebastian/complexity": "4.0.1",
+                            "sebastian/diff": "6.0.2",
+                            "sebastian/environment": "7.2.1",
+                            "sebastian/exporter": "6.3.2",
+                            "sebastian/global-state": "7.0.2",
+                            "sebastian/lines-of-code": "3.0.1",
+                            "sebastian/object-enumerator": "6.0.1",
+                            "sebastian/object-reflector": "4.0.1",
+                            "sebastian/recursion-context": "6.0.3",
+                            "sebastian/type": "5.1.3",
+                            "sebastian/version": "5.0.2",
+                            "sirix/mezzio-routing-attributes": "1.4.2",
+                            "staabm/side-effects-detector": "1.0.5",
+                            "theseer/tokenizer": "1.3.1"
+                        }
+                    }
+                },
+                "scenarios": [
+                    {
+                        "name": "No RouteResult passthrough",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 0.496,
+                        "min_us_per_op": 0.478,
+                        "max_us_per_op": 0.51,
+                        "samples_us_per_op": [
+                            0.49,
+                            0.48,
+                            0.478,
+                            0.499,
+                            0.496,
+                            0.5,
+                            0.51
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Reflection via direct handler object",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 7.586,
+                        "min_us_per_op": 7.543,
+                        "max_us_per_op": 8.18,
+                        "samples_us_per_op": [
+                            8.18,
+                            7.992,
+                            7.554,
+                            7.586,
+                            7.579,
+                            7.633,
+                            7.543
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Reflection via lazy FQCN handler",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 7.793,
+                        "min_us_per_op": 7.69,
+                        "max_us_per_op": 8.392,
+                        "samples_us_per_op": [
+                            7.854,
+                            7.793,
+                            8.392,
+                            7.706,
+                            7.69,
+                            7.853,
+                            7.734
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Route options single DTO",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 7.729,
+                        "min_us_per_op": 7.492,
+                        "max_us_per_op": 8.154,
+                        "samples_us_per_op": [
+                            8.154,
+                            7.492,
+                            7.542,
+                            7.729,
+                            7.905,
+                            7.771,
+                            7.633
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Three operations with different outputs",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 24.132,
+                        "min_us_per_op": 23.774,
+                        "max_us_per_op": 24.947,
+                        "samples_us_per_op": [
+                            23.774,
+                            24.283,
+                            23.851,
+                            24.947,
+                            24.037,
+                            24.132,
+                            24.252
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Repeated calls reusing middleware and builder",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 7.903,
+                        "min_us_per_op": 7.606,
+                        "max_us_per_op": 8.055,
+                        "samples_us_per_op": [
+                            7.606,
+                            7.66,
+                            7.903,
+                            7.977,
+                            7.766,
+                            8.019,
+                            8.055
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "New middleware/resolvers/builder per iteration with file cache",
+                        "lifecycle": "new-each-iteration",
+                        "median_us_per_op": 66.069,
+                        "min_us_per_op": 65.29,
+                        "max_us_per_op": 67.835,
+                        "samples_us_per_op": [
+                            67.037,
+                            66.069,
+                            66.023,
+                            67.616,
+                            66.063,
+                            65.29,
+                            67.835
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large flat body, one operation",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1322.513,
+                        "min_us_per_op": 1249.35,
+                        "max_us_per_op": 1383.139,
+                        "samples_us_per_op": [
+                            1338.221,
+                            1303.074,
+                            1324.15,
+                            1249.35,
+                            1274.211,
+                            1322.513,
+                            1383.139
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large flat body, three operations",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1622.017,
+                        "min_us_per_op": 1541.586,
+                        "max_us_per_op": 1636.092,
+                        "samples_us_per_op": [
+                            1612.211,
+                            1555.694,
+                            1541.586,
+                            1626.758,
+                            1632.483,
+                            1636.092,
+                            1622.017
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large nested body, one operation",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 20201,
+                            "strings": 20001,
+                            "approximate_payload_bytes": 507704
+                        },
+                        "median_us_per_op": 2425.959,
+                        "min_us_per_op": 2322.171,
+                        "max_us_per_op": 2550.106,
+                        "samples_us_per_op": [
+                            2401.079,
+                            2322.171,
+                            2444.464,
+                            2499.876,
+                            2422.733,
+                            2425.959,
+                            2550.106
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large nested body, three operations",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 20201,
+                            "strings": 20001,
+                            "approximate_payload_bytes": 507704
+                        },
+                        "median_us_per_op": 2353.784,
+                        "min_us_per_op": 2343.818,
+                        "max_us_per_op": 2518.022,
+                        "samples_us_per_op": [
+                            2363.887,
+                            2353.668,
+                            2343.953,
+                            2353.784,
+                            2518.022,
+                            2500.66,
+                            2343.818
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large body plus combined source",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1430.135,
+                        "min_us_per_op": 1417.7,
+                        "max_us_per_op": 1530.137,
+                        "samples_us_per_op": [
+                            1418.908,
+                            1420.074,
+                            1481.202,
+                            1530.137,
+                            1514.624,
+                            1430.135,
+                            1417.7
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Input source context, body only",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1123.15,
+                        "min_us_per_op": 1116.726,
+                        "max_us_per_op": 1211.824,
+                        "samples_us_per_op": [
+                            1211.824,
+                            1116.726,
+                            1119.226,
+                            1118.708,
+                            1123.15,
+                            1127.185,
+                            1124.576
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Input source context, combined source",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1126.825,
+                        "min_us_per_op": 1116.243,
+                        "max_us_per_op": 1208.236,
+                        "samples_us_per_op": [
+                            1137.934,
+                            1208.236,
+                            1153.345,
+                            1116.243,
+                            1126.825,
+                            1122.008,
+                            1119.676
+                        ],
+                        "peak_memory_bytes": 4194304
+                    }
+                ]
+            }
+        },
+        {
+            "batch": 4,
+            "label": "baseline",
+            "revision": "048b55856c732500d1c0a22da60651488859f42c",
+            "harness_sha256": "0227e397b19e3b14468c33e2d4106b394c46d36866811b6e004a167b1b769569",
+            "lock_sha256": "e04a55cef397878dafe421bb5bd49b7f26eccef5b744f15613e35252940dc5bc",
+            "result": {
+                "batch": 4,
+                "params": {
+                    "iterations": 500,
+                    "warmup": 100,
+                    "samples": 7
+                },
+                "provenance": {
+                    "revision": "048b55856c732500d1c0a22da60651488859f42c",
+                    "harness_sha256": "0227e397b19e3b14468c33e2d4106b394c46d36866811b6e004a167b1b769569",
+                    "lock_sha256": "e04a55cef397878dafe421bb5bd49b7f26eccef5b744f15613e35252940dc5bc",
+                    "versions": {
+                        "php": "8.2.33",
+                        "opcache_cli": false,
+                        "locked_packages": {
+                            "cuyz/valinor": "2.6.0",
+                            "fig/http-message-util": "1.1.5",
+                            "mezzio/mezzio-router": "4.2.0",
+                            "psr/container": "2.0.2",
+                            "psr/http-factory": "1.1.0",
+                            "psr/http-message": "2.0",
+                            "psr/http-server-handler": "1.0.2",
+                            "psr/http-server-middleware": "1.0.2",
+                            "sirix/container-resolver": "1.0.0",
+                            "sirix/mezzio-routing-contracts": "1.2.2",
+                            "webmozart/assert": "2.4.1"
+                        },
+                        "locked_packages_dev": {
+                            "bamarni/composer-bin-plugin": "1.9.1",
+                            "laminas/laminas-diactoros": "3.8.0",
+                            "laminas/laminas-escaper": "2.18.0",
+                            "laminas/laminas-httphandlerrunner": "2.13.0",
+                            "laminas/laminas-stratigility": "4.3.1",
+                            "mezzio/mezzio": "3.28.1",
+                            "mezzio/mezzio-template": "3.0.0",
+                            "myclabs/deep-copy": "1.14.0",
+                            "nikic/php-parser": "v5.8.0",
+                            "phar-io/manifest": "2.0.4",
+                            "phar-io/version": "3.2.1",
+                            "phpunit/php-code-coverage": "11.0.12",
+                            "phpunit/php-file-iterator": "5.1.1",
+                            "phpunit/php-invoker": "5.0.1",
+                            "phpunit/php-text-template": "4.0.1",
+                            "phpunit/php-timer": "7.0.1",
+                            "phpunit/phpunit": "11.5.56",
+                            "sebastian/cli-parser": "3.0.2",
+                            "sebastian/code-unit": "3.0.3",
+                            "sebastian/code-unit-reverse-lookup": "4.0.1",
+                            "sebastian/comparator": "6.3.3",
+                            "sebastian/complexity": "4.0.1",
+                            "sebastian/diff": "6.0.2",
+                            "sebastian/environment": "7.2.1",
+                            "sebastian/exporter": "6.3.2",
+                            "sebastian/global-state": "7.0.2",
+                            "sebastian/lines-of-code": "3.0.1",
+                            "sebastian/object-enumerator": "6.0.1",
+                            "sebastian/object-reflector": "4.0.1",
+                            "sebastian/recursion-context": "6.0.3",
+                            "sebastian/type": "5.1.3",
+                            "sebastian/version": "5.0.2",
+                            "sirix/mezzio-routing-attributes": "1.4.2",
+                            "staabm/side-effects-detector": "1.0.5",
+                            "theseer/tokenizer": "1.3.1"
+                        }
+                    }
+                },
+                "scenarios": [
+                    {
+                        "name": "No RouteResult passthrough",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 0.464,
+                        "min_us_per_op": 0.454,
+                        "max_us_per_op": 0.938,
+                        "samples_us_per_op": [
+                            0.938,
+                            0.464,
+                            0.454,
+                            0.464,
+                            0.485,
+                            0.47,
+                            0.454
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Reflection via direct handler object",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 7.984,
+                        "min_us_per_op": 7.678,
+                        "max_us_per_op": 8.179,
+                        "samples_us_per_op": [
+                            7.678,
+                            8.179,
+                            7.939,
+                            8.082,
+                            7.959,
+                            7.984,
+                            8.123
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Reflection via lazy FQCN handler",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 7.519,
+                        "min_us_per_op": 7.415,
+                        "max_us_per_op": 8.049,
+                        "samples_us_per_op": [
+                            8.049,
+                            7.519,
+                            7.635,
+                            7.47,
+                            7.415,
+                            7.553,
+                            7.481
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Route options single DTO",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 7.726,
+                        "min_us_per_op": 7.535,
+                        "max_us_per_op": 8.172,
+                        "samples_us_per_op": [
+                            8.172,
+                            7.931,
+                            7.937,
+                            7.726,
+                            7.567,
+                            7.626,
+                            7.535
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Three operations with different outputs",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 24.878,
+                        "min_us_per_op": 24.679,
+                        "max_us_per_op": 25.056,
+                        "samples_us_per_op": [
+                            24.679,
+                            24.863,
+                            24.878,
+                            24.96,
+                            24.979,
+                            24.723,
+                            25.056
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Repeated calls reusing middleware and builder",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 8.078,
+                        "min_us_per_op": 7.899,
+                        "max_us_per_op": 8.215,
+                        "samples_us_per_op": [
+                            7.899,
+                            8.06,
+                            8.104,
+                            8.019,
+                            8.215,
+                            8.176,
+                            8.078
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "New middleware/resolvers/builder per iteration with file cache",
+                        "lifecycle": "new-each-iteration",
+                        "median_us_per_op": 69.792,
+                        "min_us_per_op": 66.467,
+                        "max_us_per_op": 71.596,
+                        "samples_us_per_op": [
+                            66.467,
+                            69.824,
+                            69.792,
+                            69.796,
+                            68.944,
+                            69.656,
+                            71.596
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large flat body, one operation",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1278.117,
+                        "min_us_per_op": 1271.811,
+                        "max_us_per_op": 1316.437,
+                        "samples_us_per_op": [
+                            1278.117,
+                            1272.786,
+                            1316.437,
+                            1316.265,
+                            1272.065,
+                            1271.811,
+                            1312.034
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large flat body, three operations",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 3989.841,
+                        "min_us_per_op": 3842.59,
+                        "max_us_per_op": 4124.119,
+                        "samples_us_per_op": [
+                            4113.286,
+                            3863.893,
+                            3844.466,
+                            3842.59,
+                            3989.841,
+                            4124.119,
+                            4021.771
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large nested body, one operation",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 20201,
+                            "strings": 20001,
+                            "approximate_payload_bytes": 507704
+                        },
+                        "median_us_per_op": 2339.12,
+                        "min_us_per_op": 2331.782,
+                        "max_us_per_op": 2527.902,
+                        "samples_us_per_op": [
+                            2331.782,
+                            2335.557,
+                            2364.782,
+                            2470.85,
+                            2337.567,
+                            2339.12,
+                            2527.902
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large nested body, three operations",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 20201,
+                            "strings": 20001,
+                            "approximate_payload_bytes": 507704
+                        },
+                        "median_us_per_op": 7300.262,
+                        "min_us_per_op": 7003.048,
+                        "max_us_per_op": 7511.623,
+                        "samples_us_per_op": [
+                            7090.423,
+                            7040.717,
+                            7003.048,
+                            7300.262,
+                            7459.971,
+                            7510.712,
+                            7511.623
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large body plus combined source",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 2738.221,
+                        "min_us_per_op": 2681.071,
+                        "max_us_per_op": 2812.588,
+                        "samples_us_per_op": [
+                            2738.221,
+                            2692.261,
+                            2812.588,
+                            2722.175,
+                            2800.495,
+                            2681.071,
+                            2753.796
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Input source context, body only",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1115.503,
+                        "min_us_per_op": 1104.039,
+                        "max_us_per_op": 1202.782,
+                        "samples_us_per_op": [
+                            1189.367,
+                            1112.972,
+                            1113.594,
+                            1115.503,
+                            1202.782,
+                            1104.039,
+                            1150.979
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Input source context, combined source",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1197.255,
+                        "min_us_per_op": 1106.118,
+                        "max_us_per_op": 1202.475,
+                        "samples_us_per_op": [
+                            1106.118,
+                            1111.64,
+                            1199.976,
+                            1200.203,
+                            1197.255,
+                            1196.711,
+                            1202.475
+                        ],
+                        "peak_memory_bytes": 4194304
+                    }
+                ]
+            }
+        },
+        {
+            "batch": 5,
+            "label": "baseline",
+            "revision": "048b55856c732500d1c0a22da60651488859f42c",
+            "harness_sha256": "0227e397b19e3b14468c33e2d4106b394c46d36866811b6e004a167b1b769569",
+            "lock_sha256": "e04a55cef397878dafe421bb5bd49b7f26eccef5b744f15613e35252940dc5bc",
+            "result": {
+                "batch": 5,
+                "params": {
+                    "iterations": 500,
+                    "warmup": 100,
+                    "samples": 7
+                },
+                "provenance": {
+                    "revision": "048b55856c732500d1c0a22da60651488859f42c",
+                    "harness_sha256": "0227e397b19e3b14468c33e2d4106b394c46d36866811b6e004a167b1b769569",
+                    "lock_sha256": "e04a55cef397878dafe421bb5bd49b7f26eccef5b744f15613e35252940dc5bc",
+                    "versions": {
+                        "php": "8.2.33",
+                        "opcache_cli": false,
+                        "locked_packages": {
+                            "cuyz/valinor": "2.6.0",
+                            "fig/http-message-util": "1.1.5",
+                            "mezzio/mezzio-router": "4.2.0",
+                            "psr/container": "2.0.2",
+                            "psr/http-factory": "1.1.0",
+                            "psr/http-message": "2.0",
+                            "psr/http-server-handler": "1.0.2",
+                            "psr/http-server-middleware": "1.0.2",
+                            "sirix/container-resolver": "1.0.0",
+                            "sirix/mezzio-routing-contracts": "1.2.2",
+                            "webmozart/assert": "2.4.1"
+                        },
+                        "locked_packages_dev": {
+                            "bamarni/composer-bin-plugin": "1.9.1",
+                            "laminas/laminas-diactoros": "3.8.0",
+                            "laminas/laminas-escaper": "2.18.0",
+                            "laminas/laminas-httphandlerrunner": "2.13.0",
+                            "laminas/laminas-stratigility": "4.3.1",
+                            "mezzio/mezzio": "3.28.1",
+                            "mezzio/mezzio-template": "3.0.0",
+                            "myclabs/deep-copy": "1.14.0",
+                            "nikic/php-parser": "v5.8.0",
+                            "phar-io/manifest": "2.0.4",
+                            "phar-io/version": "3.2.1",
+                            "phpunit/php-code-coverage": "11.0.12",
+                            "phpunit/php-file-iterator": "5.1.1",
+                            "phpunit/php-invoker": "5.0.1",
+                            "phpunit/php-text-template": "4.0.1",
+                            "phpunit/php-timer": "7.0.1",
+                            "phpunit/phpunit": "11.5.56",
+                            "sebastian/cli-parser": "3.0.2",
+                            "sebastian/code-unit": "3.0.3",
+                            "sebastian/code-unit-reverse-lookup": "4.0.1",
+                            "sebastian/comparator": "6.3.3",
+                            "sebastian/complexity": "4.0.1",
+                            "sebastian/diff": "6.0.2",
+                            "sebastian/environment": "7.2.1",
+                            "sebastian/exporter": "6.3.2",
+                            "sebastian/global-state": "7.0.2",
+                            "sebastian/lines-of-code": "3.0.1",
+                            "sebastian/object-enumerator": "6.0.1",
+                            "sebastian/object-reflector": "4.0.1",
+                            "sebastian/recursion-context": "6.0.3",
+                            "sebastian/type": "5.1.3",
+                            "sebastian/version": "5.0.2",
+                            "sirix/mezzio-routing-attributes": "1.4.2",
+                            "staabm/side-effects-detector": "1.0.5",
+                            "theseer/tokenizer": "1.3.1"
+                        }
+                    }
+                },
+                "scenarios": [
+                    {
+                        "name": "No RouteResult passthrough",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 0.469,
+                        "min_us_per_op": 0.456,
+                        "max_us_per_op": 0.499,
+                        "samples_us_per_op": [
+                            0.469,
+                            0.456,
+                            0.468,
+                            0.466,
+                            0.473,
+                            0.499,
+                            0.476
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Reflection via direct handler object",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 8.097,
+                        "min_us_per_op": 7.848,
+                        "max_us_per_op": 8.26,
+                        "samples_us_per_op": [
+                            7.936,
+                            8.122,
+                            8.171,
+                            8.097,
+                            7.848,
+                            7.9,
+                            8.26
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Reflection via lazy FQCN handler",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 7.978,
+                        "min_us_per_op": 7.918,
+                        "max_us_per_op": 8.089,
+                        "samples_us_per_op": [
+                            8.07,
+                            8.089,
+                            7.978,
+                            7.984,
+                            7.954,
+                            7.918,
+                            7.93
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Route options single DTO",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 8.126,
+                        "min_us_per_op": 7.902,
+                        "max_us_per_op": 9.016,
+                        "samples_us_per_op": [
+                            7.902,
+                            9.016,
+                            8.112,
+                            8.434,
+                            8.126,
+                            8.09,
+                            8.234
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Three operations with different outputs",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 23.629,
+                        "min_us_per_op": 23.071,
+                        "max_us_per_op": 24.788,
+                        "samples_us_per_op": [
+                            23.319,
+                            24.788,
+                            24.067,
+                            24.096,
+                            23.629,
+                            23.071,
+                            23.628
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Repeated calls reusing middleware and builder",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 8.064,
+                        "min_us_per_op": 7.786,
+                        "max_us_per_op": 8.186,
+                        "samples_us_per_op": [
+                            7.786,
+                            8.023,
+                            7.969,
+                            8.064,
+                            8.091,
+                            8.065,
+                            8.186
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "New middleware/resolvers/builder per iteration with file cache",
+                        "lifecycle": "new-each-iteration",
+                        "median_us_per_op": 66.256,
+                        "min_us_per_op": 62.235,
+                        "max_us_per_op": 67.348,
+                        "samples_us_per_op": [
+                            62.235,
+                            62.351,
+                            66.932,
+                            63.514,
+                            66.256,
+                            67.348,
+                            66.992
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large flat body, one operation",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1338.912,
+                        "min_us_per_op": 1269.771,
+                        "max_us_per_op": 1414.044,
+                        "samples_us_per_op": [
+                            1269.771,
+                            1293.184,
+                            1411.492,
+                            1391.173,
+                            1414.044,
+                            1302.082,
+                            1338.912
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large flat body, three operations",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 3914.308,
+                        "min_us_per_op": 3786.19,
+                        "max_us_per_op": 4108.762,
+                        "samples_us_per_op": [
+                            4061.489,
+                            3786.19,
+                            3869.248,
+                            3834.872,
+                            3914.308,
+                            3989.957,
+                            4108.762
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large nested body, one operation",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 20201,
+                            "strings": 20001,
+                            "approximate_payload_bytes": 507704
+                        },
+                        "median_us_per_op": 2309.023,
+                        "min_us_per_op": 2278.699,
+                        "max_us_per_op": 2378.605,
+                        "samples_us_per_op": [
+                            2338.135,
+                            2309.023,
+                            2278.699,
+                            2291.928,
+                            2292.547,
+                            2378.605,
+                            2358.319
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large nested body, three operations",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 20201,
+                            "strings": 20001,
+                            "approximate_payload_bytes": 507704
+                        },
+                        "median_us_per_op": 7539.221,
+                        "min_us_per_op": 7160.365,
+                        "max_us_per_op": 7722.726,
+                        "samples_us_per_op": [
+                            7166.76,
+                            7608.317,
+                            7722.726,
+                            7160.365,
+                            7539.221,
+                            7576.965,
+                            7231.214
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large body plus combined source",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 2689.705,
+                        "min_us_per_op": 2561.281,
+                        "max_us_per_op": 2803.158,
+                        "samples_us_per_op": [
+                            2744.619,
+                            2803.158,
+                            2717.095,
+                            2689.705,
+                            2633.085,
+                            2561.281,
+                            2579.035
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Input source context, body only",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1213.449,
+                        "min_us_per_op": 1131.661,
+                        "max_us_per_op": 1241.4,
+                        "samples_us_per_op": [
+                            1131.661,
+                            1161.725,
+                            1156.627,
+                            1241.4,
+                            1213.449,
+                            1235.81,
+                            1218.968
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Input source context, combined source",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1158.702,
+                        "min_us_per_op": 1116.104,
+                        "max_us_per_op": 1207.194,
+                        "samples_us_per_op": [
+                            1158.702,
+                            1207.194,
+                            1179.321,
+                            1149.301,
+                            1149.66,
+                            1200.158,
+                            1116.104
+                        ],
+                        "peak_memory_bytes": 4194304
+                    }
+                ]
+            }
+        },
+        {
+            "batch": 6,
+            "label": "optimized",
+            "revision": "6d1419fb599ba4a44a9e5ef59c63e6d069de6f59",
+            "harness_sha256": "0227e397b19e3b14468c33e2d4106b394c46d36866811b6e004a167b1b769569",
+            "lock_sha256": "e04a55cef397878dafe421bb5bd49b7f26eccef5b744f15613e35252940dc5bc",
+            "result": {
+                "batch": 6,
+                "params": {
+                    "iterations": 500,
+                    "warmup": 100,
+                    "samples": 7
+                },
+                "provenance": {
+                    "revision": "6d1419fb599ba4a44a9e5ef59c63e6d069de6f59",
+                    "harness_sha256": "0227e397b19e3b14468c33e2d4106b394c46d36866811b6e004a167b1b769569",
+                    "lock_sha256": "e04a55cef397878dafe421bb5bd49b7f26eccef5b744f15613e35252940dc5bc",
+                    "versions": {
+                        "php": "8.2.33",
+                        "opcache_cli": false,
+                        "locked_packages": {
+                            "cuyz/valinor": "2.6.0",
+                            "fig/http-message-util": "1.1.5",
+                            "mezzio/mezzio-router": "4.2.0",
+                            "psr/container": "2.0.2",
+                            "psr/http-factory": "1.1.0",
+                            "psr/http-message": "2.0",
+                            "psr/http-server-handler": "1.0.2",
+                            "psr/http-server-middleware": "1.0.2",
+                            "sirix/container-resolver": "1.0.0",
+                            "sirix/mezzio-routing-contracts": "1.2.2",
+                            "webmozart/assert": "2.4.1"
+                        },
+                        "locked_packages_dev": {
+                            "bamarni/composer-bin-plugin": "1.9.1",
+                            "laminas/laminas-diactoros": "3.8.0",
+                            "laminas/laminas-escaper": "2.18.0",
+                            "laminas/laminas-httphandlerrunner": "2.13.0",
+                            "laminas/laminas-stratigility": "4.3.1",
+                            "mezzio/mezzio": "3.28.1",
+                            "mezzio/mezzio-template": "3.0.0",
+                            "myclabs/deep-copy": "1.14.0",
+                            "nikic/php-parser": "v5.8.0",
+                            "phar-io/manifest": "2.0.4",
+                            "phar-io/version": "3.2.1",
+                            "phpunit/php-code-coverage": "11.0.12",
+                            "phpunit/php-file-iterator": "5.1.1",
+                            "phpunit/php-invoker": "5.0.1",
+                            "phpunit/php-text-template": "4.0.1",
+                            "phpunit/php-timer": "7.0.1",
+                            "phpunit/phpunit": "11.5.56",
+                            "sebastian/cli-parser": "3.0.2",
+                            "sebastian/code-unit": "3.0.3",
+                            "sebastian/code-unit-reverse-lookup": "4.0.1",
+                            "sebastian/comparator": "6.3.3",
+                            "sebastian/complexity": "4.0.1",
+                            "sebastian/diff": "6.0.2",
+                            "sebastian/environment": "7.2.1",
+                            "sebastian/exporter": "6.3.2",
+                            "sebastian/global-state": "7.0.2",
+                            "sebastian/lines-of-code": "3.0.1",
+                            "sebastian/object-enumerator": "6.0.1",
+                            "sebastian/object-reflector": "4.0.1",
+                            "sebastian/recursion-context": "6.0.3",
+                            "sebastian/type": "5.1.3",
+                            "sebastian/version": "5.0.2",
+                            "sirix/mezzio-routing-attributes": "1.4.2",
+                            "staabm/side-effects-detector": "1.0.5",
+                            "theseer/tokenizer": "1.3.1"
+                        }
+                    }
+                },
+                "scenarios": [
+                    {
+                        "name": "No RouteResult passthrough",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 0.478,
+                        "min_us_per_op": 0.477,
+                        "max_us_per_op": 0.5,
+                        "samples_us_per_op": [
+                            0.478,
+                            0.477,
+                            0.481,
+                            0.5,
+                            0.477,
+                            0.478,
+                            0.493
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Reflection via direct handler object",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 8.088,
+                        "min_us_per_op": 7.859,
+                        "max_us_per_op": 8.321,
+                        "samples_us_per_op": [
+                            7.859,
+                            7.993,
+                            8.321,
+                            8.088,
+                            8.072,
+                            8.155,
+                            8.098
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Reflection via lazy FQCN handler",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 8.254,
+                        "min_us_per_op": 8.011,
+                        "max_us_per_op": 8.966,
+                        "samples_us_per_op": [
+                            8.011,
+                            8.043,
+                            8.251,
+                            8.254,
+                            8.263,
+                            8.43,
+                            8.966
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Route options single DTO",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 7.909,
+                        "min_us_per_op": 7.596,
+                        "max_us_per_op": 8.46,
+                        "samples_us_per_op": [
+                            8.46,
+                            7.92,
+                            8.29,
+                            7.596,
+                            7.602,
+                            7.623,
+                            7.909
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Three operations with different outputs",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 24.696,
+                        "min_us_per_op": 24.318,
+                        "max_us_per_op": 25.079,
+                        "samples_us_per_op": [
+                            24.318,
+                            25.079,
+                            24.839,
+                            24.696,
+                            24.566,
+                            24.721,
+                            24.561
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Repeated calls reusing middleware and builder",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 7.791,
+                        "min_us_per_op": 7.5,
+                        "max_us_per_op": 8.332,
+                        "samples_us_per_op": [
+                            8.327,
+                            7.609,
+                            7.791,
+                            8.156,
+                            8.332,
+                            7.522,
+                            7.5
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "New middleware/resolvers/builder per iteration with file cache",
+                        "lifecycle": "new-each-iteration",
+                        "median_us_per_op": 64.941,
+                        "min_us_per_op": 62.726,
+                        "max_us_per_op": 65.466,
+                        "samples_us_per_op": [
+                            62.726,
+                            64.87,
+                            64.941,
+                            64.831,
+                            65.466,
+                            65.12,
+                            65.176
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large flat body, one operation",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1343.019,
+                        "min_us_per_op": 1288.879,
+                        "max_us_per_op": 1379.812,
+                        "samples_us_per_op": [
+                            1340.839,
+                            1362.317,
+                            1343.019,
+                            1343.256,
+                            1302.047,
+                            1288.879,
+                            1379.812
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large flat body, three operations",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1617.318,
+                        "min_us_per_op": 1522.12,
+                        "max_us_per_op": 1716.403,
+                        "samples_us_per_op": [
+                            1716.403,
+                            1700.231,
+                            1634.71,
+                            1617.318,
+                            1547.984,
+                            1534.119,
+                            1522.12
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large nested body, one operation",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 20201,
+                            "strings": 20001,
+                            "approximate_payload_bytes": 507704
+                        },
+                        "median_us_per_op": 2309.506,
+                        "min_us_per_op": 2289.499,
+                        "max_us_per_op": 2494.235,
+                        "samples_us_per_op": [
+                            2309.506,
+                            2331.991,
+                            2494.235,
+                            2458.459,
+                            2298.263,
+                            2296.268,
+                            2289.499
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large nested body, three operations",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 20201,
+                            "strings": 20001,
+                            "approximate_payload_bytes": 507704
+                        },
+                        "median_us_per_op": 2347.706,
+                        "min_us_per_op": 2317.197,
+                        "max_us_per_op": 2513.682,
+                        "samples_us_per_op": [
+                            2317.197,
+                            2335.68,
+                            2347.706,
+                            2501.956,
+                            2513.682,
+                            2339.947,
+                            2455.819
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large body plus combined source",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1410.993,
+                        "min_us_per_op": 1403.298,
+                        "max_us_per_op": 1508.922,
+                        "samples_us_per_op": [
+                            1508.922,
+                            1504.268,
+                            1428.954,
+                            1403.298,
+                            1410.807,
+                            1410.993,
+                            1409.656
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Input source context, body only",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1204.622,
+                        "min_us_per_op": 1112.926,
+                        "max_us_per_op": 1216.699,
+                        "samples_us_per_op": [
+                            1216.699,
+                            1212.862,
+                            1210.284,
+                            1204.622,
+                            1112.926,
+                            1191.773,
+                            1190.799
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Input source context, combined source",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1199.468,
+                        "min_us_per_op": 1115.478,
+                        "max_us_per_op": 1261.158,
+                        "samples_us_per_op": [
+                            1261.158,
+                            1115.478,
+                            1187.563,
+                            1205.737,
+                            1200.499,
+                            1192.161,
+                            1199.468
+                        ],
+                        "peak_memory_bytes": 4194304
+                    }
+                ]
+            }
+        },
+        {
+            "batch": 7,
+            "label": "optimized",
+            "revision": "6d1419fb599ba4a44a9e5ef59c63e6d069de6f59",
+            "harness_sha256": "0227e397b19e3b14468c33e2d4106b394c46d36866811b6e004a167b1b769569",
+            "lock_sha256": "e04a55cef397878dafe421bb5bd49b7f26eccef5b744f15613e35252940dc5bc",
+            "result": {
+                "batch": 7,
+                "params": {
+                    "iterations": 500,
+                    "warmup": 100,
+                    "samples": 7
+                },
+                "provenance": {
+                    "revision": "6d1419fb599ba4a44a9e5ef59c63e6d069de6f59",
+                    "harness_sha256": "0227e397b19e3b14468c33e2d4106b394c46d36866811b6e004a167b1b769569",
+                    "lock_sha256": "e04a55cef397878dafe421bb5bd49b7f26eccef5b744f15613e35252940dc5bc",
+                    "versions": {
+                        "php": "8.2.33",
+                        "opcache_cli": false,
+                        "locked_packages": {
+                            "cuyz/valinor": "2.6.0",
+                            "fig/http-message-util": "1.1.5",
+                            "mezzio/mezzio-router": "4.2.0",
+                            "psr/container": "2.0.2",
+                            "psr/http-factory": "1.1.0",
+                            "psr/http-message": "2.0",
+                            "psr/http-server-handler": "1.0.2",
+                            "psr/http-server-middleware": "1.0.2",
+                            "sirix/container-resolver": "1.0.0",
+                            "sirix/mezzio-routing-contracts": "1.2.2",
+                            "webmozart/assert": "2.4.1"
+                        },
+                        "locked_packages_dev": {
+                            "bamarni/composer-bin-plugin": "1.9.1",
+                            "laminas/laminas-diactoros": "3.8.0",
+                            "laminas/laminas-escaper": "2.18.0",
+                            "laminas/laminas-httphandlerrunner": "2.13.0",
+                            "laminas/laminas-stratigility": "4.3.1",
+                            "mezzio/mezzio": "3.28.1",
+                            "mezzio/mezzio-template": "3.0.0",
+                            "myclabs/deep-copy": "1.14.0",
+                            "nikic/php-parser": "v5.8.0",
+                            "phar-io/manifest": "2.0.4",
+                            "phar-io/version": "3.2.1",
+                            "phpunit/php-code-coverage": "11.0.12",
+                            "phpunit/php-file-iterator": "5.1.1",
+                            "phpunit/php-invoker": "5.0.1",
+                            "phpunit/php-text-template": "4.0.1",
+                            "phpunit/php-timer": "7.0.1",
+                            "phpunit/phpunit": "11.5.56",
+                            "sebastian/cli-parser": "3.0.2",
+                            "sebastian/code-unit": "3.0.3",
+                            "sebastian/code-unit-reverse-lookup": "4.0.1",
+                            "sebastian/comparator": "6.3.3",
+                            "sebastian/complexity": "4.0.1",
+                            "sebastian/diff": "6.0.2",
+                            "sebastian/environment": "7.2.1",
+                            "sebastian/exporter": "6.3.2",
+                            "sebastian/global-state": "7.0.2",
+                            "sebastian/lines-of-code": "3.0.1",
+                            "sebastian/object-enumerator": "6.0.1",
+                            "sebastian/object-reflector": "4.0.1",
+                            "sebastian/recursion-context": "6.0.3",
+                            "sebastian/type": "5.1.3",
+                            "sebastian/version": "5.0.2",
+                            "sirix/mezzio-routing-attributes": "1.4.2",
+                            "staabm/side-effects-detector": "1.0.5",
+                            "theseer/tokenizer": "1.3.1"
+                        }
+                    }
+                },
+                "scenarios": [
+                    {
+                        "name": "No RouteResult passthrough",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 0.479,
+                        "min_us_per_op": 0.475,
+                        "max_us_per_op": 0.488,
+                        "samples_us_per_op": [
+                            0.478,
+                            0.488,
+                            0.48,
+                            0.479,
+                            0.476,
+                            0.482,
+                            0.475
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Reflection via direct handler object",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 8.336,
+                        "min_us_per_op": 8.007,
+                        "max_us_per_op": 8.393,
+                        "samples_us_per_op": [
+                            8.007,
+                            8.326,
+                            8.369,
+                            8.336,
+                            8.298,
+                            8.393,
+                            8.347
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Reflection via lazy FQCN handler",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 7.959,
+                        "min_us_per_op": 7.563,
+                        "max_us_per_op": 8.142,
+                        "samples_us_per_op": [
+                            8.12,
+                            7.888,
+                            8.009,
+                            7.959,
+                            8.142,
+                            7.616,
+                            7.563
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Route options single DTO",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 8.165,
+                        "min_us_per_op": 7.861,
+                        "max_us_per_op": 8.204,
+                        "samples_us_per_op": [
+                            7.861,
+                            8.204,
+                            8.115,
+                            8.165,
+                            8.066,
+                            8.168,
+                            8.204
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Three operations with different outputs",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 24.312,
+                        "min_us_per_op": 23.837,
+                        "max_us_per_op": 24.578,
+                        "samples_us_per_op": [
+                            23.837,
+                            24.201,
+                            24.312,
+                            24.578,
+                            24.335,
+                            24.224,
+                            24.32
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Repeated calls reusing middleware and builder",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 7.907,
+                        "min_us_per_op": 7.6,
+                        "max_us_per_op": 9.526,
+                        "samples_us_per_op": [
+                            7.6,
+                            7.756,
+                            7.686,
+                            8.033,
+                            9.526,
+                            7.984,
+                            7.907
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "New middleware/resolvers/builder per iteration with file cache",
+                        "lifecycle": "new-each-iteration",
+                        "median_us_per_op": 68.59,
+                        "min_us_per_op": 65.241,
+                        "max_us_per_op": 69.533,
+                        "samples_us_per_op": [
+                            65.241,
+                            68.699,
+                            67.477,
+                            68.95,
+                            69.533,
+                            68.59,
+                            68.134
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large flat body, one operation",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1326.873,
+                        "min_us_per_op": 1237.051,
+                        "max_us_per_op": 1335.237,
+                        "samples_us_per_op": [
+                            1237.051,
+                            1329.504,
+                            1335.237,
+                            1326.873,
+                            1328.9,
+                            1322.452,
+                            1273.307
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large flat body, three operations",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1528.533,
+                        "min_us_per_op": 1514.285,
+                        "max_us_per_op": 1610.524,
+                        "samples_us_per_op": [
+                            1610.524,
+                            1575.501,
+                            1514.285,
+                            1515.199,
+                            1519.833,
+                            1558.644,
+                            1528.533
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large nested body, one operation",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 20201,
+                            "strings": 20001,
+                            "approximate_payload_bytes": 507704
+                        },
+                        "median_us_per_op": 2455.697,
+                        "min_us_per_op": 2291.112,
+                        "max_us_per_op": 2466.661,
+                        "samples_us_per_op": [
+                            2291.112,
+                            2303.102,
+                            2439.174,
+                            2459.556,
+                            2466.324,
+                            2466.661,
+                            2455.697
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large nested body, three operations",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 20201,
+                            "strings": 20001,
+                            "approximate_payload_bytes": 507704
+                        },
+                        "median_us_per_op": 2448.534,
+                        "min_us_per_op": 2323.375,
+                        "max_us_per_op": 2493.248,
+                        "samples_us_per_op": [
+                            2451.099,
+                            2448.534,
+                            2467.204,
+                            2493.248,
+                            2439.102,
+                            2323.375,
+                            2433.317
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large body plus combined source",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1415.448,
+                        "min_us_per_op": 1375.007,
+                        "max_us_per_op": 1476.733,
+                        "samples_us_per_op": [
+                            1379.101,
+                            1443.941,
+                            1415.448,
+                            1476.733,
+                            1375.007,
+                            1393.182,
+                            1417.912
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Input source context, body only",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1120.432,
+                        "min_us_per_op": 1114.297,
+                        "max_us_per_op": 1139.218,
+                        "samples_us_per_op": [
+                            1130.275,
+                            1120.432,
+                            1139.218,
+                            1115.553,
+                            1114.297,
+                            1126.507,
+                            1119.996
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Input source context, combined source",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1118.561,
+                        "min_us_per_op": 1100.536,
+                        "max_us_per_op": 1201.82,
+                        "samples_us_per_op": [
+                            1117.243,
+                            1118.561,
+                            1114.883,
+                            1197.234,
+                            1139.513,
+                            1201.82,
+                            1100.536
+                        ],
+                        "peak_memory_bytes": 4194304
+                    }
+                ]
+            }
+        },
+        {
+            "batch": 8,
+            "label": "baseline",
+            "revision": "048b55856c732500d1c0a22da60651488859f42c",
+            "harness_sha256": "0227e397b19e3b14468c33e2d4106b394c46d36866811b6e004a167b1b769569",
+            "lock_sha256": "e04a55cef397878dafe421bb5bd49b7f26eccef5b744f15613e35252940dc5bc",
+            "result": {
+                "batch": 8,
+                "params": {
+                    "iterations": 500,
+                    "warmup": 100,
+                    "samples": 7
+                },
+                "provenance": {
+                    "revision": "048b55856c732500d1c0a22da60651488859f42c",
+                    "harness_sha256": "0227e397b19e3b14468c33e2d4106b394c46d36866811b6e004a167b1b769569",
+                    "lock_sha256": "e04a55cef397878dafe421bb5bd49b7f26eccef5b744f15613e35252940dc5bc",
+                    "versions": {
+                        "php": "8.2.33",
+                        "opcache_cli": false,
+                        "locked_packages": {
+                            "cuyz/valinor": "2.6.0",
+                            "fig/http-message-util": "1.1.5",
+                            "mezzio/mezzio-router": "4.2.0",
+                            "psr/container": "2.0.2",
+                            "psr/http-factory": "1.1.0",
+                            "psr/http-message": "2.0",
+                            "psr/http-server-handler": "1.0.2",
+                            "psr/http-server-middleware": "1.0.2",
+                            "sirix/container-resolver": "1.0.0",
+                            "sirix/mezzio-routing-contracts": "1.2.2",
+                            "webmozart/assert": "2.4.1"
+                        },
+                        "locked_packages_dev": {
+                            "bamarni/composer-bin-plugin": "1.9.1",
+                            "laminas/laminas-diactoros": "3.8.0",
+                            "laminas/laminas-escaper": "2.18.0",
+                            "laminas/laminas-httphandlerrunner": "2.13.0",
+                            "laminas/laminas-stratigility": "4.3.1",
+                            "mezzio/mezzio": "3.28.1",
+                            "mezzio/mezzio-template": "3.0.0",
+                            "myclabs/deep-copy": "1.14.0",
+                            "nikic/php-parser": "v5.8.0",
+                            "phar-io/manifest": "2.0.4",
+                            "phar-io/version": "3.2.1",
+                            "phpunit/php-code-coverage": "11.0.12",
+                            "phpunit/php-file-iterator": "5.1.1",
+                            "phpunit/php-invoker": "5.0.1",
+                            "phpunit/php-text-template": "4.0.1",
+                            "phpunit/php-timer": "7.0.1",
+                            "phpunit/phpunit": "11.5.56",
+                            "sebastian/cli-parser": "3.0.2",
+                            "sebastian/code-unit": "3.0.3",
+                            "sebastian/code-unit-reverse-lookup": "4.0.1",
+                            "sebastian/comparator": "6.3.3",
+                            "sebastian/complexity": "4.0.1",
+                            "sebastian/diff": "6.0.2",
+                            "sebastian/environment": "7.2.1",
+                            "sebastian/exporter": "6.3.2",
+                            "sebastian/global-state": "7.0.2",
+                            "sebastian/lines-of-code": "3.0.1",
+                            "sebastian/object-enumerator": "6.0.1",
+                            "sebastian/object-reflector": "4.0.1",
+                            "sebastian/recursion-context": "6.0.3",
+                            "sebastian/type": "5.1.3",
+                            "sebastian/version": "5.0.2",
+                            "sirix/mezzio-routing-attributes": "1.4.2",
+                            "staabm/side-effects-detector": "1.0.5",
+                            "theseer/tokenizer": "1.3.1"
+                        }
+                    }
+                },
+                "scenarios": [
+                    {
+                        "name": "No RouteResult passthrough",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 0.476,
+                        "min_us_per_op": 0.474,
+                        "max_us_per_op": 0.502,
+                        "samples_us_per_op": [
+                            0.475,
+                            0.476,
+                            0.502,
+                            0.478,
+                            0.474,
+                            0.475,
+                            0.489
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Reflection via direct handler object",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 7.481,
+                        "min_us_per_op": 7.324,
+                        "max_us_per_op": 8.212,
+                        "samples_us_per_op": [
+                            8.212,
+                            7.548,
+                            7.413,
+                            7.65,
+                            7.481,
+                            7.332,
+                            7.324
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Reflection via lazy FQCN handler",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 7.515,
+                        "min_us_per_op": 7.204,
+                        "max_us_per_op": 8.069,
+                        "samples_us_per_op": [
+                            8.069,
+                            7.515,
+                            7.448,
+                            7.542,
+                            7.549,
+                            7.394,
+                            7.204
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Route options single DTO",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 8.102,
+                        "min_us_per_op": 7.684,
+                        "max_us_per_op": 8.229,
+                        "samples_us_per_op": [
+                            7.684,
+                            8.014,
+                            8.102,
+                            8.206,
+                            8.067,
+                            8.22,
+                            8.229
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Three operations with different outputs",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 22.411,
+                        "min_us_per_op": 22.179,
+                        "max_us_per_op": 23.559,
+                        "samples_us_per_op": [
+                            23.559,
+                            22.775,
+                            22.179,
+                            22.27,
+                            22.913,
+                            22.411,
+                            22.262
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Repeated calls reusing middleware and builder",
+                        "lifecycle": "reuse",
+                        "median_us_per_op": 7.506,
+                        "min_us_per_op": 7.474,
+                        "max_us_per_op": 7.631,
+                        "samples_us_per_op": [
+                            7.516,
+                            7.482,
+                            7.562,
+                            7.506,
+                            7.474,
+                            7.631,
+                            7.503
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "New middleware/resolvers/builder per iteration with file cache",
+                        "lifecycle": "new-each-iteration",
+                        "median_us_per_op": 66.291,
+                        "min_us_per_op": 63.679,
+                        "max_us_per_op": 71.985,
+                        "samples_us_per_op": [
+                            71.985,
+                            63.679,
+                            63.806,
+                            64.42,
+                            66.291,
+                            68.201,
+                            66.873
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large flat body, one operation",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1375.477,
+                        "min_us_per_op": 1287.526,
+                        "max_us_per_op": 1395.275,
+                        "samples_us_per_op": [
+                            1395.275,
+                            1292.086,
+                            1354.765,
+                            1392.836,
+                            1380.778,
+                            1375.477,
+                            1287.526
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large flat body, three operations",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 3881.541,
+                        "min_us_per_op": 3738.817,
+                        "max_us_per_op": 4011.336,
+                        "samples_us_per_op": [
+                            3738.817,
+                            4011.336,
+                            3881.541,
+                            3824.152,
+                            3936.124,
+                            3756.801,
+                            4001.818
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large nested body, one operation",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 20201,
+                            "strings": 20001,
+                            "approximate_payload_bytes": 507704
+                        },
+                        "median_us_per_op": 2331.011,
+                        "min_us_per_op": 2280.923,
+                        "max_us_per_op": 2419.986,
+                        "samples_us_per_op": [
+                            2419.986,
+                            2372.859,
+                            2366.963,
+                            2331.011,
+                            2287.434,
+                            2280.923,
+                            2300.781
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large nested body, three operations",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 20201,
+                            "strings": 20001,
+                            "approximate_payload_bytes": 507704
+                        },
+                        "median_us_per_op": 7319.22,
+                        "min_us_per_op": 6980.108,
+                        "max_us_per_op": 7370.268,
+                        "samples_us_per_op": [
+                            7319.22,
+                            7298.247,
+                            7348.69,
+                            7370.268,
+                            7107.598,
+                            6980.108,
+                            7328.685
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Large body plus combined source",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 2510.729,
+                        "min_us_per_op": 2495.865,
+                        "max_us_per_op": 2618.565,
+                        "samples_us_per_op": [
+                            2592.234,
+                            2561.791,
+                            2618.565,
+                            2496.4,
+                            2495.865,
+                            2496.097,
+                            2510.729
+                        ],
+                        "peak_memory_bytes": 8388608
+                    },
+                    {
+                        "name": "Input source context, body only",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1208.874,
+                        "min_us_per_op": 1125.901,
+                        "max_us_per_op": 1229.314,
+                        "samples_us_per_op": [
+                            1125.901,
+                            1152.082,
+                            1211.503,
+                            1218.493,
+                            1208.874,
+                            1186.512,
+                            1229.314
+                        ],
+                        "peak_memory_bytes": 4194304
+                    },
+                    {
+                        "name": "Input source context, combined source",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1211.179,
+                        "min_us_per_op": 1189.46,
+                        "max_us_per_op": 1229.624,
+                        "samples_us_per_op": [
+                            1207.754,
+                            1211.179,
+                            1197.818,
+                            1189.46,
+                            1220.888,
+                            1229.624,
+                            1218.623
+                        ],
+                        "peak_memory_bytes": 4194304
+                    }
+                ]
+            }
+        }
+    ]
+}

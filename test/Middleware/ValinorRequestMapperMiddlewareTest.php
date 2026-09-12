@@ -27,26 +27,22 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use RuntimeException;
-use Sirix\ContainerResolver\ContainerResolver;
 use Sirix\Mezzio\Valinor\Attribute\MapRequest;
 use Sirix\Mezzio\Valinor\Error\DefaultMappingErrorResponder;
 use Sirix\Mezzio\Valinor\Error\MappingErrorContext;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderInterface;
-use Sirix\Mezzio\Valinor\Error\MappingErrorResponderResolver;
 use Sirix\Mezzio\Valinor\Error\RequestInputError;
 use Sirix\Mezzio\Valinor\Exception\InvalidMapRequestConfiguration;
-use Sirix\Mezzio\Valinor\Mapping\HandlerTargetResolver;
-use Sirix\Mezzio\Valinor\Mapping\HttpMethodNormalizer;
 use Sirix\Mezzio\Valinor\Mapping\HttpRequestSourceFactory;
 use Sirix\Mezzio\Valinor\Mapping\InputEncodingValidator;
-use Sirix\Mezzio\Valinor\Mapping\MappingPlanResolver;
-use Sirix\Mezzio\Valinor\Mapping\MapRequestOptionsParser;
-use Sirix\Mezzio\Valinor\Mapping\MapRequestResolver;
+use Sirix\Mezzio\Valinor\Mapping\InputEncodingValidatorInterface;
 use Sirix\Mezzio\Valinor\Middleware\ValinorRequestMapperMiddleware;
+use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\CaptureResponder;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\CreateBodyRequest;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\IntIdRouteRequest;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\PaginationRequest;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\PositiveIdRouteRequest;
+use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\RequestMapperMiddlewareBuilder;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\RequestObjectRequest;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\RequiredRequest;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\SearchRequest;
@@ -825,6 +821,53 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
         self::assertSame(RequiredRequest::class, $context->dtoClass);
         self::assertSame('body', $context->source);
         self::assertSame('form', $context->requestAttributeKey);
+    }
+
+    #[Test]
+    public function firstOperationFailureDoesNotReadOrValidateSourcesOfLaterOperations(): void
+    {
+        $validator  = new MiddlewareCountingInputEncodingValidator();
+        $responder  = new CaptureResponder();
+        $middleware = $this->middleware(
+            $this->defaultMapper(),
+            $responder,
+            new HttpRequestSourceFactory($validator),
+        );
+        $reads   = new MiddlewareRequestReads();
+        $request = (new MiddlewareCountingServerRequest($reads))
+            ->withMethod(RequestMethodInterface::METHOD_POST)
+            ->withParsedBody([
+                'name' => "\xB1\x31",
+            ])
+        ;
+
+        $handler = new #[MapRequest(body: RequiredRequest::class, output: 'body')]
+        #[MapRequest(source: SearchRequest::class, output: 'source')]
+        class implements MiddlewareInterface, RequestHandlerInterface {
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                return $this->handle($request);
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                return new EmptyResponse();
+            }
+        };
+
+        $request = $this->withMatchedRoute($request, $handler, [
+            'id' => "\xB1\x31",
+        ], methods: [RequestMethodInterface::METHOD_POST]);
+
+        $middleware->process($request, $this->nextHandler($handler));
+
+        self::assertSame(1, $reads->parsedBodyReads);
+        self::assertSame(0, $reads->queryParameterReads);
+        self::assertSame([
+            'body' => 1,
+        ], $validator->calls);
+        self::assertNotNull($responder->context);
+        self::assertSame('body', $responder->context->source);
     }
 
     #[Test]
@@ -1625,22 +1668,17 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
         return $this->middleware($builder->mapper());
     }
 
-    private function middleware(TreeMapper $mapper, ?MappingErrorResponderInterface $responder = null): ValinorRequestMapperMiddleware
-    {
-        return new ValinorRequestMapperMiddleware(
+    private function middleware(
+        TreeMapper $mapper,
+        ?MappingErrorResponderInterface $responder = null,
+        ?HttpRequestSourceFactory $sourceFactory = null,
+    ): ValinorRequestMapperMiddleware {
+        return RequestMapperMiddlewareBuilder::build(
             $mapper,
-            new MappingErrorResponderResolver(
-                $responder ?? $this->defaultResponder(),
-                ContainerResolver::forContext($this->emptyContainer(), self::class),
-            ),
-            new MappingPlanResolver(
-                new MapRequestResolver(
-                    new HandlerTargetResolver(),
-                    new MapRequestOptionsParser(),
-                ),
-                new HttpMethodNormalizer(),
-            ),
-            new HttpRequestSourceFactory(new InputEncodingValidator()),
+            $responder ?? $this->defaultResponder(),
+            $this->emptyContainer(),
+            self::class,
+            $sourceFactory ?? new HttpRequestSourceFactory(new InputEncodingValidator()),
         );
     }
 
@@ -1767,5 +1805,55 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
         );
 
         return $mock;
+    }
+}
+
+final class MiddlewareCountingServerRequest extends ServerRequest
+{
+    public function __construct(private readonly MiddlewareRequestReads $reads)
+    {
+        parent::__construct();
+    }
+
+    /** @return null|array<mixed>|object */
+    public function getParsedBody(): mixed
+    {
+        ++$this->reads->parsedBodyReads;
+
+        return parent::getParsedBody();
+    }
+
+    /** @return array<mixed> */
+    public function getQueryParams(): array
+    {
+        ++$this->reads->queryParameterReads;
+
+        return parent::getQueryParams();
+    }
+}
+
+final class MiddlewareRequestReads
+{
+    public int $parsedBodyReads = 0;
+
+    public int $queryParameterReads = 0;
+}
+
+final class MiddlewareCountingInputEncodingValidator implements InputEncodingValidatorInterface
+{
+    /** @var array<'body'|'query'|'route', int> */
+    public array $calls = [];
+
+    private readonly InputEncodingValidator $inner;
+
+    public function __construct()
+    {
+        $this->inner = new InputEncodingValidator();
+    }
+
+    public function assertValid(array $values, string $inputSource): void
+    {
+        $this->calls[$inputSource] = ($this->calls[$inputSource] ?? 0) + 1;
+        $this->inner->assertValid($values, $inputSource);
     }
 }

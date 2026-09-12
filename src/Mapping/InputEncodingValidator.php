@@ -15,7 +15,7 @@ use function preg_match;
 /**
  * @internal
  */
-final class InputEncodingValidator
+final class InputEncodingValidator implements InputEncodingValidatorInterface
 {
     /**
      * @param array<mixed>           $values

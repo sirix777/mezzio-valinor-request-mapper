@@ -24,22 +24,14 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use RuntimeException;
-use Sirix\ContainerResolver\ContainerResolver;
 use Sirix\Mezzio\Valinor\Attribute\MapRequest;
 use Sirix\Mezzio\Valinor\Error\DefaultMappingErrorResponder;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderInterface;
-use Sirix\Mezzio\Valinor\Error\MappingErrorResponderResolver;
 use Sirix\Mezzio\Valinor\Error\RequestInputError;
-use Sirix\Mezzio\Valinor\Mapping\HandlerTargetResolver;
-use Sirix\Mezzio\Valinor\Mapping\HttpMethodNormalizer;
-use Sirix\Mezzio\Valinor\Mapping\HttpRequestSourceFactory;
-use Sirix\Mezzio\Valinor\Mapping\InputEncodingValidator;
-use Sirix\Mezzio\Valinor\Mapping\MappingPlanResolver;
-use Sirix\Mezzio\Valinor\Mapping\MapRequestOptionsParser;
-use Sirix\Mezzio\Valinor\Mapping\MapRequestResolver;
 use Sirix\Mezzio\Valinor\Middleware\ValinorRequestMapperMiddleware;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\CaptureResponder;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\PaginationRequest;
+use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\RequestMapperMiddlewareBuilder;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\RequiredRequest;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\SearchRequest;
 
@@ -458,20 +450,11 @@ final class InvalidUtf8IntegrationTest extends TestCase
 
     private function middleware(TreeMapper $mapper, ?MappingErrorResponderInterface $responder = null): ValinorRequestMapperMiddleware
     {
-        return new ValinorRequestMapperMiddleware(
+        return RequestMapperMiddlewareBuilder::build(
             $mapper,
-            new MappingErrorResponderResolver(
-                $responder ?? $this->defaultResponder(),
-                ContainerResolver::forContext($this->emptyContainer(), self::class),
-            ),
-            new MappingPlanResolver(
-                new MapRequestResolver(
-                    new HandlerTargetResolver(),
-                    new MapRequestOptionsParser(),
-                ),
-                new HttpMethodNormalizer(),
-            ),
-            new HttpRequestSourceFactory(new InputEncodingValidator()),
+            $responder ?? $this->defaultResponder(),
+            $this->emptyContainer(),
+            self::class,
         );
     }
 

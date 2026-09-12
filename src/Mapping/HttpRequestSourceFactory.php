@@ -12,7 +12,7 @@ use Psr\Http\Message\ServerRequestInterface;
  */
 final readonly class HttpRequestSourceFactory
 {
-    public function __construct(private InputEncodingValidator $inputEncodingValidator) {}
+    public function __construct(private InputEncodingValidatorInterface $inputEncodingValidator) {}
 
     /**
      * @param array<string, mixed> $routeParams

@@ -43,6 +43,17 @@ A custom integration that constructs the middleware itself must also construct
 and pass `MappingPlanResolver` and `HttpRequestSourceFactory`; a two-argument
 constructor call is no longer valid.
 
+If the application uses the routing-attribute scanner, update
+`sirix/mezzio-routing-attributes` to `^1.4` (currently 1.4.2 is supported):
+
+```json
+"sirix/mezzio-routing-attributes": "^1.4"
+```
+
+Versions before 1.4.0 can lose class-level and repeatable `MapRequest`
+mappings and register the mapper middleware more than once. The package
+intentionally declares a Composer conflict for versions below 1.4.0.
+
 ## 3. Register and reuse the configured MapperBuilder
 
 `ValinorTreeMapperFactory` now resolves `MapperBuilder` from the container.

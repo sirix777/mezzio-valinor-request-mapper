@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Sirix\Mezzio\Valinor\Error\RequestInputError;
 use Sirix\Mezzio\Valinor\Mapping\HttpRequestSourceFactory;
 use Sirix\Mezzio\Valinor\Mapping\InputEncodingValidator;
+use Sirix\Mezzio\Valinor\Mapping\InputEncodingValidatorInterface;
 use stdClass;
 use WeakReference;
 
@@ -264,8 +265,9 @@ final class HttpRequestSourceFactoryTest extends TestCase
     #[Test]
     public function contextValidatesEachSourceOnlyOnceAndCreatesFreshHttpRequests(): void
     {
-        $factory = new HttpRequestSourceFactory(new InputEncodingValidator());
-        $request = new CountingServerRequest(
+        $validator = new CountingInputEncodingValidator();
+        $factory   = new HttpRequestSourceFactory($validator);
+        $request   = new CountingServerRequest(
             queryParams: [
                 'page' => '2',
             ],
@@ -279,14 +281,21 @@ final class HttpRequestSourceFactoryTest extends TestCase
 
         $first  = $context->create($request, 'body');
         $second = $context->create($request, 'body');
+        $third  = $context->create($request, 'body');
         $source = $context->create($request, 'source');
 
         self::assertNotSame($first, $second);
+        self::assertNotSame($second, $third);
         self::assertSame($request, $first->requestObject);
         self::assertSame($request, $second->requestObject);
         self::assertSame($request, $source->requestObject);
         self::assertSame(1, $request->parsedBodyReads);
         self::assertSame(1, $request->queryParameterReads);
+        self::assertSame([
+            'body'  => 1,
+            'route' => 1,
+            'query' => 1,
+        ], $validator->calls);
     }
 
     #[Test]
@@ -310,6 +319,31 @@ final class HttpRequestSourceFactoryTest extends TestCase
         } catch (RequestInputError $error) {
             self::assertSame('route', $error->inputSource);
         }
+    }
+
+    #[Test]
+    public function contextDoesNotCacheAnInputThatFailedValidation(): void
+    {
+        $validator = new CountingInputEncodingValidator();
+        $factory   = new HttpRequestSourceFactory($validator);
+        $request   = (new ServerRequest())->withQueryParams([
+            'page' => "\xB1\x31",
+        ]);
+        $context = $factory->createContext($request, []);
+
+        foreach ([1, 2] as $_) {
+            try {
+                $context->create($request, 'query');
+                self::fail('Expected RequestInputError to be thrown.');
+            } catch (RequestInputError $error) {
+                self::assertSame('invalid_utf8', $error->reason);
+                self::assertSame('query', $error->inputSource);
+            }
+        }
+
+        self::assertSame([
+            'query' => 2,
+        ], $validator->calls);
     }
 
     #[Test]
@@ -350,5 +384,24 @@ final class CountingServerRequest extends ServerRequest
         ++$this->queryParameterReads;
 
         return parent::getQueryParams();
+    }
+}
+
+final class CountingInputEncodingValidator implements InputEncodingValidatorInterface
+{
+    /** @var array<'body'|'query'|'route', int> */
+    public array $calls = [];
+
+    private readonly InputEncodingValidator $inner;
+
+    public function __construct()
+    {
+        $this->inner = new InputEncodingValidator();
+    }
+
+    public function assertValid(array $values, string $inputSource): void
+    {
+        $this->calls[$inputSource] = ($this->calls[$inputSource] ?? 0) + 1;
+        $this->inner->assertValid($values, $inputSource);
     }
 }

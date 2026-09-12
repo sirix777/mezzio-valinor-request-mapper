@@ -24,6 +24,6 @@ return ConfigBuilder::create()
         PhpCsFixer\Finder::create()
             ->in(__DIR__ . '/src')
             ->in(__DIR__ . '/test')
+            ->in(__DIR__ . '/benchmarks')
             ->exclude('TestAsset'),
-    )
-    ;
+    );
