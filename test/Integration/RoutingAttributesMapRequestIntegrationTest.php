@@ -396,7 +396,7 @@ final class IntegrationContainer implements ContainerInterface
     /** @param array<string, mixed> $services */
     public function __construct(private array $services) {}
 
-    public function get(string $id): mixed
+    public function get($id): mixed
     {
         $this->getCalls[$id] = ($this->getCalls[$id] ?? 0) + 1;
 
@@ -407,7 +407,7 @@ final class IntegrationContainer implements ContainerInterface
         return $this->services[$id];
     }
 
-    public function has(string $id): bool
+    public function has($id): bool
     {
         return isset($this->services[$id]);
     }

@@ -110,12 +110,12 @@ final class ValinorRequestMapperMiddlewareFactoryTest extends TestCase
     public function requiresServicesRegisteredByTheConfigProvider(): void
     {
         $container = new class implements ContainerInterface {
-            public function get(string $id): mixed
+            public function get($id): mixed
             {
                 throw new RuntimeException("Service not found: {$id}");
             }
 
-            public function has(string $id): bool
+            public function has($id): bool
             {
                 return false;
             }
@@ -351,7 +351,7 @@ final class ValinorRequestMapperMiddlewareFactoryTest extends TestCase
              */
             public function __construct(private readonly array $services) {}
 
-            public function get(string $id): mixed
+            public function get($id): mixed
             {
                 if (array_key_exists($id, $this->services)) {
                     return $this->services[$id];
@@ -376,7 +376,7 @@ final class ValinorRequestMapperMiddlewareFactoryTest extends TestCase
                 };
             }
 
-            public function has(string $id): bool
+            public function has($id): bool
             {
                 return array_key_exists($id, $this->services)
                     || in_array($id, [

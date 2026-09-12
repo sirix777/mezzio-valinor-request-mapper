@@ -415,7 +415,7 @@ final class HttpMappingSemanticsTest extends TestCase
              */
             public function __construct(private readonly array $config) {}
 
-            public function get(string $id): mixed
+            public function get($id): mixed
             {
                 return match ($id) {
                     'config'                                  => $this->config,
@@ -437,7 +437,7 @@ final class HttpMappingSemanticsTest extends TestCase
                 };
             }
 
-            public function has(string $id): bool
+            public function has($id): bool
             {
                 return in_array($id, [
                     'config',

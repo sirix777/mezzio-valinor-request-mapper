@@ -34,7 +34,7 @@ final class DefaultMappingErrorResponderFactoryTest extends TestCase
                 private readonly StreamFactoryInterface $streamFactory,
             ) {}
 
-            public function get(string $id): mixed
+            public function get($id): mixed
             {
                 return match ($id) {
                     ResponseFactoryInterface::class => $this->responseFactory,
@@ -43,7 +43,7 @@ final class DefaultMappingErrorResponderFactoryTest extends TestCase
                 };
             }
 
-            public function has(string $id): bool
+            public function has($id): bool
             {
                 return ResponseFactoryInterface::class === $id || StreamFactoryInterface::class === $id;
             }

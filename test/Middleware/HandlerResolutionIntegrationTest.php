@@ -496,7 +496,7 @@ final class TrackingContainer implements ContainerInterface
         /** @var array<string, true> */
         private array $calls = [],) {}
 
-    public function get(string $id): mixed
+    public function get($id): mixed
     {
         $this->calls[$id] = true;
 
@@ -507,7 +507,7 @@ final class TrackingContainer implements ContainerInterface
         throw new RuntimeException("Service not found: {$id}");
     }
 
-    public function has(string $id): bool
+    public function has($id): bool
     {
         return array_key_exists($id, $this->services);
     }

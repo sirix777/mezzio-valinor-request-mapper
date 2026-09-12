@@ -742,12 +742,12 @@ final class ValinorMapperBuilderFactoryTest extends TestCase
              */
             public function __construct(private readonly array $services) {}
 
-            public function get(string $id): mixed
+            public function get($id): mixed
             {
                 return $this->services[$id] ?? throw new RuntimeException("Service not found: {$id}");
             }
 
-            public function has(string $id): bool
+            public function has($id): bool
             {
                 return array_key_exists($id, $this->services);
             }

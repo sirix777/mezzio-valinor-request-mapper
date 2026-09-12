@@ -1693,12 +1693,12 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
     private function emptyContainer(): ContainerInterface
     {
         return new class implements ContainerInterface {
-            public function get(string $id): mixed
+            public function get($id): mixed
             {
                 throw new RuntimeException("Service not found: {$id}");
             }
 
-            public function has(string $id): bool
+            public function has($id): bool
             {
                 return false;
             }

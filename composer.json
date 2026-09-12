@@ -84,7 +84,7 @@
         "cs-check": "php tools/php-cs-fixer/vendor/bin/php-cs-fixer fix --dry-run -vvv --diff",
         "cs-fix": "php tools/php-cs-fixer/vendor/bin/php-cs-fixer fix -vvv",
         "normalize": "@composer bin composer-normalize normalize --diff ../../composer.json",
-        "phpstan": "php tools/phpstan/vendor/bin/phpstan analyse -c phpstan.neon ",
+        "phpstan": "php tools/phpstan/vendor/bin/phpstan analyse -c phpstan.neon --memory-limit=1G ",
         "rector": "php tools/rector/vendor/bin/rector process --dry-run ",
         "rector-fix": "php tools/rector/vendor/bin/rector process",
         "test": "php vendor/bin/phpunit --colors=always --testdox"

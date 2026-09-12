@@ -236,7 +236,7 @@ final class ConfigProviderTest extends TestCase
                 }
             }
 
-            public function get(string $id): mixed
+            public function get($id): mixed
             {
                 if (array_key_exists($id, $this->services)) {
                     return $this->services[$id];
@@ -259,7 +259,7 @@ final class ConfigProviderTest extends TestCase
                 throw new $this->notFoundClass("Service not found: {$id}");
             }
 
-            public function has(string $id): bool
+            public function has($id): bool
             {
                 $resolvedId = $this->aliases[$id] ?? $id;
 

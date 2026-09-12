@@ -77,7 +77,7 @@ final class MappingErrorResponderResolverFactoryTest extends TestCase
              */
             public function __construct(private readonly array $services) {}
 
-            public function get(string $id): mixed
+            public function get($id): mixed
             {
                 if (! array_key_exists($id, $this->services)) {
                     throw new RuntimeException("Service not found: {$id}");
@@ -86,7 +86,7 @@ final class MappingErrorResponderResolverFactoryTest extends TestCase
                 return $this->services[$id];
             }
 
-            public function has(string $id): bool
+            public function has($id): bool
             {
                 return array_key_exists($id, $this->services);
             }
