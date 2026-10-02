@@ -11,33 +11,79 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 
+use function count;
 use function json_encode;
+use function strlen;
 
 final readonly class DefaultMappingErrorResponder implements MappingErrorResponderInterface
 {
-    public function __construct(private ResponseFactoryInterface $responseFactory, private StreamFactoryInterface $streamFactory) {}
+    public function __construct(
+        private ResponseFactoryInterface $responseFactory,
+        private StreamFactoryInterface $streamFactory,
+        private ?ErrorResponseOptions $options = null,
+    ) {}
 
     public function respond(MappingErrorContext $context): ResponseInterface
     {
+        $options = $this->options ?? new ErrorResponseOptions();
+
         if ($context->error instanceof RequestInputError) {
             $messages = [
                 '' => [$context->error->getMessage()],
             ];
         } else {
             $messages = [];
+            $all      = $context->error->messages()->formatWith();
+            $limit    = $options->maxMessages;
 
-            foreach ($context->error->messages()->formatWith() as $message) {
-                $path = '*root*' === $message->path() ? '' : $message->path();
+            $hasRemainder = null !== $limit && count($all) > $limit;
 
-                $messages[$path] ??= [];
-                $messages[$path][] = (string) $message;
+            if (null === $limit) {
+                foreach ($all as $message) {
+                    $path = '*root*' === $message->path() ? '' : $message->path();
+
+                    $messages[$path] ??= [];
+                    $messages[$path][] = (string) $message;
+                }
+            } else {
+                $iterator = $all->getIterator();
+                $iterator->rewind();
+                $retained = 0;
+
+                while ($iterator->valid()) {
+                    $message = $iterator->current();
+                    $path    = '*root*' === $message->path() ? '' : $message->path();
+
+                    $messages[$path] ??= [];
+                    $messages[$path][] = (string) $message;
+                    ++$retained;
+
+                    if ($retained >= $limit) {
+                        break;
+                    }
+
+                    $iterator->next();
+                }
+            }
+
+            if ($hasRemainder) {
+                $messages[''][] = 'Additional mapping errors were omitted.';
             }
         }
 
         $body = json_encode([
             'error'    => 'Mapping failed',
-            'messages' => $messages,
+            'messages' => (object) $messages,
         ], JSON_THROW_ON_ERROR);
+
+        if (null !== $options->maxResponseBytes && strlen($body) > $options->maxResponseBytes) {
+            $body = json_encode([
+                'error'    => 'Mapping failed',
+                'messages' => (object) [
+                    '' => ['Mapping error details exceed the response limit.'],
+                ],
+            ], JSON_THROW_ON_ERROR);
+        }
 
         return $this->responseFactory
             ->createResponse(StatusCodeInterface::STATUS_UNPROCESSABLE_ENTITY)

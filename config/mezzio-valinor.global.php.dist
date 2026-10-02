@@ -62,5 +62,23 @@ return [
             // Enable in development; disable in production.
             'cache_watch'                => false,
         ],
+
+        // --- Default mapping error response limits ---
+        // Applied only to the built-in DefaultMappingErrorResponder. Custom
+        // responders keep their own contract and are not bounded by these.
+        'error_response' => [
+            // Maximum number of mapping messages retained in the response.
+            // null keeps every message. When the limit is reached, one extra
+            // message is appended to the root path to signal truncation.
+            //
+            // This does not stop Valinor from building the full error tree; it
+            // only bounds what is retained and serialized.
+            'max_messages'       => null,
+
+            // Maximum size, in bytes, of the serialized JSON body (no headers,
+            // no compression). null disables the limit. Minimum accepted value
+            // is 256. Oversized bodies are replaced with a fixed envelope.
+            'max_response_bytes' => null,
+        ],
     ],
 ];

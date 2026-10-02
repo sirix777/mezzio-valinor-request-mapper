@@ -324,9 +324,29 @@ return [
             'allow_undefined_values' => false,
             'support_date_formats' => ['Y-m-d', 'd/m/Y'],
         ],
+        'error_response' => [
+            'max_messages' => null,
+            'max_response_bytes' => null,
+        ],
     ],
 ];
 ```
+
+### Error response options
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `error_response.max_messages` | `?int` | `null` | Maximum mapping messages retained by `DefaultMappingErrorResponder`. `null` keeps all. When the limit is reached, one extra message (`Additional mapping errors were omitted.`) is appended to the root path. It does not stop Valinor from building the full error tree |
+| `error_response.max_response_bytes` | `?int` | `null` | Maximum serialized JSON body size in bytes (no headers/compression). Minimum `256`. Oversized bodies are replaced with a fixed envelope. `null` disables the limit |
+
+Both limits apply only to the built-in `DefaultMappingErrorResponder`. Custom
+responders keep their own contract and are responsible for their own limits.
+
+`max_response_bytes` checks the fully encoded JSON body once after the (already
+bounded) message collection is serialized. It bounds the transmitted body, and
+when `max_messages` is disabled it does not bound the memory used to build the
+original response. Custom extension messages and exceptions from user
+formatters/constructors are not sanitized by this package.
 
 ### Mapper options
 
@@ -511,8 +531,11 @@ response contract is fixed:
 ```
 
 It always returns status `422` and `Content-Type: application/json`, including
-for `RequestInputError`. To change the response contract, register an
-implementation of `MappingErrorResponderInterface`. See the
+for `RequestInputError`. `messages` is always a JSON object: keys are string
+paths (the root path is the empty string) and each value is a non-empty array of
+strings. Numeric paths are preserved as string JSON property names, and an empty
+message collection is encoded as `{}` rather than `[]`. To change the response
+contract, register an implementation of `MappingErrorResponderInterface`. See the
 [3.0 migration guide](docs/MIGRATION-3.0.md); applications upgrading from 1.x
 should first follow the [2.0 guide](docs/MIGRATION-2.0.md).
 

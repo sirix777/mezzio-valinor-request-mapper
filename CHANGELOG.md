@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `error_response.max_messages` and `error_response.max_response_bytes` options
+  for the built-in `DefaultMappingErrorResponder`; both default to `null`
+  (unlimited) and apply only to the default responder. An oversized serialized
+  body is replaced by a fixed `422` envelope with a root message; the initial
+  encoding and custom extension messages are not sandboxed.
+
+### Fixed
+
+- Default error response `messages` is now always a JSON object. Numeric mapping
+  paths (for example a root `list<int>` with failing elements) previously
+  serialized as a JSON array; they are now string JSON property names, and an
+  empty collection is `{}` instead of `[]`.
+
 ## [3.0.0] - 2026-09-12
 
 ### Added
