@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Persistent-worker soak CLI with static and ephemeral route modes, changing
+  request IDs, object-release probes and a last-five-checkpoint used-memory gate;
+  separate PHP heap, allocator peak and RSS evidence is recorded where available.
+- Development-only Nyholm PSR-7/17 contract coverage for immutable successful
+  requests, numeric JSON error paths, input limits and bounded response bodies.
+  Existing supported PHP/router/lowest and no-intl CI coverage is preserved.
 - Opt-in `mapper.strict_configurators` diagnostics for unresolved, invalid or
   unconstructible configurators, including their array key and identifier/type.
   The default `false` retains legacy skips and direct-construction failures;
@@ -40,6 +46,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   paths (for example a root `list<int>` with failing elements) previously
   serialized as a JSON array; they are now string JSON property names, and an
   empty collection is `{}` instead of `[]`.
+
+### Release classification
+
+- Candidate changes require a major release under the project's Semantic
+  Versioning policy because numeric JSON paths and inherited callable discovery
+  change observable behavior. Additive limits and strict diagnostics remain
+  disabled by default and could be released separately. No version or publication
+  is selected by this verification work. PERF05 remains `DEFERRED_VM`, not PASS;
+  production capacity (PERF04) has not been measured.
 
 ## [3.0.0] - 2026-09-12
 

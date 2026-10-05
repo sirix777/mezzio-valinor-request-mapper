@@ -118,8 +118,8 @@ jobs:
                   composer show cuyz/valinor
                   composer show mezzio/mezzio-router
 
-            - name: Run encoding and responder tests
-              run: vendor/bin/phpunit --colors=always --testdox --filter 'Encoding|Responder|Utf8|InvalidUtf8|DefaultMappingError'
+            - name: Run encoding, input limit, responder and alternate PSR tests
+              run: vendor/bin/phpunit --colors=always --testdox --filter 'Encoding|Responder|Utf8|InvalidUtf8|DefaultMappingError|InputLimits|AlternatePsr'
 
     qa:
         name: QA (PHP 8.2)

@@ -411,6 +411,11 @@ When `cache_dir` is set, Valinor caches compiled reflection data for mapped DTO
 types. This package separately keeps only handler and mapping metadata in
 memory. Under PHP-FPM that metadata lives for one request; persistent workers
 reuse it while their `WeakMap` entries can be released with routes and wrappers.
+The WeakMaps follow object lifetimes; strong class/reflection caches and Valinor
+type metadata remain for the worker lifetime. The
+[worker soak](docs/benchmarks/worker-soak.md) checks changing request data and
+temporary route release using a shared mapper, with used PHP memory after GC
+measured separately from allocator peaks and RSS.
 Changing loaded PHP attributes requires a worker restart; `cache_watch` is a
 Valinor file-cache watcher, not an attribute watcher.
 
@@ -627,3 +632,13 @@ composer normalize --dry-run --diff
 composer analyse-deps
 composer check
 ```
+
+The [hardening verification report](docs/benchmarks/hardening-verification.md)
+records contract coverage, the local PHP/router/lowest/no-intl matrix and worker
+evidence. Nyholm PSR-7/17 contracts run through a development dependency only;
+production dependency ranges are unchanged. Check the report's deferred gates
+before treating it as release readiness: PERF05 requires an isolated VM retest,
+and PERF04 requires a selected application/runtime before production capacity
+claims. The numeric JSON object and inherited callable discovery corrections
+change observable behavior and need a major release under this project's
+Semantic Versioning policy. No release number is selected here.

@@ -38,6 +38,7 @@
         "laminas/laminas-diactoros": "^3.5.0",
         "laminas/laminas-stratigility": "^4.3",
         "mezzio/mezzio": "^3.20",
+        "nyholm/psr7": "^1.8",
         "phpunit/phpunit": "^11.5",
         "sirix/mezzio-routing-attributes": "^1.4"
     },
