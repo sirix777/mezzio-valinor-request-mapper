@@ -192,7 +192,7 @@ final readonly class HandlerTargetResolver
             return null;
         }
 
-        $scopeClass = $refFunction->getClosureScopeClass();
+        $scopeClass = $refFunction->getClosureCalledClass() ?? $refFunction->getClosureScopeClass();
 
         if (null === $scopeClass) {
             return null;

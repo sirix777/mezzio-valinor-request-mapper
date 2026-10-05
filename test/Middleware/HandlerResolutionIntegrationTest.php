@@ -31,6 +31,7 @@ use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\AttributedClosureFactory;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\AttributedMiddleware;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\CallableMethodHandler;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\DualInterfaceHandler;
+use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\InheritedCallableChild;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\LazyLoadingMiddlewareHandler;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\LazyLoadingRequestHandler;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\RequestMapperMiddlewareBuilder;
@@ -41,6 +42,45 @@ use function json_decode;
 
 final class HandlerResolutionIntegrationTest extends TestCase
 {
+    #[Test]
+    public function inheritedCallablesMapChildBeforeInheritedMethod(): void
+    {
+        $child          = new InheritedCallableChild();
+        $factory        = new MiddlewareFactory(new MiddlewareContainer($this->createContainer([])));
+        $instanceMethod = 'work';
+        $staticMethod   = 'staticWork';
+
+        foreach ([
+            [$child, $instanceMethod],
+            $child->work(...),
+            [InheritedCallableChild::class, $staticMethod],
+            InheritedCallableChild::staticWork(...),
+        ] as $callable) {
+            $routeMiddleware = $factory->callable($callable);
+            $route           = new Route('/example', $routeMiddleware, [RequestMethodInterface::METHOD_POST]);
+            $request         = (new ServerRequest())
+                ->withMethod(RequestMethodInterface::METHOD_POST)
+                ->withParsedBody([
+                    'name' => 'inherited',
+                ])
+                ->withAttribute(RouteResult::class, RouteResult::fromRoute($route, []))
+            ;
+
+            $mapCount = 0;
+            $calls    = [];
+            $response = $this->middleware($this->spyMapper($mapCount, $calls))->process(
+                $request,
+                $this->dispatchingNextHandler($routeMiddleware),
+            );
+
+            self::assertSame([
+                'class'  => 'inherited',
+                'method' => 'inherited',
+            ], json_decode((string) $response->getBody(), true));
+            self::assertSame(2, $mapCount);
+        }
+    }
+
     #[Test]
     public function lazyLoadingRequestHandlerResolvesHandleAttribute(): void
     {

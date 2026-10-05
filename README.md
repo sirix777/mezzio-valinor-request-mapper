@@ -24,7 +24,7 @@ This package reads `#[MapRequest]` attributes on route handlers and maps request
 - `cuyz/valinor ^2.4`
 - `mezzio/mezzio-router ^3.15 || ^4.1`
 - PSR-17 `ResponseFactoryInterface` and `StreamFactoryInterface` services
-- `sirix/mezzio-routing-contracts ^1.0`
+- `sirix/mezzio-routing-contracts ^1.2`
 
 The package targets Mezzio applications, but does not install a specific
 Mezzio, PSR-7, or PSR-17 implementation. Your application provides those
@@ -80,6 +80,10 @@ In standalone mode the middleware resolves `#[MapRequest]` by reflection from th
 actually callable target. Class-level attributes run first, then method-level
 attributes on the selected method, in PHP declaration order.
 
+For inherited method callables, class attributes come from the called child
+class and method attributes come from the inherited method. Parent class
+attributes are not inherited automatically.
+
 Supported route handler targets:
 
 | Input | Resolved method | Notes |
@@ -89,7 +93,7 @@ Supported route handler targets:
 | Invokable object | `__invoke` | Only when no PSR-15 interface is implemented |
 | `RequestHandlerMiddleware` wrapper | `handle` of the inner handler | Ignores extra interfaces of the inner handler |
 | `CallableMiddlewareDecorator` with array callable | exact array method | |
-| `CallableMiddlewareDecorator` with first-class callable | real method of the closure scope | |
+| `CallableMiddlewareDecorator` with first-class callable | real method of the called class (scope fallback) | Inherited instance/static methods keep the child class |
 | `CallableMiddlewareDecorator` with invokable object | `__invoke` | |
 | `CallableMiddlewareDecorator` with string `Class::method` | `Class` and `method` if callable is valid | |
 | `CallableMiddlewareDecorator` with anonymous closure/function | *(no mapping)* | Attributes of the outer scope are not read |
@@ -318,6 +322,7 @@ return [
             'configurators' => [
                 \CuyZ\Valinor\Mapper\Configurator\ConvertKeysToCamelCase::class,
             ],
+            'strict_configurators' => false,
             'allow_superfluous_keys' => true,
             'allow_scalar_value_casting' => true,
             'allow_permissive_types' => false,
@@ -393,6 +398,7 @@ formatters/constructors are not sanitized by this package.
 | `cache_dir` | `?string` | `null` | Path to cache directory. When set, Valinor caches compiled type metadata via `FileSystemCache` |
 | `cache_watch` | `bool` | `false` | Wrap cache with `FileWatchingCache` to auto-invalidate when PHP files change (use in dev) |
 | `configurators` | `array<string\|MapperBuilderConfigurator>` | `[]` | Services or class-strings applied via `configureWith()` |
+| `strict_configurators` | `bool` | `false` | Reject unresolved, invalid or unconstructible configurators with their array key and identifier/type |
 | `allow_superfluous_keys` | `bool` | `true` | Allow extra keys in input that are not mapped. For HTTP request mapping, extra top-level keys in body/query/route are still ignored; this flag primarily affects direct array mapping through the registered `TreeMapper` |
 | `allow_scalar_value_casting` | `bool` | `true` | Allow automatic scalar type casting (e.g. `int` → `string`). For HTTP mapping, strings from query/route parameters are always cast to target scalar types; this flag mainly controls body/array mapping behavior |
 | `allow_permissive_types` | `bool` | `false` | Allow `mixed` type to accept any value |
@@ -439,10 +445,35 @@ arbitrary `TreeMapper` overrides.
 
 ### Mapper configurators
 
+Configurators are applied in declaration order. Each `allow_*` flag is additive:
+`true` enables the capability, while `false` adds nothing and does not disable
+it if a configurator already enabled it. This applies to scalar casting,
+superfluous keys, permissive types and undefined values. Date formats from
+`support_date_formats` are appended after configurators, preserving order and
+removing duplicates.
+
+HTTP mapping has additional Valinor rules: extra top-level body/query/route
+keys are ignored, and query/route strings are cast to target scalars regardless
+of the corresponding flags. Direct array mapping uses the builder's options.
+
 `mapper.configurators` supports:
 
 - service id (resolved from container)
 - class-string implementing `MapperBuilderConfigurator` (instantiated if service not found)
+- `MapperBuilderConfigurator` instance
+
+Container services take precedence over direct construction. Register configurators
+with constructor dependencies in the container. Setting `strict_configurators`
+to `true` rejects unknown entries, wrong types, abstract classes, inaccessible
+constructors and required constructor arguments with
+`InvalidMapRequestConfiguration`, naming `mapper.configurators[index]` and the
+identifier or type. Array keys are retained for diagnostics.
+
+The default `false` preserves legacy skipping of missing or unsuitable entries
+and existing direct-construction failures. A registered service of the wrong
+type throws `InvalidContainerServiceException` in both modes. Exceptions from
+constructors, container resolution or `configureMapperBuilder()` propagate;
+they are not treated as skipped configurators.
 
 ## Error responders
 

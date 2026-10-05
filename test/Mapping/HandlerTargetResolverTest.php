@@ -24,6 +24,7 @@ use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\AttributedMiddleware;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\AttributedRequestHandler;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\CallableMethodHandler;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\DualInterfaceHandler;
+use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\InheritedCallableChild;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\InvokableHandler;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\LazyLoadingMiddlewareHandler;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\LazyLoadingRequestHandler;
@@ -173,6 +174,49 @@ final class HandlerTargetResolverTest extends TestCase
         self::assertNotNull($target);
         self::assertSame(InvokableHandler::class, $target->className);
         self::assertSame('__invoke', $target->methodName);
+    }
+
+    #[Test]
+    public function inheritedFirstClassCallableKeepsChildClass(): void
+    {
+        $child            = new InheritedCallableChild();
+        $method           = 'work';
+        $arrayTarget      = $this->resolver->resolve(new CallableMiddlewareDecorator([$child, $method]));
+        $firstClassTarget = $this->resolver->resolve(new CallableMiddlewareDecorator($child->work(...)));
+
+        self::assertNotNull($arrayTarget);
+        self::assertNotNull($firstClassTarget);
+        self::assertSame(InheritedCallableChild::class, $firstClassTarget->className);
+        self::assertEquals($arrayTarget, $firstClassTarget);
+        self::assertSame('work', $firstClassTarget->methodName);
+    }
+
+    #[Test]
+    public function inheritedStaticCallableKeepsCalledClass(): void
+    {
+        $method           = 'staticWork';
+        $arrayTarget      = $this->resolver->resolve(new CallableMiddlewareDecorator([InheritedCallableChild::class, $method]));
+        $firstClassTarget = $this->resolver->resolve(new CallableMiddlewareDecorator(InheritedCallableChild::staticWork(...)));
+
+        self::assertNotNull($arrayTarget);
+        self::assertNotNull($firstClassTarget);
+        self::assertSame(InheritedCallableChild::class, $firstClassTarget->className);
+        self::assertEquals($arrayTarget, $firstClassTarget);
+        self::assertSame('staticWork', $firstClassTarget->methodName);
+    }
+
+    #[Test]
+    public function anonymousClosureInsideChildIsNotAClassTargetAndIsReleased(): void
+    {
+        $decorator = new CallableMiddlewareDecorator((new InheritedCallableChild())->anonymousClosure());
+        $reference = WeakReference::create($decorator);
+
+        self::assertNull($this->resolver->resolve($decorator));
+        self::assertNull($this->resolver->resolve($decorator));
+        unset($decorator);
+        gc_collect_cycles();
+
+        self::assertNull($reference->get());
     }
 
     #[Test]

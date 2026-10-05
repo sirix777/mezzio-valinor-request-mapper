@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sirix\Mezzio\Valinor\Test\Factory;
 
+use ArgumentCountError;
 use CuyZ\Valinor\Cache\FileSystemCache;
 use CuyZ\Valinor\Mapper\Configurator\ConvertKeysToCamelCase;
 use CuyZ\Valinor\Mapper\Configurator\MapperBuilderConfigurator;
@@ -11,6 +12,8 @@ use CuyZ\Valinor\Mapper\MappingError;
 use CuyZ\Valinor\MapperBuilder;
 use DateTimeImmutable;
 use DateTimeInterface;
+use Error;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -19,8 +22,10 @@ use RecursiveIteratorIterator;
 use RuntimeException;
 use Sirix\ContainerResolver\Exception\InvalidConfigValueException;
 use Sirix\ContainerResolver\Exception\InvalidContainerServiceException;
+use Sirix\Mezzio\Valinor\Exception\InvalidMapRequestConfiguration;
 use Sirix\Mezzio\Valinor\Factory\ValinorMapperBuilderFactory;
 use Sirix\Mezzio\Valinor\Test\Factory\Fixture\CacheableRequest;
+use Sirix\Mezzio\Valinor\Test\Factory\Fixture\ConstructorRequiredConfigurator;
 use Sirix\Mezzio\Valinor\Test\Factory\Fixture\MixedCacheableRequest;
 use stdClass;
 use Throwable;
@@ -32,6 +37,7 @@ use function chdir;
 use function file_get_contents;
 use function getcwd;
 use function mkdir;
+use function preg_quote;
 use function rmdir;
 use function sort;
 use function sys_get_temp_dir;
@@ -94,22 +100,26 @@ final class ValinorMapperBuilderFactoryTest extends TestCase
     }
 
     #[Test]
-    public function rejectsConfiguratorServiceWithAnIncorrectType(): void
+    #[DataProvider('configuratorModes')]
+    public function rejectsConfiguratorServiceWithAnIncorrectType(bool $strict): void
     {
         $this->expectException(InvalidContainerServiceException::class);
 
         $this->builder([
-            'configurators' => ['MyConfigurator'],
+            'strict_configurators' => $strict,
+            'configurators'        => ['MyConfigurator'],
         ], [
             'MyConfigurator' => new stdClass(),
         ]);
     }
 
     #[Test]
-    public function configuratorClassNameIsInstantiatedDirectly(): void
+    #[DataProvider('configuratorModes')]
+    public function configuratorClassNameIsInstantiatedDirectly(bool $strict): void
     {
         self::assertInstanceOf(MapperBuilder::class, $this->builder([
-            'configurators' => [ConvertKeysToCamelCase::class],
+            'strict_configurators' => $strict,
+            'configurators'        => [ConvertKeysToCamelCase::class],
         ]));
     }
 
@@ -119,6 +129,238 @@ final class ValinorMapperBuilderFactoryTest extends TestCase
         self::assertInstanceOf(MapperBuilder::class, $this->builder([
             'configurators' => ['NonExistentClass'],
         ]));
+    }
+
+    #[Test]
+    #[DataProvider('unknownConfigurators')]
+    public function strictModeRejectsUnknownConfigurator(string $identifier): void
+    {
+        $this->expectException(InvalidMapRequestConfiguration::class);
+        $this->expectExceptionMessageMatches('/mapper\.configurators\[missing\].*' . preg_quote($identifier, '/') . '/');
+
+        $this->builder([
+            'strict_configurators' => true,
+            'configurators'        => [
+                'missing' => $identifier,
+            ],
+        ]);
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function unknownConfigurators(): iterable
+    {
+        yield 'service alias' => ['missing.configurator'];
+
+        yield 'class' => ['NonExistentConfigurator'];
+
+        yield 'wrong class' => [stdClass::class];
+    }
+
+    #[Test]
+    #[DataProvider('wrongConfiguratorElements')]
+    public function strictModeRejectsWrongElementType(mixed $value, string $type): void
+    {
+        $this->expectException(InvalidMapRequestConfiguration::class);
+        $this->expectExceptionMessageMatches('/mapper\.configurators\[7\].*' . preg_quote($type, '/') . '/');
+
+        $this->builder([
+            'strict_configurators' => true,
+            'configurators'        => [
+                7 => $value,
+            ],
+        ]);
+    }
+
+    /** @return iterable<string, array{mixed, string}> */
+    public static function wrongConfiguratorElements(): iterable
+    {
+        yield 'integer' => [42, 'int'];
+
+        yield 'array' => [[], 'array'];
+
+        yield 'object' => [new stdClass(), 'stdClass'];
+    }
+
+    #[Test]
+    #[DataProvider('unconstructibleConfigurators')]
+    public function strictModeRejectsUnconstructibleClass(string $className, string $legacyException): void
+    {
+        $this->expectException(InvalidMapRequestConfiguration::class);
+        $this->expectExceptionMessageMatches('/mapper\.configurators\[0\].*' . preg_quote($className, '/') . '/');
+
+        $this->builder([
+            'strict_configurators' => true,
+            'configurators'        => [$className],
+        ]);
+    }
+
+    /** @return iterable<string, array{class-string<MapperBuilderConfigurator>, class-string<Throwable>}> */
+    public static function unconstructibleConfigurators(): iterable
+    {
+        yield 'abstract' => [AbstractConfigurator::class, Error::class];
+
+        yield 'constructor dependency' => [ConstructorRequiredConfigurator::class, ArgumentCountError::class];
+
+        yield 'private constructor' => [PrivateConstructorConfigurator::class, Error::class];
+    }
+
+    /** @param class-string<Throwable> $legacyException */
+    #[Test]
+    #[DataProvider('unconstructibleConfigurators')]
+    public function legacyModePreservesConstructionFailure(string $className, string $legacyException): void
+    {
+        $this->expectException($legacyException);
+
+        $this->builder([
+            'configurators' => [$className],
+        ]);
+    }
+
+    #[Test]
+    public function legacyModeSkipsInvalidConfiguratorElements(): void
+    {
+        self::assertInstanceOf(MapperBuilder::class, $this->builder([
+            'configurators' => [42, [], new stdClass(), stdClass::class, 'missing.configurator'],
+        ]));
+    }
+
+    #[Test]
+    public function constructorDependencyIsResolvedFromContainer(): void
+    {
+        $mapper = $this->builder([
+            'strict_configurators' => true,
+            'configurators'        => [ConstructorRequiredConfigurator::class],
+        ], [
+            ConstructorRequiredConfigurator::class => new ConstructorRequiredConfigurator('d/m/Y'),
+        ])->mapper();
+
+        $date = $mapper->map(DateTimeImmutable::class, '05/10/2026');
+
+        self::assertSame('2026-10-05', $date->format('Y-m-d'));
+    }
+
+    #[Test]
+    #[DataProvider('configuratorModes')]
+    public function configuratorFailureIsNotSwallowed(bool $strict): void
+    {
+        $exception    = new RuntimeException('Configurator failed');
+        $configurator = new class($exception) implements MapperBuilderConfigurator {
+            public function __construct(private readonly RuntimeException $exception) {}
+
+            public function configureMapperBuilder(MapperBuilder $builder): MapperBuilder
+            {
+                throw $this->exception;
+            }
+        };
+
+        try {
+            $this->builder([
+                'strict_configurators' => $strict,
+                'configurators'        => [$configurator],
+            ]);
+            self::fail('The configurator exception must propagate.');
+        } catch (RuntimeException $actual) {
+            self::assertSame($exception, $actual);
+        }
+    }
+
+    /** @return iterable<string, array{bool}> */
+    public static function configuratorModes(): iterable
+    {
+        yield 'legacy' => [false];
+
+        yield 'strict' => [true];
+    }
+
+    #[Test]
+    #[DataProvider('invalidStrictFlags')]
+    public function strictModeRejectsNonBooleanFlag(mixed $value): void
+    {
+        $this->expectException(InvalidConfigValueException::class);
+
+        $this->builder([
+            'strict_configurators' => $value,
+        ]);
+    }
+
+    /** @return iterable<string, array{mixed}> */
+    public static function invalidStrictFlags(): iterable
+    {
+        yield 'string' => ['true'];
+
+        yield 'integer' => [1];
+    }
+
+    #[Test]
+    public function falseDoesNotUndoConfiguratorCasting(): void
+    {
+        self::assertSame([
+            'value' => '42',
+        ], $this->permissiveBuilder()->mapper()->map('array{value: string}', [
+            'value' => 42,
+        ]));
+    }
+
+    #[Test]
+    public function falseDoesNotUndoConfiguratorSuperfluousKeys(): void
+    {
+        self::assertSame([
+            'name' => 'test',
+        ], $this->permissiveBuilder()->mapper()->map('array{name: string}', [
+            'name'  => 'test',
+            'extra' => 'ignored',
+        ]));
+    }
+
+    #[Test]
+    public function falseDoesNotUndoConfiguratorPermissiveTypes(): void
+    {
+        self::assertSame([
+            'data' => 42,
+        ], $this->permissiveBuilder()->mapper()->map('array{data: mixed}', [
+            'data' => 42,
+        ]));
+    }
+
+    #[Test]
+    public function falseDoesNotUndoConfiguratorUndefinedValues(): void
+    {
+        self::assertSame([
+            'name' => 'test',
+            'age'  => null,
+        ], $this->permissiveBuilder()->mapper()->map('array{name: string, age: int|null}', [
+            'name' => 'test',
+        ]));
+    }
+
+    #[Test]
+    public function configuratorsRunInDeclarationOrderBeforeConfiguredDateFormats(): void
+    {
+        $first = new class implements MapperBuilderConfigurator {
+            public function configureMapperBuilder(MapperBuilder $builder): MapperBuilder
+            {
+                return $builder->supportDateFormats('m.d.Y');
+            }
+        };
+        $second = new class implements MapperBuilderConfigurator {
+            public function configureMapperBuilder(MapperBuilder $builder): MapperBuilder
+            {
+                return $builder->supportDateFormats(...[...$builder->supportedDateFormats(), 'd-m-Y']);
+            }
+        };
+        $builder = $this->builder([
+            'configurators'        => [
+                'first'  => $first,
+                'second' => $second,
+            ],
+            'support_date_formats' => ['d/m/Y', 'm.d.Y'],
+        ]);
+
+        self::assertSame(['m.d.Y', 'd-m-Y', 'd/m/Y'], $builder->supportedDateFormats());
+
+        foreach (['10.05.2026', '05-10-2026', '05/10/2026'] as $input) {
+            self::assertSame('2026-10-05', $builder->mapper()->map(DateTimeImmutable::class, $input)->format('Y-m-d'));
+        }
     }
 
     #[Test]
@@ -655,6 +897,29 @@ final class ValinorMapperBuilderFactoryTest extends TestCase
         return (new ValinorMapperBuilderFactory())($this->createContainer($services));
     }
 
+    private function permissiveBuilder(): MapperBuilder
+    {
+        $configurator = new class implements MapperBuilderConfigurator {
+            public function configureMapperBuilder(MapperBuilder $builder): MapperBuilder
+            {
+                return $builder
+                    ->allowScalarValueCasting()
+                    ->allowSuperfluousKeys()
+                    ->allowPermissiveTypes()
+                    ->allowUndefinedValues()
+                ;
+            }
+        };
+
+        return $this->builder([
+            'configurators'              => [$configurator],
+            'allow_scalar_value_casting' => false,
+            'allow_superfluous_keys'     => false,
+            'allow_permissive_types'     => false,
+            'allow_undefined_values'     => false,
+        ]);
+    }
+
     /**
      * @return list<string>
      */
@@ -752,5 +1017,17 @@ final class ValinorMapperBuilderFactoryTest extends TestCase
                 return array_key_exists($id, $this->services);
             }
         };
+    }
+}
+
+abstract class AbstractConfigurator implements MapperBuilderConfigurator {}
+
+final readonly class PrivateConstructorConfigurator implements MapperBuilderConfigurator
+{
+    private function __construct() {}
+
+    public function configureMapperBuilder(MapperBuilder $builder): MapperBuilder
+    {
+        return $builder;
     }
 }

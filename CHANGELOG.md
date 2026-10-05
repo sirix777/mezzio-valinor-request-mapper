@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Opt-in `mapper.strict_configurators` diagnostics for unresolved, invalid or
+  unconstructible configurators, including their array key and identifier/type.
+  The default `false` retains legacy skips and direct-construction failures;
+  container services take precedence and configurator exceptions propagate.
 - Optional `input_limits` budgets (`max_nodes`, `max_depth`,
   `max_total_string_bytes`), all defaulting to `null`. When enabled, selected
   body/query/route inputs are rejected before mapping with stable
@@ -25,6 +29,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Inherited first-class handler callables now discover attributes from the
+  called child class, matching equivalent array callables. Attributes on the
+  inherited method remain active; parent class attributes are not inherited.
+  This correction can change which mappings run for existing routes.
+- Documented additive mapper flags: `false` does not undo capabilities enabled
+  by configurators. Configurators retain declaration order, followed by flags
+  and appended date formats; HTTP-specific extra-key/casting rules are retained.
 - Default error response `messages` is now always a JSON object. Numeric mapping
   paths (for example a root `list<int>` with failing elements) previously
   serialized as a JSON array; they are now string JSON property names, and an

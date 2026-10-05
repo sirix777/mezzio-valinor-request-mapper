@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sirix\Mezzio\Valinor\Test\Mapping;
 
 use Fig\Http\Message\RequestMethodInterface;
+use Laminas\Stratigility\Middleware\CallableMiddlewareDecorator;
 use Laminas\Stratigility\Middleware\RequestHandlerMiddleware;
 use Laminas\Stratigility\MiddlewarePipe;
 use Mezzio\Router\Route;
@@ -23,6 +24,8 @@ use Sirix\Mezzio\Valinor\Mapping\MapRequestResolver;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\AttributedMiddleware;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\AttributedRequestHandler;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\DualInterfaceHandler;
+use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\InheritedCallableChild;
+use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\InheritedCallableParent;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\RequiredRequest;
 
 final class MapRequestResolverTest extends TestCase
@@ -43,6 +46,59 @@ final class MapRequestResolverTest extends TestCase
         $result = RouteResult::fromRouteFailure([RequestMethodInterface::METHOD_GET]);
 
         self::assertSame([], $this->resolver->resolve($result));
+    }
+
+    #[Test]
+    public function inheritedFirstClassCallableReadsChildAndParentMethodMappings(): void
+    {
+        $child  = new InheritedCallableChild();
+        $method = 'work';
+        foreach ([[$child, $method], $child->work(...)] as $callable) {
+            $route    = new Route('/example', new CallableMiddlewareDecorator($callable), [RequestMethodInterface::METHOD_POST]);
+            $mappings = $this->resolver->resolve(RouteResult::fromRoute($route, []));
+
+            self::assertCount(2, $mappings);
+            self::assertSame('child', $mappings[0]->output);
+            self::assertSame('work', $mappings[1]->output);
+        }
+    }
+
+    #[Test]
+    public function inheritedStaticCallableReadsChildAndParentMethodMappings(): void
+    {
+        $method = 'staticWork';
+        foreach ([[InheritedCallableChild::class, $method], InheritedCallableChild::staticWork(...)] as $callable) {
+            $route    = new Route('/example', new CallableMiddlewareDecorator($callable), [RequestMethodInterface::METHOD_POST]);
+            $mappings = $this->resolver->resolve(RouteResult::fromRoute($route, []));
+
+            self::assertCount(2, $mappings);
+            self::assertSame('child', $mappings[0]->output);
+            self::assertSame('staticWork', $mappings[1]->output);
+        }
+    }
+
+    #[Test]
+    public function parentClassMappingsAreNotInheritedByUnannotatedChild(): void
+    {
+        $child  = new class extends InheritedCallableParent {};
+        $method = 'work';
+
+        foreach ([[$child, $method], $child->work(...)] as $callable) {
+            $route    = new Route('/example', new CallableMiddlewareDecorator($callable), [RequestMethodInterface::METHOD_POST]);
+            $mappings = $this->resolver->resolve(RouteResult::fromRoute($route, []));
+
+            self::assertCount(1, $mappings);
+            self::assertSame('work', $mappings[0]->output);
+        }
+    }
+
+    #[Test]
+    public function anonymousClosureInsideChildDoesNotReadClassMappings(): void
+    {
+        $decorator = new CallableMiddlewareDecorator((new InheritedCallableChild())->anonymousClosure());
+        $route     = new Route('/example', $decorator, [RequestMethodInterface::METHOD_POST]);
+
+        self::assertSame([], $this->resolver->resolve(RouteResult::fromRoute($route, [])));
     }
 
     #[Test]

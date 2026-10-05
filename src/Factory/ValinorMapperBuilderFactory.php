@@ -12,13 +12,17 @@ use CuyZ\Valinor\MapperBuilder;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
+use ReflectionClass;
 use Sirix\ContainerResolver\ConfigReader;
 use Sirix\ContainerResolver\ContainerResolver;
+use Sirix\Mezzio\Valinor\Exception\InvalidMapRequestConfiguration;
 
 use function array_unique;
 use function array_values;
+use function get_debug_type;
 use function is_a;
 use function is_string;
+use function sprintf;
 
 final readonly class ValinorMapperBuilderFactory
 {
@@ -47,11 +51,10 @@ final readonly class ValinorMapperBuilderFactory
             $builder = $builder->withCache($cache);
         }
 
-        foreach ($configReader->array('configurators', default: []) as $configurator) {
-            if (is_string($configurator)) {
-                $configurator = $resolver->optionalAs($configurator, MapperBuilderConfigurator::class)
-                    ?? (is_a($configurator, MapperBuilderConfigurator::class, true) ? new $configurator() : null);
-            }
+        $strict = $configReader->bool('strict_configurators', default: false);
+
+        foreach ($configReader->array('configurators', default: []) as $index => $value) {
+            $configurator = $this->resolveConfigurator($value, $index, $strict, $resolver);
 
             if ($configurator instanceof MapperBuilderConfigurator) {
                 $builder = $builder->configureWith($configurator);
@@ -83,6 +86,48 @@ final readonly class ValinorMapperBuilderFactory
         }
 
         return $builder;
+    }
+
+    private function resolveConfigurator(
+        mixed $value,
+        int|string $index,
+        bool $strict,
+        ContainerResolver $resolver,
+    ): ?MapperBuilderConfigurator {
+        if ($value instanceof MapperBuilderConfigurator) {
+            return $value;
+        }
+
+        if (is_string($value)) {
+            $service = $resolver->optionalAs($value, MapperBuilderConfigurator::class);
+
+            if (null !== $service) {
+                return $service;
+            }
+
+            if (is_a($value, MapperBuilderConfigurator::class, true)) {
+                if (! $strict) {
+                    return new $value();
+                }
+
+                $class = new ReflectionClass($value);
+
+                if ($class->isInstantiable() && 0 === ($class->getConstructor()?->getNumberOfRequiredParameters() ?? 0)) {
+                    return new $value();
+                }
+            }
+        }
+
+        if ($strict) {
+            throw new InvalidMapRequestConfiguration(sprintf(
+                'mapper.configurators[%s]: expected a registered service or constructible %s; received %s.',
+                $index,
+                MapperBuilderConfigurator::class,
+                is_string($value) ? "'{$value}'" : get_debug_type($value),
+            ));
+        }
+
+        return null;
     }
 
     private function createCache(ConfigReader $config): ?Cache
