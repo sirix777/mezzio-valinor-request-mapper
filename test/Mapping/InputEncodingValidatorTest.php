@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Sirix\Mezzio\Valinor\Error\RequestInputError;
 use Sirix\Mezzio\Valinor\Mapping\InputEncodingValidator;
+use Sirix\Mezzio\Valinor\Mapping\InputLimits;
 
 use function preg_match;
 
@@ -191,6 +192,288 @@ final class InputEncodingValidatorTest extends TestCase
         }
 
         self::assertSame(1, $callCount);
+    }
+
+    /**
+     * @param array<mixed>           $values
+     * @param 'body'|'query'|'route' $inputSource
+     */
+    #[Test]
+    #[DataProvider('nodeBoundaryProvider')]
+    public function nodeBoundaryIsInclusive(array $values, bool $accepted, string $inputSource): void
+    {
+        $validator = new InputEncodingValidator(new InputLimits(maxNodes: 2));
+
+        if ($accepted) {
+            self::expectNotToPerformAssertions();
+            $validator->assertValid($values, $inputSource);
+
+            return;
+        }
+
+        try {
+            $validator->assertValid($values, $inputSource);
+            self::fail('Expected RequestInputError to be thrown.');
+        } catch (RequestInputError $error) {
+            self::assertSame('input_node_limit_exceeded', $error->reason);
+            self::assertSame($inputSource, $error->inputSource);
+            self::assertSame('Request input exceeds the node limit.', $error->getMessage());
+        }
+    }
+
+    /**
+     * @return iterable<string, array{array<mixed>, bool, 'body'|'query'|'route'}>
+     */
+    public static function nodeBoundaryProvider(): iterable
+    {
+        foreach (['body', 'query', 'route'] as $source) {
+            yield "at limit {$source}" => [[1, 2], true, $source];
+
+            yield "over limit {$source}" => [[1, 2, 3], false, $source];
+        }
+    }
+
+    /** @param array<mixed> $values */
+    #[Test]
+    #[DataProvider('depthBoundaryProvider')]
+    public function emptyArrayCountsDepth(array $values, bool $accepted): void
+    {
+        $validator = new InputEncodingValidator(new InputLimits(maxDepth: 1));
+
+        if ($accepted) {
+            self::expectNotToPerformAssertions();
+            $validator->assertValid($values, 'body');
+
+            return;
+        }
+
+        try {
+            $validator->assertValid($values, 'body');
+            self::fail('Expected RequestInputError to be thrown.');
+        } catch (RequestInputError $error) {
+            self::assertSame('input_depth_limit_exceeded', $error->reason);
+            self::assertSame('body', $error->inputSource);
+            self::assertSame('Request input exceeds the nesting depth limit.', $error->getMessage());
+        }
+    }
+
+    /**
+     * @return iterable<string, array{array<mixed>, bool}>
+     */
+    public static function depthBoundaryProvider(): iterable
+    {
+        yield 'empty root at depth 1'  => [[], true];
+
+        yield 'nested array at depth 2' => [[
+            'x' => [],
+        ], false];
+    }
+
+    #[Test]
+    public function stringBytesIncludeKeys(): void
+    {
+        $accepted = new InputEncodingValidator(new InputLimits(maxTotalStringBytes: 5));
+        $accepted->assertValid([
+            'x' => 'éé',
+        ], 'body');
+
+        $rejected = new InputEncodingValidator(new InputLimits(maxTotalStringBytes: 5));
+
+        try {
+            $rejected->assertValid([
+                'x' => 'ééa',
+            ], 'query');
+            self::fail('Expected RequestInputError to be thrown.');
+        } catch (RequestInputError $error) {
+            self::assertSame('input_string_bytes_limit_exceeded', $error->reason);
+            self::assertSame('query', $error->inputSource);
+            self::assertSame('Request input exceeds the string byte limit.', $error->getMessage());
+        }
+    }
+
+    /**
+     * @param array<mixed>           $values
+     * @param 'body'|'query'|'route' $inputSource
+     */
+    #[Test]
+    #[DataProvider('invalidUtf8OverBudgetProvider')]
+    public function budgetPrecedesInvalidUtf8(array $values, string $inputSource): void
+    {
+        $validator = new InputEncodingValidator(new InputLimits(maxTotalStringBytes: 1));
+
+        try {
+            $validator->assertValid($values, $inputSource);
+            self::fail('Expected RequestInputError to be thrown.');
+        } catch (RequestInputError $error) {
+            self::assertSame('input_string_bytes_limit_exceeded', $error->reason);
+            self::assertSame($inputSource, $error->inputSource);
+        }
+    }
+
+    /**
+     * @return iterable<string, array{array<mixed>, 'body'|'query'|'route'}>
+     */
+    public static function invalidUtf8OverBudgetProvider(): iterable
+    {
+        // String key: the key itself already consumes the one-byte budget, so
+        // the rejection happens before the invalid value is inspected.
+        yield 'string key' => [[
+            'name' => "\xB1\x31\xB1",
+        ], 'route'];
+
+        // Integer key: keys of other types do not consume string bytes, so the
+        // invalid value is what exceeds the budget before UTF-8 validation.
+        yield 'integer key' => [[
+            0 => "\xB1\x31\xB1",
+        ], 'body'];
+    }
+
+    #[Test]
+    public function singleLimitDoesNotEnableOthers(): void
+    {
+        self::expectNotToPerformAssertions();
+
+        $validator = new InputEncodingValidator(new InputLimits(maxNodes: 10));
+
+        $validator->assertValid([
+            'deep' => [
+                'nested' => [
+                    'array' => [
+                        'with' => 'a very long string value that is not measured',
+                    ],
+                ],
+            ],
+        ], 'body');
+    }
+
+    #[Test]
+    public function earlyNodeFailureDoesNotScanTheTail(): void
+    {
+        $validator = new InputEncodingValidator(new InputLimits(maxNodes: 1));
+
+        try {
+            $validator->assertValid(['ok', "\xB1\x31"], 'body');
+            self::fail('Expected RequestInputError to be thrown.');
+        } catch (RequestInputError $error) {
+            self::assertSame('input_node_limit_exceeded', $error->reason);
+        }
+    }
+
+    #[Test]
+    public function sharedSiblingReferencesCountEachOccurrence(): void
+    {
+        $shared = [
+            'v' => 1,
+        ];
+        $values = [
+            'a' => &$shared,
+            'b' => &$shared,
+        ];
+
+        $accepted = new InputEncodingValidator(new InputLimits(maxNodes: 4));
+        $accepted->assertValid($values, 'body');
+
+        try {
+            (new InputEncodingValidator(new InputLimits(maxNodes: 3)))->assertValid($values, 'body');
+            self::fail('Expected RequestInputError to be thrown.');
+        } catch (RequestInputError $error) {
+            self::assertSame('input_node_limit_exceeded', $error->reason);
+        }
+    }
+
+    #[Test]
+    public function sharedReferenceAtDeeperPathHonorsDepth(): void
+    {
+        $shared = [
+            'v' => 1,
+        ];
+        $values = [
+            'a' => &$shared,
+        ];
+
+        $accepted = new InputEncodingValidator(new InputLimits(maxDepth: 2));
+        $accepted->assertValid($values, 'body');
+
+        try {
+            (new InputEncodingValidator(new InputLimits(maxDepth: 1)))->assertValid($values, 'body');
+            self::fail('Expected RequestInputError to be thrown.');
+        } catch (RequestInputError $error) {
+            self::assertSame('input_depth_limit_exceeded', $error->reason);
+        }
+    }
+
+    #[Test]
+    public function enabledLimitsRejectSelfCycles(): void
+    {
+        $circular = [
+            'value' => 'ok',
+        ];
+        $circular['self'] = &$circular;
+
+        try {
+            (new InputEncodingValidator(new InputLimits(maxNodes: 100)))->assertValid($circular, 'body');
+            self::fail('Expected RequestInputError to be thrown.');
+        } catch (RequestInputError $error) {
+            self::assertSame('cyclic_input', $error->reason);
+            self::assertSame('body', $error->inputSource);
+            self::assertSame('Request input contains a circular array reference.', $error->getMessage());
+        }
+    }
+
+    #[Test]
+    public function enabledLimitsRejectMutualCycles(): void
+    {
+        $a      = [];
+        $b      = [];
+        $a['b'] = &$b;
+        $b['a'] = &$a;
+
+        try {
+            (new InputEncodingValidator(new InputLimits(maxNodes: 100)))->assertValid($a, 'body');
+            self::fail('Expected RequestInputError to be thrown.');
+        } catch (RequestInputError $error) {
+            self::assertSame('cyclic_input', $error->reason);
+        }
+    }
+
+    #[Test]
+    public function disabledLimitsKeepCycleCompatibility(): void
+    {
+        $self = [
+            'value' => 'ok',
+        ];
+        $self['self'] = &$self;
+
+        $a      = [];
+        $b      = [];
+        $a['b'] = &$b;
+        $b['a'] = &$a;
+
+        self::expectNotToPerformAssertions();
+
+        $validator = new InputEncodingValidator();
+        $validator->assertValid($self, 'body');
+        $validator->assertValid($a, 'body');
+    }
+
+    #[Test]
+    public function validationDoesNotMutateReferences(): void
+    {
+        $shared = [
+            'v' => 1,
+        ];
+        $values = [
+            'a' => &$shared,
+            'b' => &$shared,
+        ];
+
+        (new InputEncodingValidator(new InputLimits(maxNodes: 4)))->assertValid($values, 'body');
+
+        $values['a']['v'] = 2;
+        self::assertSame(2, $shared['v']);
+        self::assertSame([
+            'v' => 2,
+        ], $values['b']);
     }
 
     #[Test]

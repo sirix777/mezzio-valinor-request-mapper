@@ -22,6 +22,7 @@ use Sirix\Mezzio\Valinor\Error\MappingErrorResponderInterface;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderResolver;
 use Sirix\Mezzio\Valinor\Factory\DefaultMappingErrorResponderFactory;
 use Sirix\Mezzio\Valinor\Factory\HttpRequestSourceFactoryFactory;
+use Sirix\Mezzio\Valinor\Factory\InputEncodingValidatorFactory;
 use Sirix\Mezzio\Valinor\Factory\MappingErrorResponderResolverFactory;
 use Sirix\Mezzio\Valinor\Factory\MappingPlanResolverFactory;
 use Sirix\Mezzio\Valinor\Factory\MapRequestResolverFactory;
@@ -85,6 +86,10 @@ final class ConfigProviderTest extends TestCase
             MappingErrorResponderResolverFactory::class,
             $config['dependencies']['factories'][MappingErrorResponderResolver::class] ?? null,
         );
+        self::assertSame(
+            InputEncodingValidatorFactory::class,
+            $config['dependencies']['factories'][InputEncodingValidator::class] ?? null,
+        );
     }
 
     #[Test]
@@ -95,10 +100,6 @@ final class ConfigProviderTest extends TestCase
         self::assertSame(
             HandlerTargetResolver::class,
             $config['dependencies']['invokables'][HandlerTargetResolver::class] ?? null,
-        );
-        self::assertSame(
-            InputEncodingValidator::class,
-            $config['dependencies']['invokables'][InputEncodingValidator::class] ?? null,
         );
         self::assertSame(
             MapRequestOptionsParser::class,

@@ -30,4 +30,40 @@ final class RequestInputError extends RuntimeException
             'Request input contains invalid UTF-8.',
         );
     }
+
+    public static function nodeLimitExceeded(string $inputSource): self
+    {
+        return new self(
+            'input_node_limit_exceeded',
+            $inputSource,
+            'Request input exceeds the node limit.',
+        );
+    }
+
+    public static function depthLimitExceeded(string $inputSource): self
+    {
+        return new self(
+            'input_depth_limit_exceeded',
+            $inputSource,
+            'Request input exceeds the nesting depth limit.',
+        );
+    }
+
+    public static function stringBytesLimitExceeded(string $inputSource): self
+    {
+        return new self(
+            'input_string_bytes_limit_exceeded',
+            $inputSource,
+            'Request input exceeds the string byte limit.',
+        );
+    }
+
+    public static function cyclicInput(string $inputSource): self
+    {
+        return new self(
+            'cyclic_input',
+            $inputSource,
+            'Request input contains a circular array reference.',
+        );
+    }
 }

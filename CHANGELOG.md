@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Optional `input_limits` budgets (`max_nodes`, `max_depth`,
+  `max_total_string_bytes`), all defaulting to `null`. When enabled, selected
+  body/query/route inputs are rejected before mapping with stable
+  `RequestInputError` reasons (`input_node_limit_exceeded`,
+  `input_depth_limit_exceeded`, `input_string_bytes_limit_exceeded`,
+  `cyclic_input`). Limits are checked per source in one iterative traversal
+  together with UTF-8 validation; with all limits disabled the previous
+  reference handling is preserved.
 - `error_response.max_messages` and `error_response.max_response_bytes` options
   for the built-in `DefaultMappingErrorResponder`; both default to `null`
   (unlimited) and apply only to the default responder. An oversized serialized

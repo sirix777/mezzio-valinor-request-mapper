@@ -34,13 +34,13 @@ final class ConfigProvider
                     DefaultMappingErrorResponder::class               => Factory\DefaultMappingErrorResponderFactory::class,
                     Error\MappingErrorResponderResolver::class        => Factory\MappingErrorResponderResolverFactory::class,
                     Middleware\ValinorRequestMapperMiddleware::class  => Factory\ValinorRequestMapperMiddlewareFactory::class,
+                    InputEncodingValidator::class                     => Factory\InputEncodingValidatorFactory::class,
                 ],
                 'aliases'    => [
                     MappingErrorResponderInterface::class => DefaultMappingErrorResponder::class,
                 ],
                 'invokables' => [
                     HandlerTargetResolver::class   => HandlerTargetResolver::class,
-                    InputEncodingValidator::class  => InputEncodingValidator::class,
                     MapRequestOptionsParser::class => MapRequestOptionsParser::class,
                     HttpMethodNormalizer::class    => HttpMethodNormalizer::class,
                 ],

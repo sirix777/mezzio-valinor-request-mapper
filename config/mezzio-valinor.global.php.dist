@@ -63,6 +63,22 @@ return [
             'cache_watch'                => false,
         ],
 
+        // --- Optional request input budgets ---
+        // Checked in a single iterative traversal together with UTF-8
+        // validation, before the mapper for the matching operation runs.
+        // All limits default to null (disabled); enabling one does not enable
+        // the others. Budgets apply per selected source (body/query/route).
+        'input_limits' => [
+            // Maximum number of array elements (root itself is not a node).
+            'max_nodes'              => null,
+
+            // Maximum nesting depth of native arrays; the root array is depth 1.
+            'max_depth'              => null,
+
+            // Maximum total bytes of string keys and string values.
+            'max_total_string_bytes' => null,
+        ],
+
         // --- Default mapping error response limits ---
         // Applied only to the built-in DefaultMappingErrorResponder. Custom
         // responders keep their own contract and are not bounded by these.

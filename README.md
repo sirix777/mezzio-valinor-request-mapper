@@ -324,6 +324,11 @@ return [
             'allow_undefined_values' => false,
             'support_date_formats' => ['Y-m-d', 'd/m/Y'],
         ],
+        'input_limits' => [
+            'max_nodes' => null,
+            'max_depth' => null,
+            'max_total_string_bytes' => null,
+        ],
         'error_response' => [
             'max_messages' => null,
             'max_response_bytes' => null,
@@ -331,6 +336,39 @@ return [
     ],
 ];
 ```
+
+### Input budget options
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `input_limits.max_nodes` | `?int` | `null` | Maximum number of array elements. The root array itself is not a node |
+| `input_limits.max_depth` | `?int` | `null` | Maximum nesting depth of native arrays; the root array is depth 1 |
+| `input_limits.max_total_string_bytes` | `?int` | `null` | Maximum total bytes of string keys and string values |
+
+All three default to `null` (disabled); enabling one does not enable the
+others. A limit is enforced in a single iterative traversal together with
+UTF-8 validation, before the mapper runs for the matching operation, and only
+for the selected source (body, query or route). Exactly N nodes, depth D or B
+bytes are accepted; one more is rejected with a fixed `RequestInputError`
+reason (`input_node_limit_exceeded`, `input_depth_limit_exceeded`,
+`input_string_bytes_limit_exceeded`, `cyclic_input`) and the default `422`
+response. When limits are enabled, shared array branches are traversed once per
+occurrence and circular references are rejected. With all limits disabled the
+previous UTF-8 semantics (including accepting repeated/circular references) are
+unchanged.
+
+Budgets count the array structure that reaches the middleware: element nodes,
+nesting depth and the bytes of string keys and values are measured and
+bounded. What is *not* bounded is the cost and memory already spent by the body
+parser or by application code producing that array, nor the work of
+application objects, iterables and custom constructors reached from it. The
+package is not a full sandbox for arbitrary parsed input.
+
+The request-scoped input snapshot is shallow: it holds the arrays retrieved
+from the request, not deep copies. Custom code must not mutate nested
+references in those arrays between mappings in the same request — the package
+does not deep-copy the payload or re-validate each DTO. See the
+[spec](docs/superpowers/specs/) for the exact counter semantics and IN-05.
 
 ### Error response options
 
