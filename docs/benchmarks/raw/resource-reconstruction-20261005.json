@@ -1,0 +1,280 @@
+{
+    "schema": "sirix-mezzio-valinor-resource/1",
+    "metric": "elapsed microseconds per operation",
+    "environment": {
+        "php": "8.5.10",
+        "os": "Linux W10-NTB-112 6.18.40.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026 x86_64",
+        "opcache_cli": "0",
+        "jit": "disable",
+        "extensions": [
+            "Core",
+            "date",
+            "lexbor",
+            "openssl",
+            "pcre",
+            "zlib",
+            "filter",
+            "hash",
+            "json",
+            "uri",
+            "Zend OPcache",
+            "pcntl",
+            "random",
+            "Reflection",
+            "SPL",
+            "session",
+            "standard",
+            "sodium",
+            "libxml",
+            "mysqlnd",
+            "PDO",
+            "xml",
+            "bcmath",
+            "calendar",
+            "ctype",
+            "curl",
+            "dom",
+            "mbstring",
+            "FFI",
+            "fileinfo",
+            "ftp",
+            "gd",
+            "gettext",
+            "iconv",
+            "intl",
+            "exif",
+            "mongodb",
+            "mysqli",
+            "pcov",
+            "pdo_mysql",
+            "pdo_pgsql",
+            "pdo_sqlite",
+            "pgsql",
+            "Phar",
+            "posix",
+            "raphf",
+            "readline",
+            "shmop",
+            "SimpleXML",
+            "sockets",
+            "sqlite3",
+            "ssh2",
+            "sysvmsg",
+            "sysvsem",
+            "sysvshm",
+            "tokenizer",
+            "xmlreader",
+            "xmlwriter",
+            "xsl",
+            "http"
+        ]
+    },
+    "provenance": {
+        "runner_sha256": "a0a7223d42107a8fb16c388fb9f340f184cafbb271ead60ad70f8cb9f0dd379e",
+        "harness_sha256": "2eb73406079d9db254727ac5c475088552b14d35a6d26a3a2a5723baef5550f9",
+        "lock_sha256": "ab4eb98175e6b5564ebcfa0342bcc9e62abfe9f1622669a06c8e48503438fac6"
+    },
+    "params": {
+        "iterations": 100,
+        "warmup": 10,
+        "samples": 5
+    },
+    "scenarios": [
+        {
+            "name": "nested",
+            "lifecycle": "warm-reuse",
+            "status": 204,
+            "correctness": {
+                "hydrated_records": 100
+            },
+            "samples_us_per_op": [
+                1438.07923,
+                1368.6581700000002,
+                1313.2152600000002,
+                1307.40456,
+                1388.5162
+            ],
+            "median_us_per_op": 1368.6581700000002,
+            "setup_used_bytes": 1750304,
+            "setup_allocated_bytes": 4194304,
+            "peak_used_bytes": 3937176,
+            "peak_allocated_bytes": 4194304,
+            "response_bytes": 0,
+            "rss_bytes": null
+        },
+        {
+            "name": "errors-10",
+            "lifecycle": "warm-reuse",
+            "status": 422,
+            "correctness": {
+                "retained_messages": 10
+            },
+            "samples_us_per_op": [
+                157.2537,
+                202.28548999999998,
+                228.99831999999998,
+                174.03061000000002,
+                151.417
+            ],
+            "median_us_per_op": 174.03061000000002,
+            "setup_used_bytes": 1750320,
+            "setup_allocated_bytes": 4194304,
+            "peak_used_bytes": 4328712,
+            "peak_allocated_bytes": 6291456,
+            "response_bytes": 669,
+            "rss_bytes": null
+        },
+        {
+            "name": "errors-100",
+            "lifecycle": "warm-reuse",
+            "status": 422,
+            "correctness": {
+                "retained_messages": 100
+            },
+            "samples_us_per_op": [
+                1136.72453,
+                1239.31701,
+                1221.33382,
+                1146.89624,
+                1135.70122
+            ],
+            "median_us_per_op": 1146.89624,
+            "setup_used_bytes": 1750320,
+            "setup_allocated_bytes": 4194304,
+            "peak_used_bytes": 5599248,
+            "peak_allocated_bytes": 6291456,
+            "response_bytes": 6429,
+            "rss_bytes": null
+        },
+        {
+            "name": "errors-1000",
+            "lifecycle": "warm-reuse",
+            "status": 422,
+            "correctness": {
+                "retained_messages": 1000
+            },
+            "samples_us_per_op": [
+                15855.74595,
+                15655.67882,
+                15637.4291,
+                15366.89763,
+                17443.59823
+            ],
+            "median_us_per_op": 15655.67882,
+            "setup_used_bytes": 1750320,
+            "setup_allocated_bytes": 4194304,
+            "peak_used_bytes": 18576432,
+            "peak_allocated_bytes": 20971520,
+            "response_bytes": 64929,
+            "rss_bytes": null
+        },
+        {
+            "name": "errors-10000",
+            "lifecycle": "warm-reuse",
+            "status": 422,
+            "correctness": {
+                "retained_messages": 10000
+            },
+            "samples_us_per_op": [
+                520266.73663,
+                531839.4723200001,
+                588122.4289599999,
+                577456.79366,
+                554031.45361
+            ],
+            "median_us_per_op": 554031.45361,
+            "setup_used_bytes": 1750320,
+            "setup_allocated_bytes": 4194304,
+            "peak_used_bytes": 149085992,
+            "peak_allocated_bytes": 153092096,
+            "response_bytes": 658929,
+            "rss_bytes": null
+        },
+        {
+            "name": "input-limit",
+            "lifecycle": "warm-reuse",
+            "status": 422,
+            "correctness": {
+                "retained_messages": 1,
+                "mapper_calls": 0,
+                "reason": "input_node_limit_exceeded"
+            },
+            "samples_us_per_op": [
+                442.96394999999995,
+                455.80410000000006,
+                484.59938,
+                439.47478,
+                458.41134
+            ],
+            "median_us_per_op": 455.80410000000006,
+            "setup_used_bytes": 1750320,
+            "setup_allocated_bytes": 4194304,
+            "peak_used_bytes": 3586872,
+            "peak_allocated_bytes": 4194304,
+            "response_bytes": 84,
+            "rss_bytes": null
+        },
+        {
+            "name": "response-limit",
+            "lifecycle": "warm-reuse",
+            "status": 422,
+            "correctness": {
+                "retained_messages": 101
+            },
+            "samples_us_per_op": [
+                494043.25542000006,
+                518411.87362,
+                505175.30464,
+                510078.63434,
+                497746.64009999996
+            ],
+            "median_us_per_op": 505175.30464,
+            "setup_used_bytes": 1750320,
+            "setup_allocated_bytes": 4194304,
+            "peak_used_bytes": 143444384,
+            "peak_allocated_bytes": 146800640,
+            "response_bytes": 6476,
+            "rss_bytes": null
+        },
+        {
+            "name": "cold",
+            "lifecycle": "cold-first-map",
+            "status": 204,
+            "correctness": {
+                "hydrated_records": 100
+            },
+            "samples_us_per_op": [
+                8141.66
+            ],
+            "median_us_per_op": 8141.66,
+            "setup_used_bytes": 1750304,
+            "setup_allocated_bytes": 4194304,
+            "peak_used_bytes": 3937176,
+            "peak_allocated_bytes": 4194304,
+            "response_bytes": 0,
+            "rss_bytes": null
+        },
+        {
+            "name": "warm",
+            "lifecycle": "warm-reuse",
+            "status": 204,
+            "correctness": {
+                "hydrated_records": 100
+            },
+            "samples_us_per_op": [
+                1486.35771,
+                1517.16426,
+                1568.47954,
+                1524.01358,
+                1450.2040100000002
+            ],
+            "median_us_per_op": 1517.16426,
+            "setup_used_bytes": 1750304,
+            "setup_allocated_bytes": 4194304,
+            "peak_used_bytes": 3937176,
+            "peak_allocated_bytes": 4194304,
+            "response_bytes": 0,
+            "rss_bytes": null
+        }
+    ]
+}

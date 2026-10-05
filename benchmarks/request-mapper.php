@@ -25,12 +25,14 @@ use Psr\Http\Server\RequestHandlerInterface;
 use Sirix\ContainerResolver\ContainerResolver;
 use Sirix\Mezzio\Valinor\Attribute\MapRequest;
 use Sirix\Mezzio\Valinor\Error\DefaultMappingErrorResponder;
+use Sirix\Mezzio\Valinor\Error\ErrorResponseOptions;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderInterface;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderResolver;
 use Sirix\Mezzio\Valinor\Mapping\HandlerTargetResolver;
 use Sirix\Mezzio\Valinor\Mapping\HttpMethodNormalizer;
 use Sirix\Mezzio\Valinor\Mapping\HttpRequestSourceFactory;
 use Sirix\Mezzio\Valinor\Mapping\InputEncodingValidator;
+use Sirix\Mezzio\Valinor\Mapping\InputLimits;
 use Sirix\Mezzio\Valinor\Mapping\MappingPlanResolver;
 use Sirix\Mezzio\Valinor\Mapping\MapRequestOptionsParser;
 use Sirix\Mezzio\Valinor\Mapping\MapRequestResolver;
@@ -121,7 +123,7 @@ final class BenchmarkBodyAndSourceHandler implements RequestHandlerInterface
 }
 
 /** @return array{0: ValinorRequestMapperMiddleware, 1: TreeMapper} */
-function createServices(?string $cacheDir = null): array
+function createServices(?string $cacheDir = null, ?InputLimits $inputLimits = null, ?ErrorResponseOptions $errorOptions = null): array
 {
     $builder = (new MapperBuilder())->allowSuperfluousKeys()->allowScalarValueCasting();
 
@@ -133,7 +135,9 @@ function createServices(?string $cacheDir = null): array
 
     $responseFactory  = new ResponseFactory();
     $streamFactory    = new StreamFactory();
-    $defaultResponder = new DefaultMappingErrorResponder($responseFactory, $streamFactory);
+    $defaultResponder = $errorOptions instanceof ErrorResponseOptions
+        ? new DefaultMappingErrorResponder($responseFactory, $streamFactory, $errorOptions)
+        : new DefaultMappingErrorResponder($responseFactory, $streamFactory);
 
     $container = new class($defaultResponder) implements ContainerInterface {
         /** @var array<class-string, MappingErrorResponderInterface> */
@@ -147,7 +151,8 @@ function createServices(?string $cacheDir = null): array
             ];
         }
 
-        public function get(string $id): mixed
+        /** @param string $id */
+        public function get($id): mixed
         {
             if (\array_key_exists($id, $this->services)) {
                 return $this->services[$id];
@@ -156,7 +161,8 @@ function createServices(?string $cacheDir = null): array
             throw new RuntimeException("Service not found: {$id}");
         }
 
-        public function has(string $id): bool
+        /** @param string $id */
+        public function has($id): bool
         {
             return \array_key_exists($id, $this->services);
         }
@@ -172,7 +178,8 @@ function createServices(?string $cacheDir = null): array
         new HttpMethodNormalizer(),
     );
 
-    $sourceFactory = new HttpRequestSourceFactory(new InputEncodingValidator());
+    $validator     = $inputLimits instanceof InputLimits ? new InputEncodingValidator($inputLimits) : new InputEncodingValidator();
+    $sourceFactory = new HttpRequestSourceFactory($validator);
 
     return [
         new ValinorRequestMapperMiddleware($treeMapper, $responderResolver, $planResolver, $sourceFactory),
@@ -309,13 +316,28 @@ function largePayloadScenario(
         ->withAttribute(RouteResult::class, RouteResult::fromRoute($route, $routeParams))
     ;
 
+    $expected = match (true) {
+        $handler instanceof BenchmarkThreeLargeBodyHandler => [
+            'first'  => new BenchmarkLargeBodyRequest('Ada'),
+            'second' => new BenchmarkLargeBodyRequest('Ada'),
+            'third'  => new BenchmarkLargeBodyRequest('Ada'),
+        ],
+        $handler instanceof BenchmarkBodyAndSourceHandler  => [
+            'body'   => new BenchmarkLargeBodyRequest('Ada'),
+            'source' => new BenchmarkLargeSourceRequest('42', '2', 'Ada'),
+        ],
+        default                                            => [
+            BenchmarkLargeBodyRequest::class => new BenchmarkLargeBodyRequest('Ada'),
+        ],
+    };
+
     return \array_merge(
         [
             'name'      => $name,
             'lifecycle' => 'reuse',
             'input'     => \payloadMetadata($body),
         ],
-        \measure(static fn () => $middleware->process($request, $handler), $iterations, $warmup, $samples),
+        \measureMappedScenario($middleware, $request, $handler, $expected, $iterations, $warmup, $samples),
     );
 }
 
@@ -404,6 +426,9 @@ function removeScenarioCacheDirectory(string $cacheDir): void
 }
 
 /**
+ * hrtime measures wall-clock elapsed time, not CPU time. Peak memory is PHP
+ * allocated memory for the process, not PHP used memory or operating-system RSS.
+ *
  * @return array{
  *     median_us_per_op: float,
  *     min_us_per_op: float,
@@ -414,6 +439,13 @@ function removeScenarioCacheDirectory(string $cacheDir): void
  */
 function measure(callable $callback, int $iterations, int $warmup, int $samples): array
 {
+    // Correctness is checked once, outside every elapsed measurement.
+    $probe = $callback();
+
+    if ($probe instanceof ResponseInterface) {
+        \assertScenarioResult($probe, 204);
+    }
+
     $sampleTimes = [];
 
     for ($sample = 0; $sample < $samples; ++$sample) {
@@ -436,7 +468,7 @@ function measure(callable $callback, int $iterations, int $warmup, int $samples)
     \sort($sorted);
 
     return [
-        'median_us_per_op'  => \round($sorted[(int) \floor($samples / 2)], 3),
+        'median_us_per_op'  => \round(\benchmarkMedian($sampleTimes), 3),
         'min_us_per_op'     => \round($sorted[0], 3),
         'max_us_per_op'     => \round($sorted[$samples - 1], 3),
         'samples_us_per_op' => \array_map(
@@ -445,6 +477,82 @@ function measure(callable $callback, int $iterations, int $warmup, int $samples)
         ),
         'peak_memory_bytes' => \memory_get_peak_usage(true),
     ];
+}
+
+/** @param list<float|int> $values */
+function benchmarkMedian(array $values): float
+{
+    if ([] === $values) {
+        throw new InvalidArgumentException('Cannot calculate a median without samples');
+    }
+
+    \sort($values);
+    $middle = \intdiv(\count($values), 2);
+
+    return 0 === \count($values) % 2
+        ? ($values[$middle - 1] + $values[$middle]) / 2.0
+        : (float) $values[$middle];
+}
+
+/** @return list<int> */
+function compatibilityScenarioIds(): array
+{
+    return \range(1, 15);
+}
+
+function assertScenarioResult(ResponseInterface $response, int $expectedStatus): void
+{
+    if ($response->getStatusCode() !== $expectedStatus) {
+        throw new RuntimeException('Benchmark correctness probe returned unexpected HTTP status: ' . $response->getStatusCode());
+    }
+}
+
+/**
+ * @param array<string, object> $expected
+ *
+ * @return array<string, mixed>
+ */
+function measureMappedScenario(
+    ValinorRequestMapperMiddleware $middleware,
+    ServerRequestInterface $request,
+    RequestHandlerInterface $handler,
+    array $expected,
+    int $iterations,
+    int $warmup,
+    int $samples,
+): array {
+    \assertMappedScenario($middleware, $request, $expected);
+
+    return \array_merge([
+        'classification' => 'mapping',
+        'correctness'    => [
+            'status'              => 204,
+            'dto_values_verified' => true,
+        ],
+    ], \measure(static fn () => $middleware->process($request, $handler), $iterations, $warmup, $samples));
+}
+
+/** @param array<string, object> $expected */
+function assertMappedScenario(ValinorRequestMapperMiddleware $middleware, ServerRequestInterface $request, array $expected): void
+{
+    $verifier = new class($expected) implements RequestHandlerInterface {
+        /** @param array<string, object> $expected */
+        public function __construct(private readonly array $expected) {}
+
+        public function handle(ServerRequestInterface $request): ResponseInterface
+        {
+            foreach ($this->expected as $key => $dto) {
+                $actual = $request->getAttribute($key);
+
+                if (! \is_object($actual) || $actual::class !== $dto::class || \get_object_vars($actual) !== \get_object_vars($dto)) {
+                    throw new RuntimeException('Benchmark correctness probe returned incorrect DTO: ' . $key);
+                }
+            }
+
+            return new EmptyResponse();
+        }
+    };
+    \assertScenarioResult($middleware->process($request, $verifier), 204);
 }
 
 /** @return array<string, mixed> */
@@ -463,8 +571,13 @@ function runScenario(
 
             return \array_merge(
                 [
-                    'name'      => 'No RouteResult passthrough',
-                    'lifecycle' => 'reuse',
+                    'name'           => 'No RouteResult passthrough',
+                    'lifecycle'      => 'reuse',
+                    'classification' => 'control',
+                    'correctness'    => [
+                        'status'              => 204,
+                        'dto_values_verified' => false,
+                    ],
                 ],
                 \measure(static fn () => $middleware->process($request, $handler), $iterations, $warmup, $samples),
             );
@@ -486,18 +599,22 @@ function runScenario(
                     'name'      => 'Reflection via direct handler object',
                     'lifecycle' => 'reuse',
                 ],
-                \measure(static fn () => $middleware->process($request, $handler), $iterations, $warmup, $samples),
+                \measureMappedScenario($middleware, $request, $handler, [
+                    BenchmarkBodyRequest::class => new BenchmarkBodyRequest('Ada'),
+                ], $iterations, $warmup, $samples),
             );
 
         case 3:
             [$middleware]  = \createServices();
             $lazyContainer = new class implements ContainerInterface {
-                public function get(string $id): mixed
+                /** @param string $id */
+                public function get($id): mixed
                 {
                     return new $id();
                 }
 
-                public function has(string $id): bool
+                /** @param string $id */
+                public function has($id): bool
                 {
                     return \class_exists($id);
                 }
@@ -521,7 +638,9 @@ function runScenario(
                     'name'      => 'Reflection via lazy FQCN handler',
                     'lifecycle' => 'reuse',
                 ],
-                \measure(static fn () => $middleware->process($request, $handler), $iterations, $warmup, $samples),
+                \measureMappedScenario($middleware, $request, $handler, [
+                    BenchmarkBodyRequest::class => new BenchmarkBodyRequest('Ada'),
+                ], $iterations, $warmup, $samples),
             );
 
         case 4:
@@ -551,7 +670,9 @@ function runScenario(
                     'name'      => 'Route options single DTO',
                     'lifecycle' => 'reuse',
                 ],
-                \measure(static fn () => $middleware->process($request, $handler), $iterations, $warmup, $samples),
+                \measureMappedScenario($middleware, $request, $handler, [
+                    BenchmarkBodyRequest::class => new BenchmarkBodyRequest('Ada'),
+                ], $iterations, $warmup, $samples),
             );
 
         case 5:
@@ -576,7 +697,11 @@ function runScenario(
                     'name'      => 'Three operations with different outputs',
                     'lifecycle' => 'reuse',
                 ],
-                \measure(static fn () => $middleware->process($request, $handler), $iterations, $warmup, $samples),
+                \measureMappedScenario($middleware, $request, $handler, [
+                    'body'  => new BenchmarkBodyRequest('Ada'),
+                    'query' => new BenchmarkQueryRequest(1),
+                    'route' => new BenchmarkRouteRequest('42'),
+                ], $iterations, $warmup, $samples),
             );
 
         case 6:
@@ -596,7 +721,9 @@ function runScenario(
                     'name'      => 'Repeated calls reusing middleware and builder',
                     'lifecycle' => 'reuse',
                 ],
-                \measure(static fn () => $middleware->process($request, $handler), $iterations, $warmup, $samples),
+                \measureMappedScenario($middleware, $request, $handler, [
+                    BenchmarkBodyRequest::class => new BenchmarkBodyRequest('Ada'),
+                ], $iterations, $warmup, $samples),
             );
 
         case 7:
@@ -626,15 +753,27 @@ function runScenario(
                     ->withAttribute(RouteResult::class, RouteResult::fromRoute($route, []))
                 ;
 
-                $callback = static function() use ($scenarioCacheDir, $request, $handler): void {
+                $callback = static function() use ($scenarioCacheDir, $request, $handler): ResponseInterface {
                     [$middleware] = \createServices($scenarioCacheDir);
-                    $middleware->process($request, $handler);
+
+                    return $middleware->process($request, $handler);
                 };
+
+                [$probeMiddleware] = \createServices($scenarioCacheDir);
+                // Verify the same mapped path before timing fresh service construction.
+                \assertMappedScenario($probeMiddleware, $request, [
+                    BenchmarkBodyRequest::class => new BenchmarkBodyRequest('Ada'),
+                ]);
 
                 return \array_merge(
                     [
-                        'name'      => 'New middleware/resolvers/builder per iteration with file cache',
-                        'lifecycle' => 'new-each-iteration',
+                        'name'           => 'New middleware/resolvers/builder per iteration with file cache',
+                        'lifecycle'      => 'new-each-iteration',
+                        'classification' => 'mapping',
+                        'correctness'    => [
+                            'status'              => 204,
+                            'dto_values_verified' => true,
+                        ],
                     ],
                     \measure($callback, $iterations, $warmup, $samples),
                 );
@@ -727,6 +866,27 @@ function runScenario(
                 ],
             );
 
+        case 15:
+            [$middleware] = \createServices();
+            $handler      = \passthroughHandler();
+            $route        = new Route('/example', new RequestHandlerMiddleware($handler), [RequestMethodInterface::METHOD_POST]);
+            // Invalid UTF-8 proves this route does not enter source validation/mapping.
+            $request = \makeRequest(RequestMethodInterface::METHOD_POST, [
+                'name' => "\xFF",
+            ])
+                ->withAttribute(RouteResult::class, RouteResult::fromRoute($route, []))
+            ;
+
+            return \array_merge([
+                'name'           => 'Matched route without mappings',
+                'lifecycle'      => 'reuse',
+                'classification' => 'control',
+                'correctness'    => [
+                    'status'              => 204,
+                    'dto_values_verified' => false,
+                ],
+            ], \measure(static fn () => $middleware->process($request, $handler), $iterations, $warmup, $samples));
+
         default:
             throw new InvalidArgumentException("Unknown scenario: {$scenario}");
     }
@@ -789,6 +949,8 @@ function provenance(): array
         'versions'       => [
             'php'                    => PHP_VERSION,
             'opcache_cli'            => (bool) \ini_get('opcache.enable_cli'),
+            'pcov_enabled'           => \extension_loaded('pcov') && (bool) \ini_get('pcov.enabled'),
+            'jit'                    => \ini_get('opcache.jit'),
             'locked_packages'        => \lockedPackageVersions($lockPath, 'packages'),
             'locked_packages_dev'    => \lockedPackageVersions($lockPath, 'packages-dev'),
         ],
@@ -813,6 +975,10 @@ function revisionOfDirectory(string $directory): ?string
 
         if (1 === \preg_match('/^gitdir:\s*(.+)$/m', $contents, $matches)) {
             $gitDirectory = \rtrim($matches[1]);
+
+            if (! \str_starts_with($gitDirectory, '/')) {
+                $gitDirectory = $directory . '/' . $gitDirectory;
+            }
         }
     }
 
@@ -828,10 +994,36 @@ function revisionOfDirectory(string $directory): ?string
         return $head;
     }
 
-    $refPath = $gitDirectory . '/' . \substr($head, 5);
+    if (! \str_starts_with($head, 'ref: ')) {
+        return null;
+    }
+
+    $commonDirectory = $gitDirectory;
+    $commonPath      = $gitDirectory . '/commondir';
+
+    if (\is_file($commonPath)) {
+        $commonDirectory = \trim((string) \file_get_contents($commonPath));
+
+        if (! \str_starts_with($commonDirectory, '/')) {
+            $commonDirectory = $gitDirectory . '/' . $commonDirectory;
+        }
+    }
+
+    $reference = \substr($head, 5);
+    $refPath   = $commonDirectory . '/' . $reference;
 
     if (\file_exists($refPath)) {
         return \trim((string) \file_get_contents($refPath));
+    }
+
+    $packedPath = $commonDirectory . '/packed-refs';
+
+    if (\is_file($packedPath)) {
+        foreach (\file($packedPath, FILE_IGNORE_NEW_LINES) ?: [] as $line) {
+            if (1 === \preg_match('/^([0-9a-f]{40}) (.+)$/', $line, $matches) && $matches[2] === $reference) {
+                return $matches[1];
+            }
+        }
     }
 
     return null;
@@ -889,7 +1081,7 @@ function parseCliIntOption(
     return $value;
 }
 
-function main(): void
+function benchmarkMain(): void
 {
     $options = \getopt('', [
         'iterations:',
@@ -897,7 +1089,14 @@ function main(): void
         'samples:',
         'scenario:',
         'cache-dir:',
+        'list-scenarios',
     ]);
+
+    if (isset($options['list-scenarios'])) {
+        echo \json_encode(\compatibilityScenarioIds(), JSON_THROW_ON_ERROR) . PHP_EOL;
+
+        return;
+    }
 
     $iterations  = \parseCliIntOption($options, 'iterations', 10000, 1, 1000000);
     $warmup      = \parseCliIntOption($options, 'warmup', 1000, 0, 100000);
@@ -912,7 +1111,7 @@ function main(): void
 
         $scenario = (int) $scenarioRaw;
 
-        if ($scenario < 1 || $scenario > 14) {
+        if (! \in_array($scenario, \compatibilityScenarioIds(), true)) {
             throw new InvalidArgumentException("Unknown scenario: {$scenario}");
         }
     } elseif (null !== $scenarioRaw) {
@@ -924,7 +1123,13 @@ function main(): void
         : null;
 
     if (null !== $scenario) {
-        $result               = \runScenario($scenario, $iterations, $warmup, $samples, $cacheDir);
+        $result                = \runScenario($scenario, $iterations, $warmup, $samples, $cacheDir);
+        $result['scenario_id'] = $scenario;
+        $result['params']      = [
+            'iterations' => $iterations,
+            'warmup'     => $warmup,
+            'samples'    => $samples,
+        ];
         $result['provenance'] = \provenance();
         echo \json_encode($result, JSON_THROW_ON_ERROR) . PHP_EOL;
 
@@ -933,7 +1138,7 @@ function main(): void
 
     $results = [];
 
-    foreach (\range(1, 14) as $id) {
+    foreach (\compatibilityScenarioIds() as $id) {
         $command = [
             PHP_BINARY,
             __FILE__,
@@ -995,4 +1200,6 @@ function main(): void
     echo \json_encode($result, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT) . PHP_EOL;
 }
 
-\main();
+if (__FILE__ === \realpath($_SERVER['SCRIPT_FILENAME'] ?? '')) {
+    \benchmarkMain();
+}

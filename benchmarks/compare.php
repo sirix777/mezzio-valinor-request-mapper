@@ -16,10 +16,10 @@ declare(strict_types=1);
  * Usage:
  *   php benchmarks/compare.php \
  *     --baseline=<full-sha> --optimized=<full-sha> \
- *     [--batches=4] [--iterations=500] [--warmup=100] [--samples=7] \
+ *     [--batches=4] [--iterations=500] [--control-iterations=500] [--warmup=100] [--samples=7] \
  *     [--workdir=/tmp] [--output=docs/benchmarks/raw]
  *
- * --batches is the number of full batches per revision (each batch runs all 14
+ * --batches is the number of full batches per revision (each batch runs all discovered
  * scenarios), so the total process batch count is twice that value. The raw
  * document records it as `batches_per_revision`.
  */
@@ -63,8 +63,13 @@ final class CompareBenchmark
 {
     private readonly string $workRoot;
 
+    private readonly int $controlIterations;
+
     /** @var array{baseline?: string, optimized?: string} */
     private array $worktrees = [];
+
+    /** @var list<int> */
+    private array $scenarioIds = [];
 
     public function __construct(
         private readonly string $baseline,
@@ -75,7 +80,14 @@ final class CompareBenchmark
         private readonly int $samples,
         private readonly ?string $outputDir,
         string $workRoot,
+        ?int $controlIterations = null,
     ) {
+        $this->controlIterations = $controlIterations ?? $this->iterations;
+
+        if ($this->controlIterations < 1 || $this->controlIterations > 1000000) {
+            throw new InvalidArgumentException('Option --control-iterations must be between 1 and 1000000');
+        }
+
         $this->workRoot = \rtrim($workRoot, '/\\')
             . '/mezzio-valinor-compare-' . \bin2hex(\random_bytes(6));
     }
@@ -86,6 +98,7 @@ final class CompareBenchmark
     public function run(): array
     {
         $results       = [];
+        $environment   = null;
         $harnessSha256 = \hash_file('sha256', HARNESS_SOURCE);
 
         if (false === $harnessSha256) {
@@ -124,7 +137,14 @@ final class CompareBenchmark
                     $revision,
                 ));
 
-                $batchResult = $this->runHarness($revision, $index + 1);
+                $batchResult       = $this->runHarness($revision, $index + 1);
+                $workerEnvironment = $this->measuredEnvironment($batchResult['provenance']['versions']);
+
+                if (null !== $environment && $environment !== $workerEnvironment) {
+                    throw new RuntimeException('Measured worker runtime environment differs between batches or revisions');
+                }
+
+                $environment = $workerEnvironment;
 
                 $results[] = [
                     'batch'          => $index + 1,
@@ -137,7 +157,7 @@ final class CompareBenchmark
             }
 
             $document = [
-                'schema'      => 'sirix-mezzio-valinor-compare/1',
+                'schema'      => 'sirix-mezzio-valinor-compare/2',
                 'created_at'  => \gmdate('Y-m-d\TH:i:s\Z'),
                 'baseline'    => $this->baseline,
                 'optimized'   => $this->optimized,
@@ -145,13 +165,12 @@ final class CompareBenchmark
                     'batches_per_revision' => $this->batchesPerRevision,
                     'order'                => $order,
                     'iterations'           => $this->iterations,
+                    'control_iterations'   => $this->controlIterations,
                     'warmup'               => $this->warmup,
                     'samples'              => $this->samples,
+                    'scenario_ids'         => $this->scenarioIds,
                 ],
-                'environment' => [
-                    'php'         => PHP_VERSION,
-                    'opcache_cli' => (bool) \ini_get('opcache.enable_cli'),
-                ],
+                'environment' => $environment,
                 'provenance'  => [
                     'harness_sha256'      => $harnessSha256,
                     'orchestrator_sha256' => $orchestratorSha256,
@@ -202,12 +221,43 @@ final class CompareBenchmark
 
             $this->composerInstall($path);
             $this->verifyProvenance($path, $revision, $lockSource, $harnessSha256);
+
+            $ids = $this->discoverScenarioIds($path);
+
+            if ([] !== $this->scenarioIds && $this->scenarioIds !== $ids) {
+                throw new RuntimeException('Baseline and optimized harness scenario IDs differ');
+            }
+
+            $this->scenarioIds = $ids;
         }
+    }
+
+    /** @return list<int> */
+    private function discoverScenarioIds(string $path): array
+    {
+        $stdout = $this->execute([PHP_BINARY, $path . '/benchmarks/request-mapper.php', '--list-scenarios'], $path);
+        $ids    = \json_decode($stdout, true, flags: JSON_THROW_ON_ERROR);
+
+        if (! \is_array($ids) || ! \array_is_list($ids) || [] === $ids) {
+            throw new RuntimeException('Harness returned invalid scenario IDs');
+        }
+
+        foreach ($ids as $id) {
+            if (! \is_int($id) || $id < 1) {
+                throw new RuntimeException('Harness scenario IDs must be positive integers');
+            }
+        }
+
+        if (\count($ids) !== \count(\array_unique($ids))) {
+            throw new RuntimeException('Harness scenario IDs must be unique');
+        }
+
+        return $ids;
     }
 
     private function resolveLockSource(): string
     {
-        $lock = \dirname(__DIR__) . '/composer.lock';
+        $lock = __DIR__ . '/../composer.lock';
 
         if (! \file_exists($lock)) {
             throw new RuntimeException('composer.lock is missing in the source repository');
@@ -278,12 +328,18 @@ final class CompareBenchmark
         $results    = [];
         $provenance = null;
 
-        foreach (\range(1, 14) as $scenario) {
+        foreach ($this->scenarioIds as $scenario) {
+            $iterations         = \in_array($scenario, [1, 15], true) ? $this->controlIterations : $this->iterations;
+            $expectedParameters = [
+                'iterations' => $iterations,
+                'warmup'     => $this->warmup,
+                'samples'    => $this->samples,
+            ];
             $stdout = $this->execute([
                 PHP_BINARY,
                 $path . '/benchmarks/request-mapper.php',
                 '--scenario=' . $scenario,
-                '--iterations=' . $this->iterations,
+                '--iterations=' . $iterations,
                 '--warmup=' . $this->warmup,
                 '--samples=' . $this->samples,
             ], $path);
@@ -292,6 +348,10 @@ final class CompareBenchmark
 
             if (! \is_array($decoded)) {
                 throw new RuntimeException("Scenario {$scenario} returned invalid JSON: {$stdout}");
+            }
+
+            if (($decoded['scenario_id'] ?? null) !== $scenario || ($decoded['params'] ?? null) !== $expectedParameters) {
+                throw new RuntimeException("Scenario {$scenario} worker parameters do not match the requested operation counts");
             }
 
             // Every scenario worker reports its own provenance: verify it
@@ -319,9 +379,10 @@ final class CompareBenchmark
         return [
             'batch'      => $batch,
             'params'     => [
-                'iterations' => $this->iterations,
-                'warmup'     => $this->warmup,
-                'samples'    => $this->samples,
+                'iterations'         => $this->iterations,
+                'control_iterations' => $this->controlIterations,
+                'warmup'             => $this->warmup,
+                'samples'            => $this->samples,
             ],
             'provenance' => $provenance,
             'scenarios'  => $results,
@@ -370,6 +431,30 @@ final class CompareBenchmark
         ) {
             throw new RuntimeException('Harness provenance does not contain locked package manifests');
         }
+    }
+
+    /**
+     * @param array<string, mixed> $versions
+     *
+     * @return array<string, mixed>
+     */
+    private function measuredEnvironment(array $versions): array
+    {
+        if (
+            ! \is_string($versions['php'] ?? null)
+            || ! \is_bool($versions['opcache_cli'] ?? null)
+            || ! \is_bool($versions['pcov_enabled'] ?? null)
+            || (! \is_string($versions['jit'] ?? null) && false !== ($versions['jit'] ?? null))
+        ) {
+            throw new RuntimeException('Measured worker provenance does not contain valid runtime facts');
+        }
+
+        return [
+            'php'          => $versions['php'],
+            'opcache_cli'  => $versions['opcache_cli'],
+            'pcov_enabled' => $versions['pcov_enabled'],
+            'jit'          => $versions['jit'],
+        ];
     }
 
     private function verifyProvenance(string $path, string $revision, string $lockSource, string $harnessSha256): void
@@ -551,52 +636,62 @@ final class CompareBenchmark
     }
 }
 
-$options = \getopt('', [
-    'baseline:',
-    'optimized:',
-    'batches:',
-    'iterations:',
-    'warmup:',
-    'samples:',
-    'workdir:',
-    'output:',
-]);
+function compareMain(): void
+{
+    $options = \getopt('', [
+        'baseline:',
+        'optimized:',
+        'batches:',
+        'iterations:',
+        'control-iterations:',
+        'warmup:',
+        'samples:',
+        'workdir:',
+        'output:',
+    ]);
 
-$baselineSha  = \is_string($options['baseline'] ?? null) ? $options['baseline'] : null;
-$optimizedSha = \is_string($options['optimized'] ?? null) ? $options['optimized'] : null;
+    $baselineSha  = \is_string($options['baseline'] ?? null) ? $options['baseline'] : null;
+    $optimizedSha = \is_string($options['optimized'] ?? null) ? $options['optimized'] : null;
 
-if (
-    null === $baselineSha
-    || null === $optimizedSha
-    || 1 !== \preg_match('/^[0-9a-f]{40}$/', $baselineSha)
-    || 1 !== \preg_match('/^[0-9a-f]{40}$/', $optimizedSha)
-) {
-    \fwrite(STDERR, "Usage: php benchmarks/compare.php --baseline=<full-sha> --optimized=<full-sha> [options]\n");
+    if (
+        null === $baselineSha
+        || null === $optimizedSha
+        || 1 !== \preg_match('/^[0-9a-f]{40}$/', $baselineSha)
+        || 1 !== \preg_match('/^[0-9a-f]{40}$/', $optimizedSha)
+    ) {
+        \fwrite(STDERR, "Usage: php benchmarks/compare.php --baseline=<full-sha> --optimized=<full-sha> [options]\n");
 
-    exit(1);
+        exit(1);
+    }
+
+    $batchesPerRevision = \parsePositiveIntOption($options, 'batches', 4, 2, 64);
+    $iterations         = \parsePositiveIntOption($options, 'iterations', 500, 1, 1000000);
+    $controlIterations  = \parsePositiveIntOption($options, 'control-iterations', $iterations, 1, 1000000);
+    $warmup             = \parsePositiveIntOption($options, 'warmup', 100, 0, 100000);
+    $samples            = \parsePositiveIntOption($options, 'samples', 7, 1, 1000);
+    $workdir            = \is_string($options['workdir'] ?? null) ? $options['workdir'] : \sys_get_temp_dir();
+    $output             = isset($options['output']) && \is_string($options['output']) && '' !== $options['output']
+        ? $options['output']
+        : null;
+
+    $comparison = new CompareBenchmark(
+        $baselineSha,
+        $optimizedSha,
+        $batchesPerRevision,
+        $iterations,
+        $warmup,
+        $samples,
+        $output,
+        $workdir,
+        $controlIterations,
+    );
+
+    echo \json_encode(
+        $comparison->run(),
+        JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES,
+    ) . "\n";
 }
 
-$batchesPerRevision = \parsePositiveIntOption($options, 'batches', 4, 2, 64);
-$iterations         = \parsePositiveIntOption($options, 'iterations', 500, 1, 1000000);
-$warmup             = \parsePositiveIntOption($options, 'warmup', 100, 0, 100000);
-$samples            = \parsePositiveIntOption($options, 'samples', 7, 1, 1000);
-$workdir            = \is_string($options['workdir'] ?? null) ? $options['workdir'] : \sys_get_temp_dir();
-$output             = isset($options['output']) && \is_string($options['output']) && '' !== $options['output']
-    ? $options['output']
-    : null;
-
-$comparison = new CompareBenchmark(
-    $baselineSha,
-    $optimizedSha,
-    $batchesPerRevision,
-    $iterations,
-    $warmup,
-    $samples,
-    $output,
-    $workdir,
-);
-
-echo \json_encode(
-    $comparison->run(),
-    JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES,
-) . "\n";
+if (__FILE__ === \realpath($_SERVER['SCRIPT_FILENAME'] ?? '')) {
+    \compareMain();
+}

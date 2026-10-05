@@ -1,0 +1,1845 @@
+{
+    "schema": "sirix-mezzio-valinor-compare/2",
+    "created_at": "2026-10-05T09:27:45Z",
+    "baseline": "e581e210953faaaae5c21627b651727a505c4df8",
+    "optimized": "f7dd99fe539b73327ad867c299d95e27939f7820",
+    "params": {
+        "batches_per_revision": 2,
+        "order": [
+            "e581e210953faaaae5c21627b651727a505c4df8",
+            "f7dd99fe539b73327ad867c299d95e27939f7820",
+            "f7dd99fe539b73327ad867c299d95e27939f7820",
+            "e581e210953faaaae5c21627b651727a505c4df8"
+        ],
+        "iterations": 1,
+        "control_iterations": 3,
+        "warmup": 0,
+        "samples": 1,
+        "scenario_ids": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+        ]
+    },
+    "environment": {
+        "php": "8.5.10",
+        "opcache_cli": false
+    },
+    "provenance": {
+        "harness_sha256": "0ef7a91483e240a9f54444dbcbbacb2da8badd502c4662eb0f50f156400bb343",
+        "orchestrator_sha256": "2cfa6503dd25e72f7ee901ff564ead7244de43aef6b4452b9eedca2422b50660",
+        "lock_sha256": "ab4eb98175e6b5564ebcfa0342bcc9e62abfe9f1622669a06c8e48503438fac6",
+        "lock_source": "source repository composer.lock (untracked, recorded by SHA-256)",
+        "worker": {
+            "revision": "e581e210953faaaae5c21627b651727a505c4df8",
+            "harness_sha256": "0ef7a91483e240a9f54444dbcbbacb2da8badd502c4662eb0f50f156400bb343",
+            "lock_sha256": "ab4eb98175e6b5564ebcfa0342bcc9e62abfe9f1622669a06c8e48503438fac6",
+            "versions": {
+                "php": "8.5.10",
+                "opcache_cli": false,
+                "pcov_enabled": true,
+                "jit": "disable",
+                "locked_packages": {
+                    "cuyz/valinor": "2.6.0",
+                    "fig/http-message-util": "1.1.5",
+                    "mezzio/mezzio-router": "4.2.0",
+                    "psr/container": "2.0.2",
+                    "psr/http-factory": "1.1.0",
+                    "psr/http-message": "2.0",
+                    "psr/http-server-handler": "1.0.2",
+                    "psr/http-server-middleware": "1.0.2",
+                    "sirix/container-resolver": "1.0.0",
+                    "sirix/mezzio-routing-contracts": "1.2.2",
+                    "webmozart/assert": "2.4.1"
+                },
+                "locked_packages_dev": {
+                    "bamarni/composer-bin-plugin": "1.9.1",
+                    "laminas/laminas-diactoros": "3.8.0",
+                    "laminas/laminas-escaper": "2.18.0",
+                    "laminas/laminas-httphandlerrunner": "2.14.0",
+                    "laminas/laminas-stratigility": "4.3.1",
+                    "mezzio/mezzio": "3.28.1",
+                    "mezzio/mezzio-template": "3.0.0",
+                    "myclabs/deep-copy": "1.14.0",
+                    "nikic/php-parser": "v5.9.0",
+                    "phar-io/manifest": "2.0.4",
+                    "phar-io/version": "3.2.1",
+                    "phpunit/php-code-coverage": "11.0.12",
+                    "phpunit/php-file-iterator": "5.1.1",
+                    "phpunit/php-invoker": "5.0.1",
+                    "phpunit/php-text-template": "4.0.1",
+                    "phpunit/php-timer": "7.0.1",
+                    "phpunit/phpunit": "11.5.56",
+                    "sebastian/cli-parser": "3.0.2",
+                    "sebastian/code-unit": "3.0.3",
+                    "sebastian/code-unit-reverse-lookup": "4.0.1",
+                    "sebastian/comparator": "6.3.3",
+                    "sebastian/complexity": "4.0.1",
+                    "sebastian/diff": "6.0.2",
+                    "sebastian/environment": "7.2.1",
+                    "sebastian/exporter": "6.3.2",
+                    "sebastian/global-state": "7.0.2",
+                    "sebastian/lines-of-code": "3.0.1",
+                    "sebastian/object-enumerator": "6.0.1",
+                    "sebastian/object-reflector": "4.0.1",
+                    "sebastian/recursion-context": "6.0.3",
+                    "sebastian/type": "5.1.3",
+                    "sebastian/version": "5.0.2",
+                    "sirix/mezzio-routing-attributes": "1.4.3",
+                    "staabm/side-effects-detector": "1.0.5",
+                    "theseer/tokenizer": "1.3.1"
+                }
+            }
+        }
+    },
+    "batches": [
+        {
+            "batch": 1,
+            "label": "baseline",
+            "revision": "e581e210953faaaae5c21627b651727a505c4df8",
+            "harness_sha256": "0ef7a91483e240a9f54444dbcbbacb2da8badd502c4662eb0f50f156400bb343",
+            "lock_sha256": "ab4eb98175e6b5564ebcfa0342bcc9e62abfe9f1622669a06c8e48503438fac6",
+            "result": {
+                "batch": 1,
+                "params": {
+                    "iterations": 1,
+                    "control_iterations": 3,
+                    "warmup": 0,
+                    "samples": 1
+                },
+                "provenance": {
+                    "revision": "e581e210953faaaae5c21627b651727a505c4df8",
+                    "harness_sha256": "0ef7a91483e240a9f54444dbcbbacb2da8badd502c4662eb0f50f156400bb343",
+                    "lock_sha256": "ab4eb98175e6b5564ebcfa0342bcc9e62abfe9f1622669a06c8e48503438fac6",
+                    "versions": {
+                        "php": "8.5.10",
+                        "opcache_cli": false,
+                        "pcov_enabled": true,
+                        "jit": "disable",
+                        "locked_packages": {
+                            "cuyz/valinor": "2.6.0",
+                            "fig/http-message-util": "1.1.5",
+                            "mezzio/mezzio-router": "4.2.0",
+                            "psr/container": "2.0.2",
+                            "psr/http-factory": "1.1.0",
+                            "psr/http-message": "2.0",
+                            "psr/http-server-handler": "1.0.2",
+                            "psr/http-server-middleware": "1.0.2",
+                            "sirix/container-resolver": "1.0.0",
+                            "sirix/mezzio-routing-contracts": "1.2.2",
+                            "webmozart/assert": "2.4.1"
+                        },
+                        "locked_packages_dev": {
+                            "bamarni/composer-bin-plugin": "1.9.1",
+                            "laminas/laminas-diactoros": "3.8.0",
+                            "laminas/laminas-escaper": "2.18.0",
+                            "laminas/laminas-httphandlerrunner": "2.14.0",
+                            "laminas/laminas-stratigility": "4.3.1",
+                            "mezzio/mezzio": "3.28.1",
+                            "mezzio/mezzio-template": "3.0.0",
+                            "myclabs/deep-copy": "1.14.0",
+                            "nikic/php-parser": "v5.9.0",
+                            "phar-io/manifest": "2.0.4",
+                            "phar-io/version": "3.2.1",
+                            "phpunit/php-code-coverage": "11.0.12",
+                            "phpunit/php-file-iterator": "5.1.1",
+                            "phpunit/php-invoker": "5.0.1",
+                            "phpunit/php-text-template": "4.0.1",
+                            "phpunit/php-timer": "7.0.1",
+                            "phpunit/phpunit": "11.5.56",
+                            "sebastian/cli-parser": "3.0.2",
+                            "sebastian/code-unit": "3.0.3",
+                            "sebastian/code-unit-reverse-lookup": "4.0.1",
+                            "sebastian/comparator": "6.3.3",
+                            "sebastian/complexity": "4.0.1",
+                            "sebastian/diff": "6.0.2",
+                            "sebastian/environment": "7.2.1",
+                            "sebastian/exporter": "6.3.2",
+                            "sebastian/global-state": "7.0.2",
+                            "sebastian/lines-of-code": "3.0.1",
+                            "sebastian/object-enumerator": "6.0.1",
+                            "sebastian/object-reflector": "4.0.1",
+                            "sebastian/recursion-context": "6.0.3",
+                            "sebastian/type": "5.1.3",
+                            "sebastian/version": "5.0.2",
+                            "sirix/mezzio-routing-attributes": "1.4.3",
+                            "staabm/side-effects-detector": "1.0.5",
+                            "theseer/tokenizer": "1.3.1"
+                        }
+                    }
+                },
+                "scenarios": [
+                    {
+                        "name": "No RouteResult passthrough",
+                        "lifecycle": "reuse",
+                        "classification": "control",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": false
+                        },
+                        "median_us_per_op": 2.921,
+                        "min_us_per_op": 2.921,
+                        "max_us_per_op": 2.921,
+                        "samples_us_per_op": [
+                            2.921
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 1,
+                        "params": {
+                            "iterations": 3,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Reflection via direct handler object",
+                        "lifecycle": "reuse",
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 39.865,
+                        "min_us_per_op": 39.865,
+                        "max_us_per_op": 39.865,
+                        "samples_us_per_op": [
+                            39.865
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 2,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Reflection via lazy FQCN handler",
+                        "lifecycle": "reuse",
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 33.611,
+                        "min_us_per_op": 33.611,
+                        "max_us_per_op": 33.611,
+                        "samples_us_per_op": [
+                            33.611
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 3,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Route options single DTO",
+                        "lifecycle": "reuse",
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 33.829,
+                        "min_us_per_op": 33.829,
+                        "max_us_per_op": 33.829,
+                        "samples_us_per_op": [
+                            33.829
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 4,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Three operations with different outputs",
+                        "lifecycle": "reuse",
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 64.635,
+                        "min_us_per_op": 64.635,
+                        "max_us_per_op": 64.635,
+                        "samples_us_per_op": [
+                            64.635
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 5,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Repeated calls reusing middleware and builder",
+                        "lifecycle": "reuse",
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 32.954,
+                        "min_us_per_op": 32.954,
+                        "max_us_per_op": 32.954,
+                        "samples_us_per_op": [
+                            32.954
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 6,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "New middleware/resolvers/builder per iteration with file cache",
+                        "lifecycle": "new-each-iteration",
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 177.159,
+                        "min_us_per_op": 177.159,
+                        "max_us_per_op": 177.159,
+                        "samples_us_per_op": [
+                            177.159
+                        ],
+                        "peak_memory_bytes": 6291456,
+                        "scenario_id": 7,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Large flat body, one operation",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 2318.173,
+                        "min_us_per_op": 2318.173,
+                        "max_us_per_op": 2318.173,
+                        "samples_us_per_op": [
+                            2318.173
+                        ],
+                        "peak_memory_bytes": 8388608,
+                        "scenario_id": 8,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Large flat body, three operations",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 2910.653,
+                        "min_us_per_op": 2910.653,
+                        "max_us_per_op": 2910.653,
+                        "samples_us_per_op": [
+                            2910.653
+                        ],
+                        "peak_memory_bytes": 8388608,
+                        "scenario_id": 9,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Large nested body, one operation",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 20201,
+                            "strings": 20001,
+                            "approximate_payload_bytes": 507704
+                        },
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 4035.171,
+                        "min_us_per_op": 4035.171,
+                        "max_us_per_op": 4035.171,
+                        "samples_us_per_op": [
+                            4035.171
+                        ],
+                        "peak_memory_bytes": 8388608,
+                        "scenario_id": 10,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Large nested body, three operations",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 20201,
+                            "strings": 20001,
+                            "approximate_payload_bytes": 507704
+                        },
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 3797.817,
+                        "min_us_per_op": 3797.817,
+                        "max_us_per_op": 3797.817,
+                        "samples_us_per_op": [
+                            3797.817
+                        ],
+                        "peak_memory_bytes": 8388608,
+                        "scenario_id": 11,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Large body plus combined source",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 2728.87,
+                        "min_us_per_op": 2728.87,
+                        "max_us_per_op": 2728.87,
+                        "samples_us_per_op": [
+                            2728.87
+                        ],
+                        "peak_memory_bytes": 8388608,
+                        "scenario_id": 12,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Input source context, body only",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1958.567,
+                        "min_us_per_op": 1958.567,
+                        "max_us_per_op": 1958.567,
+                        "samples_us_per_op": [
+                            1958.567
+                        ],
+                        "peak_memory_bytes": 6291456,
+                        "scenario_id": 13,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Input source context, combined source",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1963.67,
+                        "min_us_per_op": 1963.67,
+                        "max_us_per_op": 1963.67,
+                        "samples_us_per_op": [
+                            1963.67
+                        ],
+                        "peak_memory_bytes": 6291456,
+                        "scenario_id": 14,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Matched route without mappings",
+                        "lifecycle": "reuse",
+                        "classification": "control",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": false
+                        },
+                        "median_us_per_op": 5.354,
+                        "min_us_per_op": 5.354,
+                        "max_us_per_op": 5.354,
+                        "samples_us_per_op": [
+                            5.354
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 15,
+                        "params": {
+                            "iterations": 3,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "batch": 2,
+            "label": "optimized",
+            "revision": "f7dd99fe539b73327ad867c299d95e27939f7820",
+            "harness_sha256": "0ef7a91483e240a9f54444dbcbbacb2da8badd502c4662eb0f50f156400bb343",
+            "lock_sha256": "ab4eb98175e6b5564ebcfa0342bcc9e62abfe9f1622669a06c8e48503438fac6",
+            "result": {
+                "batch": 2,
+                "params": {
+                    "iterations": 1,
+                    "control_iterations": 3,
+                    "warmup": 0,
+                    "samples": 1
+                },
+                "provenance": {
+                    "revision": "f7dd99fe539b73327ad867c299d95e27939f7820",
+                    "harness_sha256": "0ef7a91483e240a9f54444dbcbbacb2da8badd502c4662eb0f50f156400bb343",
+                    "lock_sha256": "ab4eb98175e6b5564ebcfa0342bcc9e62abfe9f1622669a06c8e48503438fac6",
+                    "versions": {
+                        "php": "8.5.10",
+                        "opcache_cli": false,
+                        "pcov_enabled": true,
+                        "jit": "disable",
+                        "locked_packages": {
+                            "cuyz/valinor": "2.6.0",
+                            "fig/http-message-util": "1.1.5",
+                            "mezzio/mezzio-router": "4.2.0",
+                            "psr/container": "2.0.2",
+                            "psr/http-factory": "1.1.0",
+                            "psr/http-message": "2.0",
+                            "psr/http-server-handler": "1.0.2",
+                            "psr/http-server-middleware": "1.0.2",
+                            "sirix/container-resolver": "1.0.0",
+                            "sirix/mezzio-routing-contracts": "1.2.2",
+                            "webmozart/assert": "2.4.1"
+                        },
+                        "locked_packages_dev": {
+                            "bamarni/composer-bin-plugin": "1.9.1",
+                            "laminas/laminas-diactoros": "3.8.0",
+                            "laminas/laminas-escaper": "2.18.0",
+                            "laminas/laminas-httphandlerrunner": "2.14.0",
+                            "laminas/laminas-stratigility": "4.3.1",
+                            "mezzio/mezzio": "3.28.1",
+                            "mezzio/mezzio-template": "3.0.0",
+                            "myclabs/deep-copy": "1.14.0",
+                            "nikic/php-parser": "v5.9.0",
+                            "phar-io/manifest": "2.0.4",
+                            "phar-io/version": "3.2.1",
+                            "phpunit/php-code-coverage": "11.0.12",
+                            "phpunit/php-file-iterator": "5.1.1",
+                            "phpunit/php-invoker": "5.0.1",
+                            "phpunit/php-text-template": "4.0.1",
+                            "phpunit/php-timer": "7.0.1",
+                            "phpunit/phpunit": "11.5.56",
+                            "sebastian/cli-parser": "3.0.2",
+                            "sebastian/code-unit": "3.0.3",
+                            "sebastian/code-unit-reverse-lookup": "4.0.1",
+                            "sebastian/comparator": "6.3.3",
+                            "sebastian/complexity": "4.0.1",
+                            "sebastian/diff": "6.0.2",
+                            "sebastian/environment": "7.2.1",
+                            "sebastian/exporter": "6.3.2",
+                            "sebastian/global-state": "7.0.2",
+                            "sebastian/lines-of-code": "3.0.1",
+                            "sebastian/object-enumerator": "6.0.1",
+                            "sebastian/object-reflector": "4.0.1",
+                            "sebastian/recursion-context": "6.0.3",
+                            "sebastian/type": "5.1.3",
+                            "sebastian/version": "5.0.2",
+                            "sirix/mezzio-routing-attributes": "1.4.3",
+                            "staabm/side-effects-detector": "1.0.5",
+                            "theseer/tokenizer": "1.3.1"
+                        }
+                    }
+                },
+                "scenarios": [
+                    {
+                        "name": "No RouteResult passthrough",
+                        "lifecycle": "reuse",
+                        "classification": "control",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": false
+                        },
+                        "median_us_per_op": 2.84,
+                        "min_us_per_op": 2.84,
+                        "max_us_per_op": 2.84,
+                        "samples_us_per_op": [
+                            2.84
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 1,
+                        "params": {
+                            "iterations": 3,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Reflection via direct handler object",
+                        "lifecycle": "reuse",
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 39.35,
+                        "min_us_per_op": 39.35,
+                        "max_us_per_op": 39.35,
+                        "samples_us_per_op": [
+                            39.35
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 2,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Reflection via lazy FQCN handler",
+                        "lifecycle": "reuse",
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 33.474,
+                        "min_us_per_op": 33.474,
+                        "max_us_per_op": 33.474,
+                        "samples_us_per_op": [
+                            33.474
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 3,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Route options single DTO",
+                        "lifecycle": "reuse",
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 32.943,
+                        "min_us_per_op": 32.943,
+                        "max_us_per_op": 32.943,
+                        "samples_us_per_op": [
+                            32.943
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 4,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Three operations with different outputs",
+                        "lifecycle": "reuse",
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 73.087,
+                        "min_us_per_op": 73.087,
+                        "max_us_per_op": 73.087,
+                        "samples_us_per_op": [
+                            73.087
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 5,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Repeated calls reusing middleware and builder",
+                        "lifecycle": "reuse",
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 33.105,
+                        "min_us_per_op": 33.105,
+                        "max_us_per_op": 33.105,
+                        "samples_us_per_op": [
+                            33.105
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 6,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "New middleware/resolvers/builder per iteration with file cache",
+                        "lifecycle": "new-each-iteration",
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 195.477,
+                        "min_us_per_op": 195.477,
+                        "max_us_per_op": 195.477,
+                        "samples_us_per_op": [
+                            195.477
+                        ],
+                        "peak_memory_bytes": 6291456,
+                        "scenario_id": 7,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Large flat body, one operation",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 2490.313,
+                        "min_us_per_op": 2490.313,
+                        "max_us_per_op": 2490.313,
+                        "samples_us_per_op": [
+                            2490.313
+                        ],
+                        "peak_memory_bytes": 8388608,
+                        "scenario_id": 8,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Large flat body, three operations",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 3616.099,
+                        "min_us_per_op": 3616.099,
+                        "max_us_per_op": 3616.099,
+                        "samples_us_per_op": [
+                            3616.099
+                        ],
+                        "peak_memory_bytes": 8388608,
+                        "scenario_id": 9,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Large nested body, one operation",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 20201,
+                            "strings": 20001,
+                            "approximate_payload_bytes": 507704
+                        },
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 3976.425,
+                        "min_us_per_op": 3976.425,
+                        "max_us_per_op": 3976.425,
+                        "samples_us_per_op": [
+                            3976.425
+                        ],
+                        "peak_memory_bytes": 8388608,
+                        "scenario_id": 10,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Large nested body, three operations",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 20201,
+                            "strings": 20001,
+                            "approximate_payload_bytes": 507704
+                        },
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 3859.987,
+                        "min_us_per_op": 3859.987,
+                        "max_us_per_op": 3859.987,
+                        "samples_us_per_op": [
+                            3859.987
+                        ],
+                        "peak_memory_bytes": 8388608,
+                        "scenario_id": 11,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Large body plus combined source",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 3214.363,
+                        "min_us_per_op": 3214.363,
+                        "max_us_per_op": 3214.363,
+                        "samples_us_per_op": [
+                            3214.363
+                        ],
+                        "peak_memory_bytes": 8388608,
+                        "scenario_id": 12,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Input source context, body only",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1991.421,
+                        "min_us_per_op": 1991.421,
+                        "max_us_per_op": 1991.421,
+                        "samples_us_per_op": [
+                            1991.421
+                        ],
+                        "peak_memory_bytes": 6291456,
+                        "scenario_id": 13,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Input source context, combined source",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1950.406,
+                        "min_us_per_op": 1950.406,
+                        "max_us_per_op": 1950.406,
+                        "samples_us_per_op": [
+                            1950.406
+                        ],
+                        "peak_memory_bytes": 6291456,
+                        "scenario_id": 14,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Matched route without mappings",
+                        "lifecycle": "reuse",
+                        "classification": "control",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": false
+                        },
+                        "median_us_per_op": 5.283,
+                        "min_us_per_op": 5.283,
+                        "max_us_per_op": 5.283,
+                        "samples_us_per_op": [
+                            5.283
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 15,
+                        "params": {
+                            "iterations": 3,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "batch": 3,
+            "label": "optimized",
+            "revision": "f7dd99fe539b73327ad867c299d95e27939f7820",
+            "harness_sha256": "0ef7a91483e240a9f54444dbcbbacb2da8badd502c4662eb0f50f156400bb343",
+            "lock_sha256": "ab4eb98175e6b5564ebcfa0342bcc9e62abfe9f1622669a06c8e48503438fac6",
+            "result": {
+                "batch": 3,
+                "params": {
+                    "iterations": 1,
+                    "control_iterations": 3,
+                    "warmup": 0,
+                    "samples": 1
+                },
+                "provenance": {
+                    "revision": "f7dd99fe539b73327ad867c299d95e27939f7820",
+                    "harness_sha256": "0ef7a91483e240a9f54444dbcbbacb2da8badd502c4662eb0f50f156400bb343",
+                    "lock_sha256": "ab4eb98175e6b5564ebcfa0342bcc9e62abfe9f1622669a06c8e48503438fac6",
+                    "versions": {
+                        "php": "8.5.10",
+                        "opcache_cli": false,
+                        "pcov_enabled": true,
+                        "jit": "disable",
+                        "locked_packages": {
+                            "cuyz/valinor": "2.6.0",
+                            "fig/http-message-util": "1.1.5",
+                            "mezzio/mezzio-router": "4.2.0",
+                            "psr/container": "2.0.2",
+                            "psr/http-factory": "1.1.0",
+                            "psr/http-message": "2.0",
+                            "psr/http-server-handler": "1.0.2",
+                            "psr/http-server-middleware": "1.0.2",
+                            "sirix/container-resolver": "1.0.0",
+                            "sirix/mezzio-routing-contracts": "1.2.2",
+                            "webmozart/assert": "2.4.1"
+                        },
+                        "locked_packages_dev": {
+                            "bamarni/composer-bin-plugin": "1.9.1",
+                            "laminas/laminas-diactoros": "3.8.0",
+                            "laminas/laminas-escaper": "2.18.0",
+                            "laminas/laminas-httphandlerrunner": "2.14.0",
+                            "laminas/laminas-stratigility": "4.3.1",
+                            "mezzio/mezzio": "3.28.1",
+                            "mezzio/mezzio-template": "3.0.0",
+                            "myclabs/deep-copy": "1.14.0",
+                            "nikic/php-parser": "v5.9.0",
+                            "phar-io/manifest": "2.0.4",
+                            "phar-io/version": "3.2.1",
+                            "phpunit/php-code-coverage": "11.0.12",
+                            "phpunit/php-file-iterator": "5.1.1",
+                            "phpunit/php-invoker": "5.0.1",
+                            "phpunit/php-text-template": "4.0.1",
+                            "phpunit/php-timer": "7.0.1",
+                            "phpunit/phpunit": "11.5.56",
+                            "sebastian/cli-parser": "3.0.2",
+                            "sebastian/code-unit": "3.0.3",
+                            "sebastian/code-unit-reverse-lookup": "4.0.1",
+                            "sebastian/comparator": "6.3.3",
+                            "sebastian/complexity": "4.0.1",
+                            "sebastian/diff": "6.0.2",
+                            "sebastian/environment": "7.2.1",
+                            "sebastian/exporter": "6.3.2",
+                            "sebastian/global-state": "7.0.2",
+                            "sebastian/lines-of-code": "3.0.1",
+                            "sebastian/object-enumerator": "6.0.1",
+                            "sebastian/object-reflector": "4.0.1",
+                            "sebastian/recursion-context": "6.0.3",
+                            "sebastian/type": "5.1.3",
+                            "sebastian/version": "5.0.2",
+                            "sirix/mezzio-routing-attributes": "1.4.3",
+                            "staabm/side-effects-detector": "1.0.5",
+                            "theseer/tokenizer": "1.3.1"
+                        }
+                    }
+                },
+                "scenarios": [
+                    {
+                        "name": "No RouteResult passthrough",
+                        "lifecycle": "reuse",
+                        "classification": "control",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": false
+                        },
+                        "median_us_per_op": 2.93,
+                        "min_us_per_op": 2.93,
+                        "max_us_per_op": 2.93,
+                        "samples_us_per_op": [
+                            2.93
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 1,
+                        "params": {
+                            "iterations": 3,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Reflection via direct handler object",
+                        "lifecycle": "reuse",
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 35.187,
+                        "min_us_per_op": 35.187,
+                        "max_us_per_op": 35.187,
+                        "samples_us_per_op": [
+                            35.187
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 2,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Reflection via lazy FQCN handler",
+                        "lifecycle": "reuse",
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 35.387,
+                        "min_us_per_op": 35.387,
+                        "max_us_per_op": 35.387,
+                        "samples_us_per_op": [
+                            35.387
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 3,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Route options single DTO",
+                        "lifecycle": "reuse",
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 33.415,
+                        "min_us_per_op": 33.415,
+                        "max_us_per_op": 33.415,
+                        "samples_us_per_op": [
+                            33.415
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 4,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Three operations with different outputs",
+                        "lifecycle": "reuse",
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 68.456,
+                        "min_us_per_op": 68.456,
+                        "max_us_per_op": 68.456,
+                        "samples_us_per_op": [
+                            68.456
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 5,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Repeated calls reusing middleware and builder",
+                        "lifecycle": "reuse",
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 49.701,
+                        "min_us_per_op": 49.701,
+                        "max_us_per_op": 49.701,
+                        "samples_us_per_op": [
+                            49.701
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 6,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "New middleware/resolvers/builder per iteration with file cache",
+                        "lifecycle": "new-each-iteration",
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 204.656,
+                        "min_us_per_op": 204.656,
+                        "max_us_per_op": 204.656,
+                        "samples_us_per_op": [
+                            204.656
+                        ],
+                        "peak_memory_bytes": 6291456,
+                        "scenario_id": 7,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Large flat body, one operation",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 3040.985,
+                        "min_us_per_op": 3040.985,
+                        "max_us_per_op": 3040.985,
+                        "samples_us_per_op": [
+                            3040.985
+                        ],
+                        "peak_memory_bytes": 8388608,
+                        "scenario_id": 8,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Large flat body, three operations",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 2406.84,
+                        "min_us_per_op": 2406.84,
+                        "max_us_per_op": 2406.84,
+                        "samples_us_per_op": [
+                            2406.84
+                        ],
+                        "peak_memory_bytes": 8388608,
+                        "scenario_id": 9,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Large nested body, one operation",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 20201,
+                            "strings": 20001,
+                            "approximate_payload_bytes": 507704
+                        },
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 4710.423,
+                        "min_us_per_op": 4710.423,
+                        "max_us_per_op": 4710.423,
+                        "samples_us_per_op": [
+                            4710.423
+                        ],
+                        "peak_memory_bytes": 8388608,
+                        "scenario_id": 10,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Large nested body, three operations",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 20201,
+                            "strings": 20001,
+                            "approximate_payload_bytes": 507704
+                        },
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 4698.917,
+                        "min_us_per_op": 4698.917,
+                        "max_us_per_op": 4698.917,
+                        "samples_us_per_op": [
+                            4698.917
+                        ],
+                        "peak_memory_bytes": 8388608,
+                        "scenario_id": 11,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Large body plus combined source",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 3636.819,
+                        "min_us_per_op": 3636.819,
+                        "max_us_per_op": 3636.819,
+                        "samples_us_per_op": [
+                            3636.819
+                        ],
+                        "peak_memory_bytes": 8388608,
+                        "scenario_id": 12,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Input source context, body only",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1806.712,
+                        "min_us_per_op": 1806.712,
+                        "max_us_per_op": 1806.712,
+                        "samples_us_per_op": [
+                            1806.712
+                        ],
+                        "peak_memory_bytes": 6291456,
+                        "scenario_id": 13,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Input source context, combined source",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1982.61,
+                        "min_us_per_op": 1982.61,
+                        "max_us_per_op": 1982.61,
+                        "samples_us_per_op": [
+                            1982.61
+                        ],
+                        "peak_memory_bytes": 6291456,
+                        "scenario_id": 14,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Matched route without mappings",
+                        "lifecycle": "reuse",
+                        "classification": "control",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": false
+                        },
+                        "median_us_per_op": 5.084,
+                        "min_us_per_op": 5.084,
+                        "max_us_per_op": 5.084,
+                        "samples_us_per_op": [
+                            5.084
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 15,
+                        "params": {
+                            "iterations": 3,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "batch": 4,
+            "label": "baseline",
+            "revision": "e581e210953faaaae5c21627b651727a505c4df8",
+            "harness_sha256": "0ef7a91483e240a9f54444dbcbbacb2da8badd502c4662eb0f50f156400bb343",
+            "lock_sha256": "ab4eb98175e6b5564ebcfa0342bcc9e62abfe9f1622669a06c8e48503438fac6",
+            "result": {
+                "batch": 4,
+                "params": {
+                    "iterations": 1,
+                    "control_iterations": 3,
+                    "warmup": 0,
+                    "samples": 1
+                },
+                "provenance": {
+                    "revision": "e581e210953faaaae5c21627b651727a505c4df8",
+                    "harness_sha256": "0ef7a91483e240a9f54444dbcbbacb2da8badd502c4662eb0f50f156400bb343",
+                    "lock_sha256": "ab4eb98175e6b5564ebcfa0342bcc9e62abfe9f1622669a06c8e48503438fac6",
+                    "versions": {
+                        "php": "8.5.10",
+                        "opcache_cli": false,
+                        "pcov_enabled": true,
+                        "jit": "disable",
+                        "locked_packages": {
+                            "cuyz/valinor": "2.6.0",
+                            "fig/http-message-util": "1.1.5",
+                            "mezzio/mezzio-router": "4.2.0",
+                            "psr/container": "2.0.2",
+                            "psr/http-factory": "1.1.0",
+                            "psr/http-message": "2.0",
+                            "psr/http-server-handler": "1.0.2",
+                            "psr/http-server-middleware": "1.0.2",
+                            "sirix/container-resolver": "1.0.0",
+                            "sirix/mezzio-routing-contracts": "1.2.2",
+                            "webmozart/assert": "2.4.1"
+                        },
+                        "locked_packages_dev": {
+                            "bamarni/composer-bin-plugin": "1.9.1",
+                            "laminas/laminas-diactoros": "3.8.0",
+                            "laminas/laminas-escaper": "2.18.0",
+                            "laminas/laminas-httphandlerrunner": "2.14.0",
+                            "laminas/laminas-stratigility": "4.3.1",
+                            "mezzio/mezzio": "3.28.1",
+                            "mezzio/mezzio-template": "3.0.0",
+                            "myclabs/deep-copy": "1.14.0",
+                            "nikic/php-parser": "v5.9.0",
+                            "phar-io/manifest": "2.0.4",
+                            "phar-io/version": "3.2.1",
+                            "phpunit/php-code-coverage": "11.0.12",
+                            "phpunit/php-file-iterator": "5.1.1",
+                            "phpunit/php-invoker": "5.0.1",
+                            "phpunit/php-text-template": "4.0.1",
+                            "phpunit/php-timer": "7.0.1",
+                            "phpunit/phpunit": "11.5.56",
+                            "sebastian/cli-parser": "3.0.2",
+                            "sebastian/code-unit": "3.0.3",
+                            "sebastian/code-unit-reverse-lookup": "4.0.1",
+                            "sebastian/comparator": "6.3.3",
+                            "sebastian/complexity": "4.0.1",
+                            "sebastian/diff": "6.0.2",
+                            "sebastian/environment": "7.2.1",
+                            "sebastian/exporter": "6.3.2",
+                            "sebastian/global-state": "7.0.2",
+                            "sebastian/lines-of-code": "3.0.1",
+                            "sebastian/object-enumerator": "6.0.1",
+                            "sebastian/object-reflector": "4.0.1",
+                            "sebastian/recursion-context": "6.0.3",
+                            "sebastian/type": "5.1.3",
+                            "sebastian/version": "5.0.2",
+                            "sirix/mezzio-routing-attributes": "1.4.3",
+                            "staabm/side-effects-detector": "1.0.5",
+                            "theseer/tokenizer": "1.3.1"
+                        }
+                    }
+                },
+                "scenarios": [
+                    {
+                        "name": "No RouteResult passthrough",
+                        "lifecycle": "reuse",
+                        "classification": "control",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": false
+                        },
+                        "median_us_per_op": 2.752,
+                        "min_us_per_op": 2.752,
+                        "max_us_per_op": 2.752,
+                        "samples_us_per_op": [
+                            2.752
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 1,
+                        "params": {
+                            "iterations": 3,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Reflection via direct handler object",
+                        "lifecycle": "reuse",
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 32.525,
+                        "min_us_per_op": 32.525,
+                        "max_us_per_op": 32.525,
+                        "samples_us_per_op": [
+                            32.525
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 2,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Reflection via lazy FQCN handler",
+                        "lifecycle": "reuse",
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 34.514,
+                        "min_us_per_op": 34.514,
+                        "max_us_per_op": 34.514,
+                        "samples_us_per_op": [
+                            34.514
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 3,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Route options single DTO",
+                        "lifecycle": "reuse",
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 32.96,
+                        "min_us_per_op": 32.96,
+                        "max_us_per_op": 32.96,
+                        "samples_us_per_op": [
+                            32.96
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 4,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Three operations with different outputs",
+                        "lifecycle": "reuse",
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 70.129,
+                        "min_us_per_op": 70.129,
+                        "max_us_per_op": 70.129,
+                        "samples_us_per_op": [
+                            70.129
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 5,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Repeated calls reusing middleware and builder",
+                        "lifecycle": "reuse",
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 35.427,
+                        "min_us_per_op": 35.427,
+                        "max_us_per_op": 35.427,
+                        "samples_us_per_op": [
+                            35.427
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 6,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "New middleware/resolvers/builder per iteration with file cache",
+                        "lifecycle": "new-each-iteration",
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 290.05,
+                        "min_us_per_op": 290.05,
+                        "max_us_per_op": 290.05,
+                        "samples_us_per_op": [
+                            290.05
+                        ],
+                        "peak_memory_bytes": 6291456,
+                        "scenario_id": 7,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Large flat body, one operation",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 2360.183,
+                        "min_us_per_op": 2360.183,
+                        "max_us_per_op": 2360.183,
+                        "samples_us_per_op": [
+                            2360.183
+                        ],
+                        "peak_memory_bytes": 8388608,
+                        "scenario_id": 8,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Large flat body, three operations",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 3118.943,
+                        "min_us_per_op": 3118.943,
+                        "max_us_per_op": 3118.943,
+                        "samples_us_per_op": [
+                            3118.943
+                        ],
+                        "peak_memory_bytes": 8388608,
+                        "scenario_id": 9,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Large nested body, one operation",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 20201,
+                            "strings": 20001,
+                            "approximate_payload_bytes": 507704
+                        },
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 4416.42,
+                        "min_us_per_op": 4416.42,
+                        "max_us_per_op": 4416.42,
+                        "samples_us_per_op": [
+                            4416.42
+                        ],
+                        "peak_memory_bytes": 8388608,
+                        "scenario_id": 10,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Large nested body, three operations",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 20201,
+                            "strings": 20001,
+                            "approximate_payload_bytes": 507704
+                        },
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 4026.763,
+                        "min_us_per_op": 4026.763,
+                        "max_us_per_op": 4026.763,
+                        "samples_us_per_op": [
+                            4026.763
+                        ],
+                        "peak_memory_bytes": 8388608,
+                        "scenario_id": 11,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Large body plus combined source",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "classification": "mapping",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": true
+                        },
+                        "median_us_per_op": 6198.273,
+                        "min_us_per_op": 6198.273,
+                        "max_us_per_op": 6198.273,
+                        "samples_us_per_op": [
+                            6198.273
+                        ],
+                        "peak_memory_bytes": 8388608,
+                        "scenario_id": 12,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Input source context, body only",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1898.481,
+                        "min_us_per_op": 1898.481,
+                        "max_us_per_op": 1898.481,
+                        "samples_us_per_op": [
+                            1898.481
+                        ],
+                        "peak_memory_bytes": 6291456,
+                        "scenario_id": 13,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Input source context, combined source",
+                        "lifecycle": "reuse",
+                        "input": {
+                            "fields": 10001,
+                            "strings": 10001,
+                            "approximate_payload_bytes": 257794
+                        },
+                        "median_us_per_op": 1978.484,
+                        "min_us_per_op": 1978.484,
+                        "max_us_per_op": 1978.484,
+                        "samples_us_per_op": [
+                            1978.484
+                        ],
+                        "peak_memory_bytes": 6291456,
+                        "scenario_id": 14,
+                        "params": {
+                            "iterations": 1,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    },
+                    {
+                        "name": "Matched route without mappings",
+                        "lifecycle": "reuse",
+                        "classification": "control",
+                        "correctness": {
+                            "status": 204,
+                            "dto_values_verified": false
+                        },
+                        "median_us_per_op": 5.099,
+                        "min_us_per_op": 5.099,
+                        "max_us_per_op": 5.099,
+                        "samples_us_per_op": [
+                            5.099
+                        ],
+                        "peak_memory_bytes": 4194304,
+                        "scenario_id": 15,
+                        "params": {
+                            "iterations": 3,
+                            "warmup": 0,
+                            "samples": 1
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}

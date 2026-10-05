@@ -14,30 +14,6 @@ declare(strict_types=1);
  *
  * Usage: php benchmarks/aggregate.php <raw-json>
  */
-if ($argc < 2) {
-    \fwrite(STDERR, "Usage: php benchmarks/aggregate.php <raw-json>\n");
-
-    exit(1);
-}
-
-$path = $argv[1];
-
-if (! \is_file($path) || ! \is_readable($path)) {
-    \fwrite(STDERR, "Raw file not found or unreadable: {$path}\n");
-
-    exit(1);
-}
-
-$document = \json_decode((string) \file_get_contents($path), true);
-
-if (! \is_array($document)) {
-    \fwrite(STDERR, "Raw file does not contain a JSON object: {$path}\n");
-
-    exit(1);
-}
-
-\validateDocument($document);
-
 /**
  * Standard median: for an even number of values the average of the two
  * central values, for an odd count the central value.
@@ -74,7 +50,7 @@ function validateDocument(array $document): void
         \fail('Document schema is not a string');
     }
 
-    if ('sirix-mezzio-valinor-compare/1' !== $document['schema']) {
+    if (! \in_array($document['schema'], ['sirix-mezzio-valinor-compare/1', 'sirix-mezzio-valinor-compare/2'], true)) {
         \fail("Unknown schema: {$document['schema']}");
     }
 
@@ -98,6 +74,43 @@ function validateDocument(array $document): void
         \fail('Document params is missing non-negative integer warmup');
     }
 
+    if (! \is_array($document['batches']) || ! \array_is_list($document['batches'])) {
+        \fail('Document batches is not a list');
+    }
+
+    $schemaTwo = 'sirix-mezzio-valinor-compare/2' === $document['schema'];
+
+    if ($schemaTwo) {
+        foreach ([
+            'iterations'         => [1, 1000000],
+            'control_iterations' => [1, 1000000],
+            'warmup'             => [0, 100000],
+            'samples'            => [1, 1000],
+        ] as $key => [$minimum, $maximum]) {
+            $value = $document['params'][$key] ?? null;
+
+            if (! \is_int($value) || $value < $minimum || $value > $maximum) {
+                \fail("Document params has an invalid {$key}");
+            }
+        }
+
+        $scenarioIds = $document['params']['scenario_ids'] ?? null;
+
+        if (! \is_array($scenarioIds) || ! \array_is_list($scenarioIds) || [] === $scenarioIds) {
+            \fail('Document params has no scenario_ids list');
+        }
+
+        foreach ($scenarioIds as $id) {
+            if (! \is_int($id) || $id < 1 || $id > 15) {
+                \fail('Document params has an invalid scenario_id');
+            }
+        }
+
+        if (\count(\array_unique($scenarioIds)) !== \count($scenarioIds)) {
+            \fail('Document params has duplicate scenario_ids');
+        }
+    }
+
     if (! \is_array($document['params']['order'] ?? null)
         || ! \array_is_list($document['params']['order'])
         || \count($document['params']['order']) !== $document['params']['batches_per_revision'] * 2) {
@@ -108,10 +121,6 @@ function validateDocument(array $document): void
         if (! \is_string($revision) || ($revision !== $document['baseline'] && $revision !== $document['optimized'])) {
             \fail('Document params order contains an unknown revision');
         }
-    }
-
-    if (! \is_array($document['batches']) || ! \array_is_list($document['batches'])) {
-        \fail('Document batches is not a list');
     }
 
     $expectedRevisionBalance = $document['params']['batches_per_revision'] * 2;
@@ -159,6 +168,24 @@ function validateDocument(array $document): void
 
         $scenarios = $batch['result']['scenarios'];
 
+        if ($schemaTwo) {
+            $batchParams = $batch['result']['params'] ?? null;
+
+            if (! \is_array($batchParams)) {
+                \fail("Batch {$batchIndex} has no effective params");
+            }
+
+            foreach (['iterations', 'control_iterations', 'warmup', 'samples'] as $key) {
+                if (($batchParams[$key] ?? null) !== $document['params'][$key]) {
+                    \fail("Batch {$batchIndex} has inconsistent {$key}");
+                }
+            }
+
+            if (\count($scenarios) !== \count($document['params']['scenario_ids'])) {
+                \fail("Batch {$batchIndex} scenario_ids differ from document params");
+            }
+        }
+
         if (null === $referenceScenarioNames) {
             $referenceScenarioNames = \array_column($scenarios, 'name');
 
@@ -183,11 +210,40 @@ function validateDocument(array $document): void
                 \fail("Batch {$batchIndex} scenario {$scenarioIndex} is missing a name");
             }
 
+            if ($schemaTwo) {
+                $id = $scenario['scenario_id'] ?? null;
+
+                if ($id !== $document['params']['scenario_ids'][$scenarioIndex]) {
+                    \fail("Batch {$batchIndex} scenario {$scenarioIndex} has inconsistent scenario_id");
+                }
+
+                $scenarioParams = $scenario['params'] ?? null;
+
+                if (! \is_array($scenarioParams)) {
+                    \fail("Batch {$batchIndex} scenario {$scenarioIndex} has no worker params");
+                }
+
+                $expectedParams = [
+                    'iterations' => \in_array($id, [1, 15], true)
+                        ? $document['params']['control_iterations']
+                        : $document['params']['iterations'],
+                    'warmup'     => $document['params']['warmup'],
+                    'samples'    => $document['params']['samples'],
+                ];
+
+                foreach ($expectedParams as $key => $value) {
+                    if (($scenarioParams[$key] ?? null) !== $value) {
+                        \fail("Batch {$batchIndex} scenario {$scenarioIndex} has inconsistent worker {$key}");
+                    }
+                }
+            }
+
             \validateScenarioMetrics(
                 $batchIndex,
                 $scenarioIndex,
                 $scenario,
                 $document['params']['samples'],
+                'sirix-mezzio-valinor-compare/1' === $document['schema'],
             );
         }
     }
@@ -217,8 +273,13 @@ function validateDocument(array $document): void
 /**
  * @param array<mixed> $scenario
  */
-function validateScenarioMetrics(int $batchIndex, int $scenarioIndex, array $scenario, int $expectedSamples): void
-{
+function validateScenarioMetrics(
+    int $batchIndex,
+    int $scenarioIndex,
+    array $scenario,
+    int $expectedSamples,
+    bool $legacyMedian
+): void {
     foreach (['median_us_per_op', 'min_us_per_op', 'max_us_per_op'] as $key) {
         $value = $scenario[$key] ?? null;
 
@@ -254,6 +315,22 @@ function validateScenarioMetrics(int $batchIndex, int $scenarioIndex, array $sce
             \fail("Batch {$batchIndex} scenario {$scenarioIndex} has an invalid sample value");
         }
     }
+
+    \sort($samples);
+    $derived = [
+        'min_us_per_op'    => $samples[0],
+        'median_us_per_op' => $legacyMedian ? $samples[\intdiv(\count($samples), 2)] : \median($samples),
+        'max_us_per_op'    => $samples[\count($samples) - 1],
+    ];
+
+    foreach ($derived as $key => $expected) {
+        // Published samples and summaries each round to three decimals.
+        $tolerance = 0.001 + PHP_FLOAT_EPSILON * \max(\abs((float) $scenario[$key]), \abs((float) $expected)) * 4;
+
+        if (! \is_finite((float) $expected) || \abs($scenario[$key] - $expected) > $tolerance) {
+            \fail("Batch {$batchIndex} scenario {$scenarioIndex} has inconsistent {$key}");
+        }
+    }
 }
 
 /**
@@ -266,54 +343,89 @@ function fail(string $message): void
     exit(1);
 }
 
-$medByLabel = [];
+/** @param list<string> $arguments */
+function aggregateMain(array $arguments): int
+{
+    if (! \is_string($arguments[1] ?? null) || '' === $arguments[1]) {
+        \fwrite(STDERR, "Usage: php benchmarks/aggregate.php <raw-json>\n");
 
-foreach ($document['batches'] as $batch) {
-    foreach ($batch['result']['scenarios'] as $index => $scenario) {
-        $medByLabel[$index][$batch['label']][] = $scenario['median_us_per_op'];
-        $medByLabel[$index]['name']            = $scenario['name'];
-    }
-}
-
-$scenarioKinds = [
-    'No RouteResult passthrough'                                     => 'control',
-    'Reflection via direct handler object'                           => 'control',
-    'Reflection via lazy FQCN handler'                               => 'control',
-    'Route options single DTO'                                       => 'request-path check',
-    'Three operations with different outputs'                        => 'request-path check',
-    'Repeated calls reusing middleware and builder'                  => 'request-path check',
-    'New middleware/resolvers/builder per iteration with file cache' => 'request-path check',
-];
-
-$lines = [];
-
-foreach ($medByLabel as $values) {
-    $name        = $values['name'];
-    $annotation  = $scenarioKinds[$name] ?? null;
-    $displayName = null === $annotation ? $name : "{$name} ({$annotation})";
-
-    $b = \median($values['baseline']);
-
-    if ($b <= 0.0 || ! \is_finite($b)) {
-        \fail("Scenario {$name} has a non-positive baseline median");
+        return 1;
     }
 
-    $o     = \median($values['optimized']);
-    $delta = ($o - $b) / $b * 100;
+    $path = $arguments[1];
 
-    $lines[] = \sprintf(
-        '| %s | %s | %s | %+.1f%% |',
-        $displayName,
-        \number_format($b, 3, '.', ','),
-        \number_format($o, 3, '.', ','),
-        $delta,
-    );
+    if (! \is_file($path) || ! \is_readable($path)) {
+        \fwrite(STDERR, "Raw file not found or unreadable: {$path}\n");
+
+        return 1;
+    }
+
+    $document = \json_decode((string) \file_get_contents($path), true);
+
+    if (! \is_array($document)) {
+        \fwrite(STDERR, "Raw file does not contain a JSON object: {$path}\n");
+
+        return 1;
+    }
+
+    \validateDocument($document);
+
+    $medByLabel = [];
+
+    foreach ($document['batches'] as $batch) {
+        foreach ($batch['result']['scenarios'] as $index => $scenario) {
+            $medByLabel[$index][$batch['label']][] = $scenario['median_us_per_op'];
+            $medByLabel[$index]['name']            = $scenario['name'];
+        }
+    }
+
+    $scenarioKinds = [
+        'No RouteResult passthrough'                                     => 'control',
+        'Matched route without mappings'                                 => 'control',
+        'Reflection via direct handler object'                           => 'request-path check',
+        'Reflection via lazy FQCN handler'                               => 'request-path check',
+        'Route options single DTO'                                       => 'request-path check',
+        'Three operations with different outputs'                        => 'request-path check',
+        'Repeated calls reusing middleware and builder'                  => 'request-path check',
+        'New middleware/resolvers/builder per iteration with file cache' => 'request-path check',
+    ];
+
+    $lines = [];
+
+    foreach ($medByLabel as $values) {
+        $name        = $values['name'];
+        $annotation  = $scenarioKinds[$name] ?? null;
+        $displayName = null === $annotation ? $name : "{$name} ({$annotation})";
+
+        $b = \median($values['baseline']);
+
+        if ($b <= 0.0 || ! \is_finite($b)) {
+            \fail("Scenario {$name} has a non-positive baseline median");
+        }
+
+        $o     = \median($values['optimized']);
+        $delta = ($o - $b) / $b * 100;
+
+        $lines[] = \sprintf(
+            '| %s | %s | %s | %+.1f%% |',
+            $displayName,
+            \number_format($b, 3, '.', ','),
+            \number_format($o, 3, '.', ','),
+            $delta,
+        );
+    }
+
+    // Only now that every row has been computed safely the table goes to STDOUT.
+    echo "| Scenario | Baseline µs/op | Optimized µs/op | Delta |\n";
+    echo "| --- | ---: | ---: | ---: |\n";
+
+    foreach ($lines as $line) {
+        echo $line, "\n";
+    }
+
+    return 0;
 }
 
-// Only now that every row has been computed safely the table goes to STDOUT.
-echo "| Scenario | Baseline µs/op | Optimized µs/op | Delta |\n";
-echo "| --- | ---: | ---: | ---: |\n";
-
-foreach ($lines as $line) {
-    echo $line, "\n";
+if (__FILE__ === \realpath($_SERVER['SCRIPT_FILENAME'] ?? '')) {
+    exit(\aggregateMain($_SERVER['argv'] ?? []));
 }
