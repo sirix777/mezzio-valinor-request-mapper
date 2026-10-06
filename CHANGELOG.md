@@ -28,6 +28,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Breaking: explicitly configured per-mapping error responders must be
+  registered container services implementing `MappingErrorResponderInterface`.
+  Missing services throw `MissingContainerServiceException` instead of using
+  the default responder. Wrong types and service factory failures propagate
+  for the application to handle. Resolution remains lazy on mapping/input
+  errors; `null` retains the application-wide/default responder.
 - Breaking: mapper configuration is always strict. Unknown string keys in
   `sirix_mezzio_valinor.mapper` throw `InvalidMapRequestConfiguration` with their
   full path before cache setup or configurators run. Invalid, unresolved and
@@ -60,9 +66,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Release classification
 
 - These changes require a major release under the project's Semantic
-  Versioning policy because strict mapper configuration, numeric JSON paths and
-  inherited callable discovery change observable behavior. Additive limits
-  remain disabled by default and could be released separately.
+  Versioning policy because strict mapper configuration, required explicit
+  responders, numeric JSON paths and inherited callable discovery change
+  observable behavior. Additive limits remain disabled by default and could be
+  released separately.
 
 ## [3.0.0] - 2026-09-12
 

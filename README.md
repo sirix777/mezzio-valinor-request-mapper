@@ -236,7 +236,9 @@ Rules:
 - `methods = []` means any HTTP method
 - non-empty `methods` must be a list of non-empty HTTP tokens; they are
   normalized (`post`, `Post` -> `POST`)
-- `errorResponder` is resolved only from the container when mapping fails; when it is not registered, the default responder is used
+- An explicit `errorResponder` must be registered in the container as a
+  `MappingErrorResponderInterface` service; it is resolved only on a mapping or
+  input error. `null` uses the application-wide/default responder
 - if multiple `#[MapRequest]` attributes match current method, all of them are applied in declaration order; class-level mappings run before method-level mappings
 - active operations must have distinct effective output keys. For example, two
   sources that map the same DTO need separate `output` values; the package no
@@ -591,7 +593,8 @@ per-mapping `errorResponder` attribute.
 
 For a single mapping, use `errorResponder` on `MapRequest` and register that
 class in the container. The middleware never instantiates this class-string;
-if the service is absent, it safely falls back to the application-wide default.
+an explicit responder must implement `MappingErrorResponderInterface` and be
+registered under the requested identifier.
 
 ```php
 #[MapRequest(body: CreateUserRequest::class, errorResponder: ProblemDetailsResponder::class)]
@@ -600,6 +603,17 @@ final class CreateUserHandler implements RequestHandlerInterface
     // ...
 }
 ```
+
+Resolution is lazy: the explicit service is requested only when that mapping
+raises `MappingError` or `RequestInputError`, so successful requests do not
+resolve it. A missing service throws `MissingContainerServiceException` with
+the requested identifier and factory context; a service of the wrong type
+throws `InvalidContainerServiceException`. Service factory exceptions
+propagate; PSR-11 not-found failures are contextualized with the original
+exception as their cause. These configuration errors escape the middleware
+for the application to handle instead of becoming a client `422` response.
+Omitting `errorResponder` or setting it to `null` keeps the application-wide
+responder and its built-in fallback.
 
 ## Default error response and migration
 

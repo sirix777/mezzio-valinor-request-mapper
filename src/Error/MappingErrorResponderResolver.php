@@ -6,6 +6,8 @@ namespace Sirix\Mezzio\Valinor\Error;
 
 use Psr\Container\ContainerExceptionInterface;
 use Sirix\ContainerResolver\ContainerResolver;
+use Sirix\ContainerResolver\Exception\InvalidContainerServiceException;
+use Sirix\ContainerResolver\Exception\MissingContainerServiceException;
 
 final readonly class MappingErrorResponderResolver
 {
@@ -15,6 +17,8 @@ final readonly class MappingErrorResponderResolver
      * @param null|class-string<MappingErrorResponderInterface> $responderClass
      *
      * @throws ContainerExceptionInterface
+     * @throws MissingContainerServiceException when the explicit responder is not registered
+     * @throws InvalidContainerServiceException when the explicit responder has an invalid type
      */
     public function resolve(?string $responderClass): MappingErrorResponderInterface
     {
@@ -22,7 +26,6 @@ final readonly class MappingErrorResponderResolver
             return $this->defaultResponder;
         }
 
-        return $this->containerResolver->optionalAs($responderClass, MappingErrorResponderInterface::class)
-            ?? $this->defaultResponder;
+        return $this->containerResolver->getAs($responderClass, MappingErrorResponderInterface::class);
     }
 }

@@ -209,7 +209,7 @@ final class ValinorRequestMapperMiddlewareFactoryTest extends TestCase
     }
 
     #[Test]
-    public function fallsBackWhenPerMappingResponderIsNotRegistered(): void
+    public function rejectsUnregisteredResponderClass(): void
     {
         $container = $this->createContainer([
             'config'                              => [
@@ -237,11 +237,10 @@ final class ValinorRequestMapperMiddlewareFactoryTest extends TestCase
             ->withAttribute(RouteResult::class, RouteResult::fromRoute(new Route('/example', $handler, [RequestMethodInterface::METHOD_POST]), []))
         ;
 
-        $response = $middleware->process($request, $this->nextHandler($handler));
-        $body     = json_decode((string) $response->getBody(), true);
+        $this->expectException(MissingContainerServiceException::class);
+        $this->expectExceptionMessage(UnregisteredResponder::class);
 
-        self::assertSame(StatusCodeInterface::STATUS_UNPROCESSABLE_ENTITY, $response->getStatusCode());
-        self::assertSame('Mapping failed', $body['error']);
+        $middleware->process($request, $this->nextHandler($handler));
     }
 
     #[Test]

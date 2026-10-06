@@ -19,6 +19,7 @@ use Laminas\Stratigility\Middleware\CallableMiddlewareDecorator;
 use Laminas\Stratigility\Middleware\RequestHandlerMiddleware;
 use Mezzio\Router\Route;
 use Mezzio\Router\RouteResult;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -27,12 +28,14 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use RuntimeException;
+use Sirix\ContainerResolver\Exception\MissingContainerServiceException;
 use Sirix\Mezzio\Valinor\Attribute\MapRequest;
 use Sirix\Mezzio\Valinor\Error\DefaultMappingErrorResponder;
 use Sirix\Mezzio\Valinor\Error\MappingErrorContext;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderInterface;
 use Sirix\Mezzio\Valinor\Error\RequestInputError;
 use Sirix\Mezzio\Valinor\Exception\InvalidMapRequestConfiguration;
+use Sirix\Mezzio\Valinor\Factory\MappingErrorResponderResolverFactory;
 use Sirix\Mezzio\Valinor\Mapping\HttpRequestSourceFactory;
 use Sirix\Mezzio\Valinor\Mapping\InputEncodingValidator;
 use Sirix\Mezzio\Valinor\Mapping\InputEncodingValidatorInterface;
@@ -42,11 +45,13 @@ use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\CreateBodyRequest;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\IntIdRouteRequest;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\PaginationRequest;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\PositiveIdRouteRequest;
+use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\ProblemDetailsResponder;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\RequestMapperMiddlewareBuilder;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\RequestObjectRequest;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\RequiredRequest;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\SearchRequest;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\StatusRouteRequest;
+use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\UnregisteredResponder;
 use stdClass;
 
 use function json_decode;
@@ -1616,6 +1621,210 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
         $this->expectExceptionMessage('Responder failure.');
 
         $this->processRoute($middleware, $request, $handler, methods: [RequestMethodInterface::METHOD_POST]);
+    }
+
+    /**
+     * @param array<string, string> $query
+     */
+    #[Test]
+    #[DataProvider('missingExplicitResponderErrorPaths')]
+    public function missingExplicitResponderEscapesBothErrorPaths(array $query): void
+    {
+        $defaultResponderCalls = 0;
+        $defaultResponder      = $this->createMock(MappingErrorResponderInterface::class);
+        $defaultResponder->method('respond')->willReturnCallback(
+            static function() use (&$defaultResponderCalls): ResponseInterface {
+                ++$defaultResponderCalls;
+
+                return new EmptyResponse();
+            },
+        );
+        $middleware = RequestMapperMiddlewareBuilder::build(
+            $this->defaultMapper(),
+            $defaultResponder,
+            $this->emptyContainer(),
+            MappingErrorResponderResolverFactory::class,
+        );
+        $handler = new #[MapRequest(query: RequiredRequest::class, errorResponder: UnregisteredResponder::class)]
+        class implements MiddlewareInterface, RequestHandlerInterface {
+            public int $calls = 0;
+
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                return $this->handle($request);
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                ++$this->calls;
+
+                return new EmptyResponse();
+            }
+        };
+
+        try {
+            $this->processRoute($middleware, $this->request(RequestMethodInterface::METHOD_GET, query: $query), $handler);
+            self::fail('A missing explicit responder must escape the middleware.');
+        } catch (MissingContainerServiceException $caught) {
+            self::assertStringContainsString(UnregisteredResponder::class, $caught->getMessage());
+            self::assertStringContainsString(MappingErrorResponderResolverFactory::class, $caught->getMessage());
+        } finally {
+            self::assertSame(0, $defaultResponderCalls);
+            self::assertSame(0, $handler->calls);
+        }
+    }
+
+    /**
+     * @return iterable<string, array{array<string, string>}>
+     */
+    public static function missingExplicitResponderErrorPaths(): iterable
+    {
+        yield 'MappingError: required property missing' => [[]];
+
+        yield 'RequestInputError: invalid UTF-8 query value' => [[
+            'name' => "\xB1\x31",
+        ]];
+    }
+
+    #[Test]
+    public function successfulMappingDoesNotResolveExplicitResponder(): void
+    {
+        $explicitIdLookups = [];
+        $container         = $this->createMock(ContainerInterface::class);
+        $container->method('has')->willReturnCallback(
+            static function(string $id) use (&$explicitIdLookups): bool {
+                $explicitIdLookups[] = ['has', $id];
+
+                return false;
+            },
+        );
+        $container->method('get')->willReturnCallback(
+            static function(string $id) use (&$explicitIdLookups): never {
+                $explicitIdLookups[] = ['get', $id];
+
+                throw new RuntimeException("Service not found: {$id}");
+            },
+        );
+        $middleware = RequestMapperMiddlewareBuilder::build(
+            $this->defaultMapper(),
+            $this->defaultResponder(),
+            $container,
+            MappingErrorResponderResolverFactory::class,
+        );
+        $handler = new #[MapRequest(body: RequiredRequest::class, errorResponder: UnregisteredResponder::class)]
+        class implements MiddlewareInterface, RequestHandlerInterface {
+            public int $calls = 0;
+
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                return $this->handle($request);
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                ++$this->calls;
+
+                return new JsonResponse($request->getAttribute(RequiredRequest::class));
+            }
+        };
+
+        $response = $this->processRoute(
+            $middleware,
+            $this->request(RequestMethodInterface::METHOD_POST, [
+                'name' => 'mapped',
+            ]),
+            $handler,
+            methods: [RequestMethodInterface::METHOD_POST],
+        );
+
+        self::assertSame([], $explicitIdLookups);
+        self::assertSame(1, $handler->calls);
+        self::assertSame([
+            'name' => 'mapped',
+        ], json_decode((string) $response->getBody(), true));
+    }
+
+    #[Test]
+    public function laterMappingUsesItsOwnExplicitResponder(): void
+    {
+        $firstResponderCalls  = 0;
+        $secondResponderCalls = 0;
+        $captureResponder     = new CaptureResponder();
+        $firstResponder       = $this->createMock(MappingErrorResponderInterface::class);
+        $firstResponder->method('respond')->willReturnCallback(
+            static function() use (&$firstResponderCalls): ResponseInterface {
+                ++$firstResponderCalls;
+
+                return new EmptyResponse();
+            },
+        );
+        $secondResponder = $this->createMock(MappingErrorResponderInterface::class);
+        $secondResponder->method('respond')->willReturnCallback(
+            static function(MappingErrorContext $context) use (&$secondResponderCalls, $captureResponder): ResponseInterface {
+                ++$secondResponderCalls;
+
+                return $captureResponder->respond($context);
+            },
+        );
+        $container = $this->createMock(ContainerInterface::class);
+        $container->method('has')->willReturnMap([
+            [ProblemDetailsResponder::class, true],
+            [CaptureResponder::class, true],
+        ]);
+        $container->method('get')->willReturnMap([
+            [ProblemDetailsResponder::class, $firstResponder],
+            [CaptureResponder::class, $secondResponder],
+        ]);
+        $defaultResponder = new CaptureResponder();
+        $middleware       = RequestMapperMiddlewareBuilder::build(
+            $this->defaultMapper(),
+            $defaultResponder,
+            $container,
+            MappingErrorResponderResolverFactory::class,
+        );
+        $handler = new #[MapRequest(body: RequiredRequest::class, output: 'first', errorResponder: ProblemDetailsResponder::class)]
+        #[MapRequest(query: RequiredRequest::class, output: 'second', errorResponder: CaptureResponder::class)]
+        class implements MiddlewareInterface, RequestHandlerInterface {
+            public int $calls = 0;
+
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                return $this->handle($request);
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                ++$this->calls;
+
+                return new EmptyResponse();
+            }
+        };
+
+        $response = $this->processRoute(
+            $middleware,
+            $this->request(RequestMethodInterface::METHOD_POST, [
+                'name' => 'first mapped',
+            ]),
+            $handler,
+            methods: [RequestMethodInterface::METHOD_POST],
+        );
+
+        self::assertSame(0, $firstResponderCalls);
+        self::assertSame(1, $secondResponderCalls);
+        self::assertNotNull($captureResponder->context);
+        self::assertSame('second', $captureResponder->context->requestAttributeKey);
+        self::assertSame('query', $captureResponder->context->source);
+        self::assertSame(RequiredRequest::class, $captureResponder->context->dtoClass);
+        self::assertSame(CaptureResponder::class, $captureResponder->context->mapRequest->errorResponder);
+        $firstMapped = $captureResponder->context->request->getAttribute('first');
+        self::assertInstanceOf(RequiredRequest::class, $firstMapped);
+        self::assertSame('first mapped', $firstMapped->name);
+        self::assertSame(StatusCodeInterface::STATUS_CONFLICT, $response->getStatusCode());
+        self::assertSame([
+            'handled' => true,
+        ], json_decode((string) $response->getBody(), true));
+        self::assertNull($defaultResponder->context);
+        self::assertSame(0, $handler->calls);
     }
 
     /**

@@ -1,8 +1,9 @@
 # Migrating to 4.0
 
-4.0 makes mapper configuration always strict and includes the numeric JSON
-path and inherited callable discovery corrections below. When upgrading from
-an older release, apply the [3.0 migration guide](MIGRATION-3.0.md) first; for
+4.0 makes mapper configuration always strict, requires explicitly configured
+error responders, and includes the numeric JSON path and inherited callable
+discovery corrections below. When upgrading from an older release, apply the
+[3.0 migration guide](MIGRATION-3.0.md) first; for
 1.x, start with the [2.0 guide](MIGRATION-2.0.md).
 
 ## 1. Remove the strict flag and validate mapper options
@@ -45,7 +46,26 @@ Configurators retain declaration order. The `allow_*` flags remain additive:
 formats still append to the builder's existing formats, removing duplicates
 while preserving order.
 
-## 3. Read numeric error paths as JSON object properties
+## 3. Register explicitly configured error responders
+
+Register every per-mapping `errorResponder` identifier in the container with a
+service implementing `MappingErrorResponderInterface`. An existing class is
+not enough: the middleware does not instantiate responder classes.
+
+Missing explicit services now throw `MissingContainerServiceException` with
+the requested identifier and factory context instead of falling back to the
+default responder. Services of the wrong type throw
+`InvalidContainerServiceException`; service factory exceptions propagate.
+PSR-11 not-found failures preserve the original exception as their cause.
+The application must handle these configuration errors: the middleware does
+not convert them to a client `422` response.
+
+Resolution remains lazy, only when the affected mapping raises `MappingError`
+or `RequestInputError`. Successful requests do not resolve the explicit
+responder. Omit `errorResponder` or set it to `null` to keep the application-wide
+responder and its existing built-in fallback.
+
+## 4. Read numeric error paths as JSON object properties
 
 The default responder's `messages` is always a JSON object. Numeric paths
 previously could produce an array such as `[["..."]]`; they now produce
@@ -53,7 +73,7 @@ previously could produce an array such as `[["..."]]`; they now produce
 and response snapshots to read path properties, including numeric strings.
 The status `422`, JSON content type and `error` field remain unchanged.
 
-## 4. Check inherited handler callables
+## 5. Check inherited handler callables
 
 Inherited first-class instance and static method callables now use class
 attributes from the called child class, matching equivalent array callables.
