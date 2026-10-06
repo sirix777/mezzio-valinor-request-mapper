@@ -1,0 +1,16 @@
+{
+    "schema": 1,
+    "study": "6acbb0509a31a1e1e0a3bdc808f5449b62ad792379c7b57f36c9dbfc40fc6a9f",
+    "output": "/home/sirix/PhpStormProjects/mezzio-valinor-request-mapper/.worktrees/mezzio-hardening/docs/benchmarks/raw/application-load-pilot",
+    "boot_id": "d433a3d5-cf22-4ffd-b9a0-9e38a3931e9e",
+    "started_monotonic": 13358.06667116,
+    "started_utc": "2026-10-06T08:37:35+00:00",
+    "scheduled": 493,
+    "preflight": 93,
+    "cells": {
+        "fpm-w1-10-baseline": {
+            "reserved_monotonic": 13426.938670146,
+            "requests": 400
+        }
+    }
+}

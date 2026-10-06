@@ -1,0 +1,51 @@
+{
+    "evidence_class": "QUARANTINED INVALID partial-window diagnostics; no performance claim",
+    "histograms_all_400_arrivals": {
+        "native_http_status": {
+            "200": 400
+        },
+        "result_outcome": {
+            "success": 400
+        },
+        "response_bytes": {
+            "25": 400
+        }
+    },
+    "resources_all_44_rows_including_invalid": {
+        "app": {
+            "cpu_cap": 4,
+            "observed_cpu_peak_fraction": 0.09771045454542224,
+            "cpu_usage_usec_first": 807422,
+            "cpu_usage_usec_last": 9300947,
+            "observed_cpu_usage_delta_usec": 8493525,
+            "memory_peak_bytes": 30670848,
+            "observed_network_rx_delta_bytes": 300136,
+            "observed_network_tx_delta_bytes": 173428
+        },
+        "generator": {
+            "cpu_cap": 2,
+            "observed_cpu_peak_fraction": 0.1058313186813356,
+            "cpu_usage_usec_first": 421747,
+            "cpu_usage_usec_last": 5594710,
+            "observed_cpu_usage_delta_usec": 5172963,
+            "memory_peak_bytes": 28815360,
+            "observed_network_rx_delta_bytes": 138123,
+            "observed_network_tx_delta_bytes": 135516
+        },
+        "gateway": {
+            "cpu_cap": 1,
+            "observed_cpu_peak_fraction": 0.20703975903616273,
+            "cpu_usage_usec_first": 197731,
+            "cpu_usage_usec_last": 3748646,
+            "observed_cpu_usage_delta_usec": 3550915,
+            "memory_peak_bytes": 6455296,
+            "observed_network_rx_delta_bytes": 309162,
+            "observed_network_tx_delta_bytes": 438130
+        }
+    },
+    "completed_results_in_wall_interval_10_40": 300,
+    "completed_results_in_wall_interval_per_30_seconds": 10,
+    "native_send_cohort_starts": 300,
+    "native_send_cohort_starts_per_30_seconds": 10,
+    "collector_overhead_subtracted": false
+}

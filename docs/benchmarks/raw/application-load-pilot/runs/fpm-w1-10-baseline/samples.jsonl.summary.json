@@ -1,0 +1,10 @@
+{
+    "expected_rows": 44,
+    "rows": 44,
+    "invalid_rows": 3,
+    "sampler_cpu_seconds": 0.140486,
+    "docker_cli_cpu_seconds": 17.780735,
+    "collection_wall_seconds": 30.205838854000007,
+    "elapsed_seconds": 44.000370438,
+    "collector_overhead_in_container_counters": true
+}

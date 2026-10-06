@@ -1,0 +1,399 @@
+{
+    "project": "mezzio-pilot-ecab352dececf49e",
+    "purpose": "READ-ONLY residual ownership inspection before any cleanup ruling",
+    "captured_utc": "2026-10-06T08:47:22+00:00",
+    "elapsed_from_original_execution_reservation": 591.084137713,
+    "original_hard_deadline_monotonic": 17858.06667116,
+    "preserved_hashes": {
+        "cleanup.log": "5e9124a359ab4719c04a7d71a9930398a9c29bc142275c797e44a4958e9c574d",
+        "salvage.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "child.json": "48f8fba5188190e910d1890460c0a513540876a44f27849a955e93f0012fa914",
+        "artifacts.json": "c0fdb8fe1225a4ad64d2945c895ba1129e8389843bb8427e4f8fe10ab6f80015",
+        "k6-raw.json.gz": "2e12f5aea41fecd66e4023271a62ead549ecb95875956ae5d027c79010a3b398",
+        "k6-summary.json": "a059449c95b79d6441b4225bfed1ab15f1298314bb696915151fa7aa473e219f",
+        "commands.log": "029c5ea3afa2219deeec49deb5eb45983a9ad3b9754fbd3f7320a7049172f494"
+    },
+    "commands": [
+        {
+            "argv": [
+                "env",
+                "-u",
+                "DOCKER_HOST",
+                "-u",
+                "DOCKER_CONTEXT",
+                "-u",
+                "COMPOSE_PROFILES",
+                "docker",
+                "--config",
+                "/tmp/aif-pilot-task1-docker",
+                "-H",
+                "unix:///var/run/docker.sock",
+                "ps",
+                "-aq",
+                "--no-trunc",
+                "--filter",
+                "label=com.docker.compose.project=mezzio-pilot-ecab352dececf49e"
+            ],
+            "started_monotonic": 13945.090808114,
+            "finished_monotonic": 13945.825478688,
+            "stdout": "8e6f3205cc2ba3079429d297c99473c6b61468baaa8d81516ccad9269a923692\n"
+        },
+        {
+            "argv": [
+                "env",
+                "-u",
+                "DOCKER_HOST",
+                "-u",
+                "DOCKER_CONTEXT",
+                "-u",
+                "COMPOSE_PROFILES",
+                "docker",
+                "--config",
+                "/tmp/aif-pilot-task1-docker",
+                "-H",
+                "unix:///var/run/docker.sock",
+                "inspect",
+                "8e6f3205cc2ba3079429d297c99473c6b61468baaa8d81516ccad9269a923692"
+            ],
+            "started_monotonic": 13945.826210993,
+            "finished_monotonic": 13946.937756451,
+            "stdout": "[\n    {\n        \"Id\": \"8e6f3205cc2ba3079429d297c99473c6b61468baaa8d81516ccad9269a923692\",\n        \"Created\": \"2026-10-06T08:37:41.215740964Z\",\n        \"Path\": \"sh\",\n        \"Args\": [\n            \"-c\",\n            \"sleep 600\"\n        ],\n        \"State\": {\n            \"Status\": \"running\",\n            \"Running\": true,\n            \"Paused\": false,\n            \"Restarting\": false,\n            \"OOMKilled\": false,\n            \"Dead\": false,\n            \"Pid\": 27058,\n            \"ExitCode\": 0,\n            \"Error\": \"\",\n            \"StartedAt\": \"2026-10-06T08:37:41.370893363Z\",\n            \"FinishedAt\": \"0001-01-01T00:00:00Z\"\n        },\n        \"Image\": \"sha256:bfa9adb4f73593aaa9647cd339ecd5e6103827bce63267618a4ec51d5db56f72\",\n        \"ResolvConfPath\": \"/var/lib/docker/containers/8e6f3205cc2ba3079429d297c99473c6b61468baaa8d81516ccad9269a923692/resolv.conf\",\n        \"HostnamePath\": \"/var/lib/docker/containers/8e6f3205cc2ba3079429d297c99473c6b61468baaa8d81516ccad9269a923692/hostname\",\n        \"HostsPath\": \"/var/lib/docker/containers/8e6f3205cc2ba3079429d297c99473c6b61468baaa8d81516ccad9269a923692/hosts\",\n        \"LogPath\": \"/var/lib/docker/containers/8e6f3205cc2ba3079429d297c99473c6b61468baaa8d81516ccad9269a923692/8e6f3205cc2ba3079429d297c99473c6b61468baaa8d81516ccad9269a923692-json.log\",\n        \"Name\": \"/mezzio-pilot-ecab352dececf49e-generator-run-19928d5111e0\",\n        \"RestartCount\": 0,\n        \"Driver\": \"overlay2\",\n        \"Platform\": \"linux\",\n        \"MountLabel\": \"\",\n        \"ProcessLabel\": \"\",\n        \"AppArmorProfile\": \"\",\n        \"ExecIDs\": null,\n        \"HostConfig\": {\n            \"Binds\": [\n                \"/home/sirix/PhpStormProjects/mezzio-valinor-request-mapper/.worktrees/mezzio-load-app/pilot:/pilot:ro\"\n            ],\n            \"ContainerIDFile\": \"\",\n            \"LogConfig\": {\n                \"Type\": \"json-file\",\n                \"Config\": {}\n            },\n            \"NetworkMode\": \"mezzio-pilot-ecab352dececf49e_pilot\",\n            \"PortBindings\": {},\n            \"RestartPolicy\": {\n                \"Name\": \"no\",\n                \"MaximumRetryCount\": 0\n            },\n            \"AutoRemove\": false,\n            \"VolumeDriver\": \"\",\n            \"VolumesFrom\": null,\n            \"ConsoleSize\": [\n                0,\n                0\n            ],\n            \"CapAdd\": null,\n            \"CapDrop\": [\n                \"ALL\"\n            ],\n            \"CgroupnsMode\": \"private\",\n            \"Dns\": null,\n            \"DnsOptions\": null,\n            \"DnsSearch\": null,\n            \"ExtraHosts\": [],\n            \"GroupAdd\": null,\n            \"IpcMode\": \"private\",\n            \"Cgroup\": \"\",\n            \"Links\": null,\n            \"OomScoreAdj\": 0,\n            \"PidMode\": \"\",\n            \"Privileged\": false,\n            \"PublishAllPorts\": false,\n            \"ReadonlyRootfs\": true,\n            \"SecurityOpt\": [\n                \"no-new-privileges:true\"\n            ],\n            \"Tmpfs\": {\n                \"/tmp\": \"rw,nosuid,nodev,noexec,size=67108864,uid=1001,gid=1001,mode=1777\"\n            },\n            \"UTSMode\": \"\",\n            \"UsernsMode\": \"\",\n            \"ShmSize\": 67108864,\n            \"Runtime\": \"runc\",\n            \"Isolation\": \"\",\n            \"CpuShares\": 0,\n            \"Memory\": 1073741824,\n            \"NanoCpus\": 2000000000,\n            \"CgroupParent\": \"\",\n            \"BlkioWeight\": 0,\n            \"BlkioWeightDevice\": null,\n            \"BlkioDeviceReadBps\": null,\n            \"BlkioDeviceWriteBps\": null,\n            \"BlkioDeviceReadIOps\": null,\n            \"BlkioDeviceWriteIOps\": null,\n            \"CpuPeriod\": 0,\n            \"CpuQuota\": 0,\n            \"CpuRealtimePeriod\": 0,\n            \"CpuRealtimeRuntime\": 0,\n            \"CpusetCpus\": \"\",\n            \"CpusetMems\": \"\",\n            \"Devices\": null,\n            \"DeviceCgroupRules\": null,\n            \"DeviceRequests\": null,\n            \"MemoryReservation\": 0,\n            \"MemorySwap\": 1073741824,\n            \"MemorySwappiness\": null,\n            \"OomKillDisable\": null,\n            \"PidsLimit\": 64,\n            \"Ulimits\": null,\n            \"CpuCount\": 0,\n            \"CpuPercent\": 0,\n            \"IOMaximumIOps\": 0,\n            \"IOMaximumBandwidth\": 0,\n            \"MaskedPaths\": [\n                \"/proc/asound\",\n                \"/proc/acpi\",\n                \"/proc/interrupts\",\n                \"/proc/kcore\",\n                \"/proc/keys\",\n                \"/proc/latency_stats\",\n                \"/proc/timer_list\",\n                \"/proc/timer_stats\",\n                \"/proc/sched_debug\",\n                \"/proc/scsi\",\n                \"/sys/firmware\",\n                \"/sys/devices/virtual/powercap\"\n            ],\n            \"ReadonlyPaths\": [\n                \"/proc/bus\",\n                \"/proc/fs\",\n                \"/proc/irq\",\n                \"/proc/sys\",\n                \"/proc/sysrq-trigger\"\n            ]\n        },\n        \"GraphDriver\": {\n            \"Data\": {\n                \"ID\": \"8e6f3205cc2ba3079429d297c99473c6b61468baaa8d81516ccad9269a923692\",\n                \"LowerDir\": \"/var/lib/docker/overlay2/5bd0aa6a347ec0bb80a296ede854f3abff22f53da9ead48566045beac03c7a66-init/diff:/var/lib/docker/overlay2/ff7a300fb24e28d23c037a4393c7ac6e57929fee05a0df14cbf5e12101dd02e1/diff:/var/lib/docker/overlay2/615c8e510561c62ae6c1989f1c6c491deece0ce46c3b347815b185c1841f3baa/diff:/var/lib/docker/overlay2/da295c1ee452f24aea1e712ef3c490515160894f55032c5e6c8e2af6319db6a7/diff:/var/lib/docker/overlay2/aa1a8b88fac1421284320cc768c5b2fbd5e8cb5b41d378518020213cb66ad392/diff\",\n                \"MergedDir\": \"/var/lib/docker/overlay2/5bd0aa6a347ec0bb80a296ede854f3abff22f53da9ead48566045beac03c7a66/merged\",\n                \"UpperDir\": \"/var/lib/docker/overlay2/5bd0aa6a347ec0bb80a296ede854f3abff22f53da9ead48566045beac03c7a66/diff\",\n                \"WorkDir\": \"/var/lib/docker/overlay2/5bd0aa6a347ec0bb80a296ede854f3abff22f53da9ead48566045beac03c7a66/work\"\n            },\n            \"Name\": \"overlay2\"\n        },\n        \"Mounts\": [\n            {\n                \"Type\": \"bind\",\n                \"Source\": \"/home/sirix/PhpStormProjects/mezzio-valinor-request-mapper/.worktrees/mezzio-load-app/pilot\",\n                \"Destination\": \"/pilot\",\n                \"Mode\": \"ro\",\n                \"RW\": false,\n                \"Propagation\": \"rprivate\"\n            }\n        ],\n        \"Config\": {\n            \"Hostname\": \"8e6f3205cc2b\",\n            \"Domainname\": \"\",\n            \"User\": \"1001:1001\",\n            \"AttachStdin\": true,\n            \"AttachStdout\": true,\n            \"AttachStderr\": true,\n            \"Tty\": false,\n            \"OpenStdin\": true,\n            \"StdinOnce\": true,\n            \"Env\": [\n                \"K6_WEB_DASHBOARD=false\",\n                \"XDG_CONFIG_HOME=/tmp\",\n                \"K6_NO_USAGE_REPORT=true\",\n                \"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\"\n            ],\n            \"Cmd\": [\n                \"-c\",\n                \"sleep 600\"\n            ],\n            \"Image\": \"grafana/k6@sha256:98305727d160c065e1da695619c40ea4becbc3e116a3842da2d6027970e428c2\",\n            \"Volumes\": null,\n            \"WorkingDir\": \"/home/k6\",\n            \"Entrypoint\": [\n                \"sh\"\n            ],\n            \"OnBuild\": null,\n            \"Labels\": {\n                \"com.docker.compose.config-hash\": \"d21bbdcb1cadca6c00e9c26ebd7da521fa5a7c944f0108982a619fce6b191249\",\n                \"com.docker.compose.depends_on\": \"\",\n                \"com.docker.compose.image\": \"sha256:bfa9adb4f73593aaa9647cd339ecd5e6103827bce63267618a4ec51d5db56f72\",\n                \"com.docker.compose.oneoff\": \"True\",\n                \"com.docker.compose.project\": \"mezzio-pilot-ecab352dececf49e\",\n                \"com.docker.compose.project.config_files\": \"/home/sirix/PhpStormProjects/mezzio-valinor-request-mapper/.worktrees/mezzio-load-app/compose.yaml\",\n                \"com.docker.compose.project.working_dir\": \"/home/sirix/PhpStormProjects/mezzio-valinor-request-mapper/.worktrees/mezzio-load-app\",\n                \"com.docker.compose.service\": \"generator\",\n                \"com.docker.compose.slug\": \"19928d5111e012dd5ff42b0c3bd6ba8d88bd05149bcd68a729010bc35a91ea58\",\n                \"com.docker.compose.version\": \"5.1.4\"\n            }\n        },\n        \"NetworkSettings\": {\n            \"Bridge\": \"\",\n            \"SandboxID\": \"df457a3e24a49b1f0b62f76b68b83e7a4a614bc62860ae3000c819e2220a96f7\",\n            \"SandboxKey\": \"/var/run/docker/netns/df457a3e24a4\",\n            \"Ports\": {},\n            \"HairpinMode\": false,\n            \"LinkLocalIPv6Address\": \"\",\n            \"LinkLocalIPv6PrefixLen\": 0,\n            \"SecondaryIPAddresses\": null,\n            \"SecondaryIPv6Addresses\": null,\n            \"EndpointID\": \"\",\n            \"Gateway\": \"\",\n            \"GlobalIPv6Address\": \"\",\n            \"GlobalIPv6PrefixLen\": 0,\n            \"IPAddress\": \"\",\n            \"IPPrefixLen\": 0,\n            \"IPv6Gateway\": \"\",\n            \"MacAddress\": \"\",\n            \"Networks\": {\n                \"mezzio-pilot-ecab352dececf49e_pilot\": {\n                    \"IPAMConfig\": null,\n                    \"Links\": null,\n                    \"Aliases\": [\n                        \"mezzio-pilot-ecab352dececf49e-generator-run-19928d5111e0\"\n                    ],\n                    \"MacAddress\": \"12:f5:a4:fc:16:d6\",\n                    \"DriverOpts\": null,\n                    \"GwPriority\": 0,\n                    \"NetworkID\": \"3ea3b78fb7c40cd87995d157ad2cb030561e04f068f9ae1a3955c19822f8bd57\",\n                    \"EndpointID\": \"3d5539df2aedddcbf7f84323dd0ab7365ea2434ba7800525f00978a798378a64\",\n                    \"Gateway\": \"\",\n                    \"IPAddress\": \"172.24.0.4\",\n                    \"IPPrefixLen\": 16,\n                    \"IPv6Gateway\": \"\",\n                    \"GlobalIPv6Address\": \"\",\n                    \"GlobalIPv6PrefixLen\": 0,\n                    \"DNSNames\": [\n                        \"mezzio-pilot-ecab352dececf49e-generator-run-19928d5111e0\",\n                        \"8e6f3205cc2b\"\n                    ]\n                }\n            }\n        }\n    }\n]\n"
+        },
+        {
+            "argv": [
+                "env",
+                "-u",
+                "DOCKER_HOST",
+                "-u",
+                "DOCKER_CONTEXT",
+                "-u",
+                "COMPOSE_PROFILES",
+                "docker",
+                "--config",
+                "/tmp/aif-pilot-task1-docker",
+                "-H",
+                "unix:///var/run/docker.sock",
+                "network",
+                "ls",
+                "--no-trunc",
+                "--filter",
+                "label=com.docker.compose.project=mezzio-pilot-ecab352dececf49e",
+                "--format",
+                "{{.ID}}"
+            ],
+            "started_monotonic": 13946.941176741,
+            "finished_monotonic": 13948.015432013,
+            "stdout": "3ea3b78fb7c40cd87995d157ad2cb030561e04f068f9ae1a3955c19822f8bd57\n"
+        },
+        {
+            "argv": [
+                "env",
+                "-u",
+                "DOCKER_HOST",
+                "-u",
+                "DOCKER_CONTEXT",
+                "-u",
+                "COMPOSE_PROFILES",
+                "docker",
+                "--config",
+                "/tmp/aif-pilot-task1-docker",
+                "-H",
+                "unix:///var/run/docker.sock",
+                "network",
+                "inspect",
+                "3ea3b78fb7c40cd87995d157ad2cb030561e04f068f9ae1a3955c19822f8bd57"
+            ],
+            "started_monotonic": 13948.016405383,
+            "finished_monotonic": 13949.149791697,
+            "stdout": "[\n    {\n        \"Name\": \"mezzio-pilot-ecab352dececf49e_pilot\",\n        \"Id\": \"3ea3b78fb7c40cd87995d157ad2cb030561e04f068f9ae1a3955c19822f8bd57\",\n        \"Created\": \"2026-10-06T11:37:38.5058655+03:00\",\n        \"Scope\": \"local\",\n        \"Driver\": \"bridge\",\n        \"EnableIPv4\": true,\n        \"EnableIPv6\": false,\n        \"IPAM\": {\n            \"Driver\": \"default\",\n            \"Options\": null,\n            \"Config\": [\n                {\n                    \"Subnet\": \"172.24.0.0/16\",\n                    \"Gateway\": \"172.24.0.1\"\n                }\n            ]\n        },\n        \"Internal\": true,\n        \"Attachable\": false,\n        \"Ingress\": false,\n        \"ConfigFrom\": {\n            \"Network\": \"\"\n        },\n        \"ConfigOnly\": false,\n        \"Containers\": {\n            \"8e6f3205cc2ba3079429d297c99473c6b61468baaa8d81516ccad9269a923692\": {\n                \"Name\": \"mezzio-pilot-ecab352dececf49e-generator-run-19928d5111e0\",\n                \"EndpointID\": \"3d5539df2aedddcbf7f84323dd0ab7365ea2434ba7800525f00978a798378a64\",\n                \"MacAddress\": \"12:f5:a4:fc:16:d6\",\n                \"IPv4Address\": \"172.24.0.4/16\",\n                \"IPv6Address\": \"\"\n            }\n        },\n        \"Options\": {},\n        \"Labels\": {\n            \"com.docker.compose.config-hash\": \"c7d0a7c447f40f7c3c8dd263a4f6c1fe9a25e496cb32b4b3d2f1b81f8aafb5d6\",\n            \"com.docker.compose.network\": \"pilot\",\n            \"com.docker.compose.project\": \"mezzio-pilot-ecab352dececf49e\",\n            \"com.docker.compose.version\": \"5.1.4\"\n        }\n    }\n]\n"
+        }
+    ],
+    "containers": [
+        {
+            "Id": "8e6f3205cc2ba3079429d297c99473c6b61468baaa8d81516ccad9269a923692",
+            "Created": "2026-10-06T08:37:41.215740964Z",
+            "Path": "sh",
+            "Args": [
+                "-c",
+                "sleep 600"
+            ],
+            "State": {
+                "Status": "running",
+                "Running": true,
+                "Paused": false,
+                "Restarting": false,
+                "OOMKilled": false,
+                "Dead": false,
+                "Pid": 27058,
+                "ExitCode": 0,
+                "Error": "",
+                "StartedAt": "2026-10-06T08:37:41.370893363Z",
+                "FinishedAt": "0001-01-01T00:00:00Z"
+            },
+            "Image": "sha256:bfa9adb4f73593aaa9647cd339ecd5e6103827bce63267618a4ec51d5db56f72",
+            "ResolvConfPath": "/var/lib/docker/containers/8e6f3205cc2ba3079429d297c99473c6b61468baaa8d81516ccad9269a923692/resolv.conf",
+            "HostnamePath": "/var/lib/docker/containers/8e6f3205cc2ba3079429d297c99473c6b61468baaa8d81516ccad9269a923692/hostname",
+            "HostsPath": "/var/lib/docker/containers/8e6f3205cc2ba3079429d297c99473c6b61468baaa8d81516ccad9269a923692/hosts",
+            "LogPath": "/var/lib/docker/containers/8e6f3205cc2ba3079429d297c99473c6b61468baaa8d81516ccad9269a923692/8e6f3205cc2ba3079429d297c99473c6b61468baaa8d81516ccad9269a923692-json.log",
+            "Name": "/mezzio-pilot-ecab352dececf49e-generator-run-19928d5111e0",
+            "RestartCount": 0,
+            "Driver": "overlay2",
+            "Platform": "linux",
+            "MountLabel": "",
+            "ProcessLabel": "",
+            "AppArmorProfile": "",
+            "ExecIDs": null,
+            "HostConfig": {
+                "Binds": [
+                    "/home/sirix/PhpStormProjects/mezzio-valinor-request-mapper/.worktrees/mezzio-load-app/pilot:/pilot:ro"
+                ],
+                "ContainerIDFile": "",
+                "LogConfig": {
+                    "Type": "json-file",
+                    "Config": []
+                },
+                "NetworkMode": "mezzio-pilot-ecab352dececf49e_pilot",
+                "PortBindings": [],
+                "RestartPolicy": {
+                    "Name": "no",
+                    "MaximumRetryCount": 0
+                },
+                "AutoRemove": false,
+                "VolumeDriver": "",
+                "VolumesFrom": null,
+                "ConsoleSize": [
+                    0,
+                    0
+                ],
+                "CapAdd": null,
+                "CapDrop": [
+                    "ALL"
+                ],
+                "CgroupnsMode": "private",
+                "Dns": null,
+                "DnsOptions": null,
+                "DnsSearch": null,
+                "ExtraHosts": [],
+                "GroupAdd": null,
+                "IpcMode": "private",
+                "Cgroup": "",
+                "Links": null,
+                "OomScoreAdj": 0,
+                "PidMode": "",
+                "Privileged": false,
+                "PublishAllPorts": false,
+                "ReadonlyRootfs": true,
+                "SecurityOpt": [
+                    "no-new-privileges:true"
+                ],
+                "Tmpfs": {
+                    "/tmp": "rw,nosuid,nodev,noexec,size=67108864,uid=1001,gid=1001,mode=1777"
+                },
+                "UTSMode": "",
+                "UsernsMode": "",
+                "ShmSize": 67108864,
+                "Runtime": "runc",
+                "Isolation": "",
+                "CpuShares": 0,
+                "Memory": 1073741824,
+                "NanoCpus": 2000000000,
+                "CgroupParent": "",
+                "BlkioWeight": 0,
+                "BlkioWeightDevice": null,
+                "BlkioDeviceReadBps": null,
+                "BlkioDeviceWriteBps": null,
+                "BlkioDeviceReadIOps": null,
+                "BlkioDeviceWriteIOps": null,
+                "CpuPeriod": 0,
+                "CpuQuota": 0,
+                "CpuRealtimePeriod": 0,
+                "CpuRealtimeRuntime": 0,
+                "CpusetCpus": "",
+                "CpusetMems": "",
+                "Devices": null,
+                "DeviceCgroupRules": null,
+                "DeviceRequests": null,
+                "MemoryReservation": 0,
+                "MemorySwap": 1073741824,
+                "MemorySwappiness": null,
+                "OomKillDisable": null,
+                "PidsLimit": 64,
+                "Ulimits": null,
+                "CpuCount": 0,
+                "CpuPercent": 0,
+                "IOMaximumIOps": 0,
+                "IOMaximumBandwidth": 0,
+                "MaskedPaths": [
+                    "/proc/asound",
+                    "/proc/acpi",
+                    "/proc/interrupts",
+                    "/proc/kcore",
+                    "/proc/keys",
+                    "/proc/latency_stats",
+                    "/proc/timer_list",
+                    "/proc/timer_stats",
+                    "/proc/sched_debug",
+                    "/proc/scsi",
+                    "/sys/firmware",
+                    "/sys/devices/virtual/powercap"
+                ],
+                "ReadonlyPaths": [
+                    "/proc/bus",
+                    "/proc/fs",
+                    "/proc/irq",
+                    "/proc/sys",
+                    "/proc/sysrq-trigger"
+                ]
+            },
+            "GraphDriver": {
+                "Data": {
+                    "ID": "8e6f3205cc2ba3079429d297c99473c6b61468baaa8d81516ccad9269a923692",
+                    "LowerDir": "/var/lib/docker/overlay2/5bd0aa6a347ec0bb80a296ede854f3abff22f53da9ead48566045beac03c7a66-init/diff:/var/lib/docker/overlay2/ff7a300fb24e28d23c037a4393c7ac6e57929fee05a0df14cbf5e12101dd02e1/diff:/var/lib/docker/overlay2/615c8e510561c62ae6c1989f1c6c491deece0ce46c3b347815b185c1841f3baa/diff:/var/lib/docker/overlay2/da295c1ee452f24aea1e712ef3c490515160894f55032c5e6c8e2af6319db6a7/diff:/var/lib/docker/overlay2/aa1a8b88fac1421284320cc768c5b2fbd5e8cb5b41d378518020213cb66ad392/diff",
+                    "MergedDir": "/var/lib/docker/overlay2/5bd0aa6a347ec0bb80a296ede854f3abff22f53da9ead48566045beac03c7a66/merged",
+                    "UpperDir": "/var/lib/docker/overlay2/5bd0aa6a347ec0bb80a296ede854f3abff22f53da9ead48566045beac03c7a66/diff",
+                    "WorkDir": "/var/lib/docker/overlay2/5bd0aa6a347ec0bb80a296ede854f3abff22f53da9ead48566045beac03c7a66/work"
+                },
+                "Name": "overlay2"
+            },
+            "Mounts": [
+                {
+                    "Type": "bind",
+                    "Source": "/home/sirix/PhpStormProjects/mezzio-valinor-request-mapper/.worktrees/mezzio-load-app/pilot",
+                    "Destination": "/pilot",
+                    "Mode": "ro",
+                    "RW": false,
+                    "Propagation": "rprivate"
+                }
+            ],
+            "Config": {
+                "Hostname": "8e6f3205cc2b",
+                "Domainname": "",
+                "User": "1001:1001",
+                "AttachStdin": true,
+                "AttachStdout": true,
+                "AttachStderr": true,
+                "Tty": false,
+                "OpenStdin": true,
+                "StdinOnce": true,
+                "Env": [
+                    "K6_WEB_DASHBOARD=false",
+                    "XDG_CONFIG_HOME=/tmp",
+                    "K6_NO_USAGE_REPORT=true",
+                    "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+                ],
+                "Cmd": [
+                    "-c",
+                    "sleep 600"
+                ],
+                "Image": "grafana/k6@sha256:98305727d160c065e1da695619c40ea4becbc3e116a3842da2d6027970e428c2",
+                "Volumes": null,
+                "WorkingDir": "/home/k6",
+                "Entrypoint": [
+                    "sh"
+                ],
+                "OnBuild": null,
+                "Labels": {
+                    "com.docker.compose.config-hash": "d21bbdcb1cadca6c00e9c26ebd7da521fa5a7c944f0108982a619fce6b191249",
+                    "com.docker.compose.depends_on": "",
+                    "com.docker.compose.image": "sha256:bfa9adb4f73593aaa9647cd339ecd5e6103827bce63267618a4ec51d5db56f72",
+                    "com.docker.compose.oneoff": "True",
+                    "com.docker.compose.project": "mezzio-pilot-ecab352dececf49e",
+                    "com.docker.compose.project.config_files": "/home/sirix/PhpStormProjects/mezzio-valinor-request-mapper/.worktrees/mezzio-load-app/compose.yaml",
+                    "com.docker.compose.project.working_dir": "/home/sirix/PhpStormProjects/mezzio-valinor-request-mapper/.worktrees/mezzio-load-app",
+                    "com.docker.compose.service": "generator",
+                    "com.docker.compose.slug": "19928d5111e012dd5ff42b0c3bd6ba8d88bd05149bcd68a729010bc35a91ea58",
+                    "com.docker.compose.version": "5.1.4"
+                }
+            },
+            "NetworkSettings": {
+                "Bridge": "",
+                "SandboxID": "df457a3e24a49b1f0b62f76b68b83e7a4a614bc62860ae3000c819e2220a96f7",
+                "SandboxKey": "/var/run/docker/netns/df457a3e24a4",
+                "Ports": [],
+                "HairpinMode": false,
+                "LinkLocalIPv6Address": "",
+                "LinkLocalIPv6PrefixLen": 0,
+                "SecondaryIPAddresses": null,
+                "SecondaryIPv6Addresses": null,
+                "EndpointID": "",
+                "Gateway": "",
+                "GlobalIPv6Address": "",
+                "GlobalIPv6PrefixLen": 0,
+                "IPAddress": "",
+                "IPPrefixLen": 0,
+                "IPv6Gateway": "",
+                "MacAddress": "",
+                "Networks": {
+                    "mezzio-pilot-ecab352dececf49e_pilot": {
+                        "IPAMConfig": null,
+                        "Links": null,
+                        "Aliases": [
+                            "mezzio-pilot-ecab352dececf49e-generator-run-19928d5111e0"
+                        ],
+                        "MacAddress": "12:f5:a4:fc:16:d6",
+                        "DriverOpts": null,
+                        "GwPriority": 0,
+                        "NetworkID": "3ea3b78fb7c40cd87995d157ad2cb030561e04f068f9ae1a3955c19822f8bd57",
+                        "EndpointID": "3d5539df2aedddcbf7f84323dd0ab7365ea2434ba7800525f00978a798378a64",
+                        "Gateway": "",
+                        "IPAddress": "172.24.0.4",
+                        "IPPrefixLen": 16,
+                        "IPv6Gateway": "",
+                        "GlobalIPv6Address": "",
+                        "GlobalIPv6PrefixLen": 0,
+                        "DNSNames": [
+                            "mezzio-pilot-ecab352dececf49e-generator-run-19928d5111e0",
+                            "8e6f3205cc2b"
+                        ]
+                    }
+                }
+            }
+        }
+    ],
+    "networks": [
+        {
+            "Name": "mezzio-pilot-ecab352dececf49e_pilot",
+            "Id": "3ea3b78fb7c40cd87995d157ad2cb030561e04f068f9ae1a3955c19822f8bd57",
+            "Created": "2026-10-06T11:37:38.5058655+03:00",
+            "Scope": "local",
+            "Driver": "bridge",
+            "EnableIPv4": true,
+            "EnableIPv6": false,
+            "IPAM": {
+                "Driver": "default",
+                "Options": null,
+                "Config": [
+                    {
+                        "Subnet": "172.24.0.0/16",
+                        "Gateway": "172.24.0.1"
+                    }
+                ]
+            },
+            "Internal": true,
+            "Attachable": false,
+            "Ingress": false,
+            "ConfigFrom": {
+                "Network": ""
+            },
+            "ConfigOnly": false,
+            "Containers": {
+                "8e6f3205cc2ba3079429d297c99473c6b61468baaa8d81516ccad9269a923692": {
+                    "Name": "mezzio-pilot-ecab352dececf49e-generator-run-19928d5111e0",
+                    "EndpointID": "3d5539df2aedddcbf7f84323dd0ab7365ea2434ba7800525f00978a798378a64",
+                    "MacAddress": "12:f5:a4:fc:16:d6",
+                    "IPv4Address": "172.24.0.4/16",
+                    "IPv6Address": ""
+                }
+            },
+            "Options": [],
+            "Labels": {
+                "com.docker.compose.config-hash": "c7d0a7c447f40f7c3c8dd263a4f6c1fe9a25e496cb32b4b3d2f1b81f8aafb5d6",
+                "com.docker.compose.network": "pilot",
+                "com.docker.compose.project": "mezzio-pilot-ecab352dececf49e",
+                "com.docker.compose.version": "5.1.4"
+            }
+        }
+    ],
+    "status": "owned_targets_identified_no_cleanup_authorized_or_attempted",
+    "finished_utc": "2026-10-06T08:47:26+00:00"
+}

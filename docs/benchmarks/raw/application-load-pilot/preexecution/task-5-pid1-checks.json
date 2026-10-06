@@ -1,0 +1,122 @@
+{
+    "order": "package/freeze first; all13 checks serial; accepted timing limits unchanged",
+    "checks": [
+        {
+            "cmd": "php -d zend.assertions=1 -d assert.exception=1 pilot/tests/budgets.php",
+            "execution_order": 1,
+            "isolated": true,
+            "exit_code": 0,
+            "elapsed_seconds": 0.07124985100017511,
+            "output": "PASS budgets:81/75600, durable93preflight, caps/targets/duplicate/no-fit/build/request/time rejection before child; zero HTTP\n",
+            "stderr": ""
+        },
+        {
+            "cmd": "php -d zend.assertions=1 -d assert.exception=1 pilot/tests/evidence.php",
+            "execution_order": 2,
+            "isolated": true,
+            "exit_code": 0,
+            "elapsed_seconds": 0.2764328880002722,
+            "output": "PASS synthetic evidence: native-send phase, expected422, retained timeout/drain, mixed counts, drops/samples/restarts/hash/CPU/lag gates; zero HTTP\n",
+            "stderr": ""
+        },
+        {
+            "cmd": "php -d zend.assertions=1 -d assert.exception=1 pilot/tests/driver.php",
+            "execution_order": 3,
+            "isolated": true,
+            "exit_code": 0,
+            "elapsed_seconds": 4.122293251999508,
+            "output": "PASS inert driver: six-cell readiness gates, failure stops/skips all escalation, partial retention, bounded child exit/timeout; zero HTTP\n",
+            "stderr": ""
+        },
+        {
+            "cmd": "php -d zend.assertions=1 -d assert.exception=1 pilot/tests/freeze.php",
+            "execution_order": 4,
+            "isolated": true,
+            "exit_code": 0,
+            "elapsed_seconds": 1.0464362269995036,
+            "output": "PASS actual offline provenance: source/lock/runtime/payload/freshness/schedule hashes, preparation labeled; zero HTTP\n",
+            "stderr": ""
+        },
+        {
+            "cmd": "php -d zend.assertions=1 -d assert.exception=1 pilot/tests/checker.php",
+            "execution_order": 5,
+            "isolated": true,
+            "exit_code": 0,
+            "elapsed_seconds": 8.78911103199971,
+            "output": "PASS all6 ACTUAL saved endpoint identities (synthetic container wrapper); Swoole PID1 mutations rejected\nPASS independent checker: forged completion cannot replace raw/sampler/readiness/hash/archive evidence; zero HTTP\n",
+            "stderr": ""
+        },
+        {
+            "cmd": "node pilot/tests/load.mjs",
+            "execution_order": 6,
+            "isolated": true,
+            "exit_code": 0,
+            "elapsed_seconds": 0.11693778100016061,
+            "output": "PASS inert k6: single8VU40s/2s scenario, mixed byte/order, whole-test abort, retained post-send timeout and expected422; zero HTTP\n",
+            "stderr": ""
+        },
+        {
+            "cmd": "node pilot/tests/preflight.mjs",
+            "execution_order": 7,
+            "isolated": true,
+            "exit_code": 0,
+            "elapsed_seconds": 0.10484940300011658,
+            "output": "PASS frozen15/16request sequences and six rejection\u2192fresh-success pairs; inert transport, zero HTTP\nPASS invalid target/revision and response violation abort immediately, no passed marker or later HTTP; inert transport\n",
+            "stderr": ""
+        },
+        {
+            "cmd": "node pilot/tests/response-validator.mjs",
+            "execution_order": 8,
+            "isolated": true,
+            "exit_code": 0,
+            "elapsed_seconds": 0.07825113000035344,
+            "output": "PASS common response contracts and negative mutations; no HTTP\n",
+            "stderr": ""
+        },
+        {
+            "cmd": "php pilot/tests/docker-binding.php",
+            "execution_order": 9,
+            "isolated": true,
+            "exit_code": 0,
+            "elapsed_seconds": 0.09061543600000732,
+            "output": "PASS inherited remote authority excluded, daemon mismatch refused; no Docker or HTTP\n",
+            "stderr": ""
+        },
+        {
+            "cmd": "php pilot/tests/parallel-collection.php",
+            "execution_order": 10,
+            "isolated": true,
+            "exit_code": 0,
+            "elapsed_seconds": 0.8214693370009627,
+            "output": "PASS three600ms sources overlap below1second, failures propagate; zero HTTP\n",
+            "stderr": ""
+        },
+        {
+            "cmd": "php pilot/tests/sampling.php",
+            "execution_order": 11,
+            "isolated": true,
+            "exit_code": 0,
+            "elapsed_seconds": 0.060840064001240535,
+            "output": "PASS stat parsing, live cgroup/proc inventory, invalid sample rejection; zero HTTP\n",
+            "stderr": ""
+        },
+        {
+            "cmd": "env PILOT_REVISION=baseline php -d zend.assertions=1 -d assert.exception=1 pilot/tests/contracts.php",
+            "execution_order": 12,
+            "isolated": true,
+            "exit_code": 0,
+            "elapsed_seconds": 0.14353346999996575,
+            "output": "CHARACTERIZATION baseline numeric-root messages=array; W3 nested-path messages=object\nPASS baseline: W1/W2/W3, W4 explicitly excluded, 3 repeated success\u2192W3\u2192W4\u2192success cycles, malformed JSON, wrong route, source provenance; zero HTTP\n",
+            "stderr": ""
+        },
+        {
+            "cmd": "env PILOT_REVISION=candidate php -d zend.assertions=1 -d assert.exception=1 pilot/tests/contracts.php",
+            "execution_order": 13,
+            "isolated": true,
+            "exit_code": 0,
+            "elapsed_seconds": 0.17182504100128426,
+            "output": "CHARACTERIZATION candidate numeric-root messages=stdClass; W3 nested-path messages=object\nPASS candidate: W1/W2/W3, W4 limit rejection, 3 repeated success\u2192W3\u2192W4\u2192success cycles, malformed JSON, wrong route, source provenance; zero HTTP\n",
+            "stderr": ""
+        }
+    ]
+}

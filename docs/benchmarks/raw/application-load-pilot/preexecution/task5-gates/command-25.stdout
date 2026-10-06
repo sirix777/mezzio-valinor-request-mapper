@@ -1,0 +1,11 @@
+/bin/sh
+/usr/bin/awk
+printf
+/bin/mv
+test
+kill
+/bin/sleep
+/usr/bin/k6
+pid=7 ticks=1138716 uptime=11387.25
+200000 100000
+1073741824

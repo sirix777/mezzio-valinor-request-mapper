@@ -1,0 +1,40 @@
+{
+    "status": "passed",
+    "captured_utc": "2026-10-06T07:33:54+00:00",
+    "daemon": {
+        "ID": "A7JO:KKU4:CR3L:3QNP:SHES:NOC3:HLSQ:S5LE:PMPR:AUT4:WTSC:WG77",
+        "Name": "W10-NTB-112",
+        "DockerRootDir": "/var/lib/docker",
+        "NCPU": 14,
+        "MemTotal": 27316473856,
+        "Architecture": "x86_64"
+    },
+    "images": {
+        "app": {
+            "reference": "mezzio-pilot-app:task3",
+            "Id": "sha256:4102d15e94a811c89a440ee1be462c641c83ef30660d3efa70340f2ec9e4f144",
+            "RepoDigests": [],
+            "Os": "linux",
+            "Architecture": "amd64"
+        },
+        "generator": {
+            "reference": "grafana/k6@sha256:98305727d160c065e1da695619c40ea4becbc3e116a3842da2d6027970e428c2",
+            "Id": "sha256:bfa9adb4f73593aaa9647cd339ecd5e6103827bce63267618a4ec51d5db56f72",
+            "RepoDigests": [
+                "grafana/k6@sha256:98305727d160c065e1da695619c40ea4becbc3e116a3842da2d6027970e428c2"
+            ],
+            "Os": "linux",
+            "Architecture": "amd64"
+        },
+        "gateway": {
+            "reference": "nginx@sha256:3b03dfd827515a07ccf4946000f0bbdd2a4fb6aca7499249fcb6b1f9726823d6",
+            "Id": "sha256:34e04bb6b4bb37d45845842374be0cd181723daffb230849b1984aaeaa96faba",
+            "RepoDigests": [
+                "nginx@sha256:3b03dfd827515a07ccf4946000f0bbdd2a4fb6aca7499249fcb6b1f9726823d6"
+            ],
+            "Os": "linux",
+            "Architecture": "amd64"
+        }
+    },
+    "http_requests": 0
+}

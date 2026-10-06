@@ -1,0 +1,8 @@
+{
+    "project": "mezzio-pilot-task5-gate-8d4960b7b879",
+    "http_requests": 0,
+    "wrapper_source_sha256": "3147c256f90ef8352df45867f21fbd5b5d5a3fcbb4aa765302145380f8b3f5e1",
+    "probe_sha256": "fbf7c2b15879b49d4ae6bb090f033ad20bfd2b323bb1fd16a474eebb62f9ee36",
+    "utilities": "/bin/sh\n/usr/bin/awk\nprintf\n/bin/mv\ntest\nkill\n/bin/sleep\n/usr/bin/k6\npid=7 ticks=965687 uptime=9656.92\n200000 100000\n1073741824\n",
+    "cleanup_utc": "2026-10-06T07:35:56+00:00"
+}

@@ -1,0 +1,9 @@
+{
+    "status": "passed",
+    "directory": "/tmp/mezzio-pilot-task5-pid1-replay-kMAgNB",
+    "regular_files": 3496,
+    "archive_sha256": "21bd7204cbcf7da98fe530b4407c073b786d03cda123de69d7c90c95e94ff232",
+    "manifest_sha256": "3593650fa0795d8a24909ec55e45242eefba04158f9c22bed94280eb4e65a838",
+    "file_manifest_sha256": "9d91e91c879b36d7b968c5edf539450c60f973d1ff2343e625aa92d3fa2417e1",
+    "http_requests": 0
+}

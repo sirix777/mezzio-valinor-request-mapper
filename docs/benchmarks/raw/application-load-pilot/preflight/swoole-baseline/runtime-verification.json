@@ -1,0 +1,87 @@
+{
+    "runtime": "swoole",
+    "revision": "baseline",
+    "php": "8.3.35",
+    "extensions": {
+        "Core": "8.3.35",
+        "PDO": "8.3.35",
+        "Phar": "8.3.35",
+        "Reflection": "8.3.35",
+        "SPL": "8.3.35",
+        "SimpleXML": "8.3.35",
+        "Zend OPcache": "8.3.35",
+        "ctype": "8.3.35",
+        "curl": "8.3.35",
+        "date": "8.3.35",
+        "dom": "20031129",
+        "fileinfo": "8.3.35",
+        "filter": "8.3.35",
+        "hash": "8.3.35",
+        "iconv": "8.3.35",
+        "intl": "8.3.35",
+        "json": "8.3.35",
+        "libxml": "8.3.35",
+        "mbstring": "8.3.35",
+        "mysqlnd": "mysqlnd 8.3.35",
+        "openssl": "8.3.35",
+        "pcre": "8.3.35",
+        "pdo_sqlite": "8.3.35",
+        "posix": "8.3.35",
+        "random": "8.3.35",
+        "readline": "8.3.35",
+        "session": "8.3.35",
+        "sockets": "8.3.35",
+        "sodium": "8.3.35",
+        "sqlite3": "8.3.35",
+        "standard": "8.3.35",
+        "swoole": "6.1.0",
+        "tokenizer": "8.3.35",
+        "xml": "8.3.35",
+        "xmlreader": "8.3.35",
+        "xmlwriter": "8.3.35",
+        "zlib": "8.3.35"
+    },
+    "source": "/app/pilot/library/baseline/src/ConfigProvider.php",
+    "cpu_max": "400000 100000",
+    "memory_max": "2147483648",
+    "policy": {
+        "opcache.enable": "1",
+        "opcache.enable_cli": "1",
+        "opcache.memory_consumption": "128",
+        "opcache.max_accelerated_files": "10000",
+        "opcache.validate_timestamps": "0",
+        "opcache.jit": "disable",
+        "opcache.jit_buffer_size": "0"
+    },
+    "inventory": {
+        "captured_epoch_seconds": 1791275905.480719,
+        "captured_utc": "2026-10-06T08:38:25Z",
+        "captured_uptime_seconds": 13407.84,
+        "cpu_usage_usec": 347903,
+        "memory_bytes": 28999680,
+        "network_rx_bytes": 1180,
+        "network_tx_bytes": 126,
+        "workers": [
+            {
+                "pid": 1,
+                "start_ticks": 1340442,
+                "rss_kib": 38164,
+                "command": "pilot-swoole-worker-0"
+            }
+        ],
+        "processes": [
+            {
+                "pid": 1,
+                "start_ticks": 1340442,
+                "rss_kib": 38164,
+                "command": "pilot-swoole-worker-0"
+            },
+            {
+                "pid": 7,
+                "start_ticks": 1340768,
+                "rss_kib": 34316,
+                "command": "php /app/pilot/runtime/verify.php"
+            }
+        ]
+    }
+}

@@ -1,0 +1,587 @@
+{
+    "valid": false,
+    "valid_cells": 0,
+    "expected_cells": 81,
+    "reasons": [
+        "execution not started",
+        "readiness fpm/baseline unavailable/invalid",
+        "readiness fpm/candidate unavailable/invalid",
+        "readiness roadrunner/baseline unavailable/invalid",
+        "readiness roadrunner/candidate unavailable/invalid",
+        "readiness swoole/baseline unavailable/invalid",
+        "readiness swoole/candidate unavailable/invalid",
+        "incomplete/invalid cells retained; no automatic retry"
+    ],
+    "cells": [
+        {
+            "id": "fpm-w1-10-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "fpm-w1-10-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "fpm-w2-10-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "fpm-w2-10-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "fpm-w3-10-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "fpm-w3-10-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "fpm-mixed-10-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "fpm-mixed-10-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "fpm-w4-10-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "fpm-w1-20-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "fpm-w1-20-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "fpm-w2-20-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "fpm-w2-20-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "fpm-w3-20-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "fpm-w3-20-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "fpm-mixed-20-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "fpm-mixed-20-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "fpm-w4-20-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "fpm-w1-40-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "fpm-w1-40-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "fpm-w2-40-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "fpm-w2-40-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "fpm-w3-40-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "fpm-w3-40-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "fpm-mixed-40-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "fpm-mixed-40-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "fpm-w4-40-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "roadrunner-w1-10-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "roadrunner-w1-10-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "roadrunner-w2-10-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "roadrunner-w2-10-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "roadrunner-w3-10-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "roadrunner-w3-10-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "roadrunner-mixed-10-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "roadrunner-mixed-10-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "roadrunner-w4-10-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "roadrunner-w1-20-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "roadrunner-w1-20-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "roadrunner-w2-20-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "roadrunner-w2-20-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "roadrunner-w3-20-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "roadrunner-w3-20-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "roadrunner-mixed-20-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "roadrunner-mixed-20-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "roadrunner-w4-20-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "roadrunner-w1-40-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "roadrunner-w1-40-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "roadrunner-w2-40-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "roadrunner-w2-40-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "roadrunner-w3-40-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "roadrunner-w3-40-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "roadrunner-mixed-40-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "roadrunner-mixed-40-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "roadrunner-w4-40-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "swoole-w1-10-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "swoole-w1-10-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "swoole-w2-10-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "swoole-w2-10-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "swoole-w3-10-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "swoole-w3-10-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "swoole-mixed-10-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "swoole-mixed-10-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "swoole-w4-10-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "swoole-w1-20-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "swoole-w1-20-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "swoole-w2-20-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "swoole-w2-20-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "swoole-w3-20-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "swoole-w3-20-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "swoole-mixed-20-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "swoole-mixed-20-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "swoole-w4-20-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "swoole-w1-40-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "swoole-w1-40-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "swoole-w2-40-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "swoole-w2-40-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "swoole-w3-40-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "swoole-w3-40-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "swoole-mixed-40-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "swoole-mixed-40-baseline",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        },
+        {
+            "id": "swoole-w4-40-candidate",
+            "status": "incomplete",
+            "reasons": [
+                "Missing artifact: k6-raw.json.gz"
+            ]
+        }
+    ],
+    "measurement_seconds": 30,
+    "coordinated_omission_correction": false,
+    "claims": "single-repetition shared-host preliminary observations only"
+}

@@ -1,0 +1,9 @@
+{
+    "status": "passed_offline_only",
+    "evidence_class": "POST-DATA cleanup-v2 corrected follow-up replay; preparation only, never executed or substituted for original study",
+    "directory": "/tmp/mezzio-pilot-task5-cleanup-replay-kcFs0W",
+    "regular_files": 3496,
+    "archive_sha256": "562add0edc792a53816278084325c150a925a6cd6974626a1b2b0b46fb364b92",
+    "manifest_sha256": "10504c02a89e5d7e1b22fa157be2d9308cd3e795e3051859937a6e9840ef7c2b",
+    "new_http_requests": 0
+}

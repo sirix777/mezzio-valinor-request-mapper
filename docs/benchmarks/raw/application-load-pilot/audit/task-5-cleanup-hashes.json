@@ -1,0 +1,11 @@
+{
+    "evidence_class": "POST-DATA cleanup-only corrected follow-up replay; preparation only, never executed or substituted for original study",
+    "archive": {
+        "sha256": "5a15ddff36e144c2f6e9266d5d6e4bfd967dcdaa86714a5c7afda1c5f9895b85",
+        "bytes": 21278720,
+        "files": 3496
+    },
+    "manifest_sha256": "6642f22ecebbb9573c17c1b25ef5d984f49221476a4d024461e4215dc4f81438",
+    "package_sha256": "4056557f5d0dc173ad7a0dcce578bca957c8ead8f3d2de0f1fd7097b8a9740f3",
+    "source_issues": []
+}

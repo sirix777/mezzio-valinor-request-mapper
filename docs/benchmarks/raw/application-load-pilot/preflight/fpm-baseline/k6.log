@@ -1,0 +1,39 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: /pilot/runtime/preflight.js
+        output: json (/tmp/pilot-raw.json.gz)
+
+     scenarios: (100.00%) 1 scenario, 1 max VUs, 10m30s max duration (incl. graceful stop):
+              * default: 1 iterations shared among 1 VUs (maxDuration: 10m0s, gracefulStop: 30s)
+
+{"preflight":"passed","revision":"baseline","target":"http://app-fpm","requests":15,"health_requests":0}
+
+
+  █ TOTAL RESULTS 
+
+    HTTP
+    http_req_duration..............: avg=32.28ms  min=5.43ms   med=13.55ms  max=260.23ms p(90)=33.24ms  p(95)=101.76ms
+      { expected_response:true }...: avg=41.99ms  min=5.43ms   med=7.6ms    max=260.23ms p(90)=100.7ms  p(95)=180.47ms
+    http_req_failed................: 46.66% 7 out of 15
+    http_reqs......................: 15     28.873908/s
+
+    EXECUTION
+    iteration_duration.............: avg=517.69ms min=517.69ms med=517.69ms max=517.69ms p(90)=517.69ms p(95)=517.69ms
+    iterations.....................: 1      1.924927/s
+
+    NETWORK
+    data_received..................: 48 kB  92 kB/s
+    data_sent......................: 37 kB  71 kB/s
+
+
+
+
+running (00m00.5s), 0/1 VUs, 1 complete and 0 interrupted iterations
+default ✓ [ 100% ] 1 VUs  00m00.5s/10m0s  1/1 shared iters

@@ -1,0 +1,30 @@
+{
+    "authority": "ROOT explicit final GO via coordinator; exactly one execute",
+    "launch_intent_utc": "2026-10-06T08:37:28+00:00",
+    "launch_intent_monotonic": 13351.222198151,
+    "argv": [
+        "php",
+        "/home/sirix/PhpStormProjects/mezzio-valinor-request-mapper/.worktrees/mezzio-load-app/pilot/run.php",
+        "--execute",
+        "--output",
+        "/home/sirix/PhpStormProjects/mezzio-valinor-request-mapper/.worktrees/mezzio-hardening/docs/benchmarks/raw/application-load-pilot"
+    ],
+    "cwd": "/home/sirix/PhpStormProjects/mezzio-valinor-request-mapper/.worktrees/mezzio-load-app",
+    "manifest_sha256": "6acbb0509a31a1e1e0a3bdc808f5449b62ad792379c7b57f36c9dbfc40fc6a9f",
+    "session": 28208,
+    "owned_process": null,
+    "observed_utc": "2026-10-06T08:38:05+00:00",
+    "observed_monotonic": 13387.595286013,
+    "durable_budget": {
+        "schema": 1,
+        "study": "6acbb0509a31a1e1e0a3bdc808f5449b62ad792379c7b57f36c9dbfc40fc6a9f",
+        "output": "/home/sirix/PhpStormProjects/mezzio-valinor-request-mapper/.worktrees/mezzio-hardening/docs/benchmarks/raw/application-load-pilot",
+        "boot_id": "d433a3d5-cf22-4ffd-b9a0-9e38a3931e9e",
+        "started_monotonic": 13358.06667116,
+        "started_utc": "2026-10-06T08:37:35+00:00",
+        "scheduled": 93,
+        "preflight": 93,
+        "cells": []
+    },
+    "hard_deadline_monotonic": 17858.06667116
+}

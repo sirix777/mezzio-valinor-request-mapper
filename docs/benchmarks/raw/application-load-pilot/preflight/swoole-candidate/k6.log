@@ -1,0 +1,39 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: /pilot/runtime/preflight.js
+        output: json (/tmp/pilot-raw.json.gz)
+
+     scenarios: (100.00%) 1 scenario, 1 max VUs, 10m30s max duration (incl. graceful stop):
+              * default: 1 iterations shared among 1 VUs (maxDuration: 10m0s, gracefulStop: 30s)
+
+{"preflight":"passed","revision":"candidate","target":"http://app-swoole","requests":16,"health_requests":0}
+
+
+  █ TOTAL RESULTS 
+
+    HTTP
+    http_req_duration..............: avg=11.57ms  min=1.47ms   med=1.88ms   max=93.25ms  p(90)=17.55ms  p(95)=36.59ms 
+      { expected_response:true }...: avg=15.19ms  min=1.57ms   med=1.84ms   max=93.25ms  p(90)=40.36ms  p(95)=66.81ms 
+    http_req_failed................: 50.00% 8 out of 16
+    http_reqs......................: 16     77.587183/s
+
+    EXECUTION
+    iteration_duration.............: avg=205.92ms min=205.92ms med=205.92ms max=205.92ms p(90)=205.92ms p(95)=205.92ms
+    iterations.....................: 1      4.849199/s
+
+    NETWORK
+    data_received..................: 31 kB  149 kB/s
+    data_sent......................: 24 kB  115 kB/s
+
+
+
+
+running (00m00.2s), 0/1 VUs, 1 complete and 0 interrupted iterations
+default ✓ [ 100% ] 1 VUs  00m00.2s/10m0s  1/1 shared iters

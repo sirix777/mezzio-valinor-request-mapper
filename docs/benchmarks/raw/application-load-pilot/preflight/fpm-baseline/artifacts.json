@@ -1,0 +1,20 @@
+{
+    "native_stop": {
+        "status": "stopped",
+        "exit": 0
+    },
+    "raw": {
+        "status": "copied",
+        "exit": 0,
+        "bytes": 2283,
+        "sha256": "2e12f5aea41fecd66e4023271a62ead549ecb95875956ae5d027c79010a3b398",
+        "byte_cap": 67108864
+    },
+    "summary": {
+        "status": "copied",
+        "exit": 0,
+        "bytes": 2823,
+        "sha256": "a059449c95b79d6441b4225bfed1ab15f1298314bb696915151fa7aa473e219f",
+        "byte_cap": 1048576
+    }
+}

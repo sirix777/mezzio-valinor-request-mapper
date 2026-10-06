@@ -1,0 +1,14 @@
+{
+    "native_stop": {
+        "status": "stopped",
+        "exit": 0
+    },
+    "raw": {
+        "status": "unavailable",
+        "exit": 1
+    },
+    "summary": {
+        "status": "unavailable",
+        "exit": 1
+    }
+}

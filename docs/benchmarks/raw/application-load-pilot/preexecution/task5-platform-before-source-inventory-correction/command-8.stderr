@@ -1,0 +1,5 @@
+[06-Oct-2026 08:07:59 UTC] PHP Warning:  hash_file(/app/pilot/library/baseline/docs/MIGRATION-2.0.md): Failed to open stream: No such file or directory in Command line code on line 1
+[06-Oct-2026 08:07:59 UTC] PHP Fatal error:  Uncaught RuntimeException: Serving source hash mismatch: pilot/library/baseline/docs/MIGRATION-2.0.md in Command line code:1
+Stack trace:
+#0 {main}
+  thrown in Command line code on line 1

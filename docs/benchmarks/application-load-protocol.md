@@ -18,6 +18,24 @@ VM replay remains mandatory when available, with the unchanged 5% independent
 control gate and profiling requirement for small mapped regressions above 10%.
 Protocol review cannot close either performance gate.
 
+## Approved bounded Docker pilot exception
+
+2026-10-06: the separately approved Mezzio Docker pilot was attempted once;
+[its report](application-load-pilot-report.md) records **0 valid measured cells,
+1 invalid attempted cell and 80 skipped**, plus six passed readiness cells.
+This does not bind or complete the full owner-input table/matrix below, close
+PERF-04, or change PERF-05 DEFERRED_VM / NOT PASS and its required VM follow-up.
+
+Only the pilot used FPM → RoadRunner → Swoole sequentially, 1 PHP worker, 8 in-flight
+requests, 10/20/40RPS, 10s warmup + 30s measured and 1 repetition. Mixed was 40%W1 /
+40%W2 /20%W3; W4 was candidate-only. App 4CPU/2GiB, gateway 1CPU/256MiB and
+generator 2CPU/1GiB were enforced. Total execution 4500s, build 3600s, 80000 scheduled
+requests and 300 preflight requests were hard ceilings, with no retry/reset.
+Actual 493 HTTP = 93 readiness + 400 first-window requests; the sampler validity gate
+stopped all escalation. The [frozen pilot manifest](raw/application-load-pilot/manifest.json)
+and immutable evidence, not the unbound full-protocol defaults, define this scope.
+No SLO, significance, sustainable-RPS or production-p99 claim follows.
+
 ## Owner inputs and execution gate
 
 The application owner must fill every required field below before preflight.

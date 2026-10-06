@@ -1,0 +1,10 @@
+ Container mezzio-pilot-ecab352dececf49e-app-fpm-1 Stopping 
+ Container mezzio-pilot-ecab352dececf49e-app-fpm-1 Stopped 
+ Container mezzio-pilot-ecab352dececf49e-app-fpm-1 Removing 
+ Container mezzio-pilot-ecab352dececf49e-app-fpm-1 Removed 
+ Container mezzio-pilot-ecab352dececf49e-php-fpm-1 Stopping 
+ Container mezzio-pilot-ecab352dececf49e-php-fpm-1 Stopped 
+ Container mezzio-pilot-ecab352dececf49e-php-fpm-1 Removing 
+ Container mezzio-pilot-ecab352dececf49e-php-fpm-1 Removed 
+ Network mezzio-pilot-ecab352dececf49e_pilot Removing 
+ Network mezzio-pilot-ecab352dececf49e_pilot Resource is still in use 
