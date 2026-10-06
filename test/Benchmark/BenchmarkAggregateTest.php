@@ -7,6 +7,7 @@ namespace Sirix\Mezzio\Valinor\Test\Benchmark;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
+use function array_fill;
 use function dirname;
 use function fclose;
 use function file_put_contents;
@@ -57,11 +58,24 @@ final class BenchmarkAggregateTest extends TestCase
     #[Test]
     public function readsArchivedSchemaOne(): void
     {
-        [$status, $stdout, $stderr] = $this->runProcess([
-            PHP_BINARY,
-            $this->script(),
-            dirname(__DIR__, 2) . '/docs/benchmarks/raw/compare-048b558-6d1419f-20260912-154933.json',
-        ]);
+        // Synthetic archived-format data; these are not measured results.
+        $document = $this->document();
+
+        foreach ($document['batches'] as &$batch) {
+            $scenario                     = $batch['result']['scenarios'][0];
+            $batch['result']['scenarios'] = [
+                [
+                    ...$scenario,
+                    'name' => 'Reflection via direct handler object',
+                ],
+                [
+                    ...$scenario,
+                    'name' => 'Reflection via lazy FQCN handler',
+                ],
+            ];
+        }
+
+        [$status, $stdout, $stderr] = $this->aggregate($document);
 
         self::assertSame(0, $status, $stderr);
         self::assertStringContainsString('| Scenario | Baseline', $stdout);
@@ -302,12 +316,29 @@ final class BenchmarkAggregateTest extends TestCase
     #[Test]
     public function rejectsIncompleteExperimentalSchemaTwoBeforeStdout(): void
     {
-        foreach (['085349', '090730'] as $time) {
-            [$status, $stdout, $stderr] = $this->runProcess([
-                PHP_BINARY,
-                $this->script(),
-                dirname(__DIR__, 2) . "/docs/benchmarks/raw/compare-e581e21-f7dd99f-20261005-{$time}.json",
-            ]);
+        // Synthetic smoke/sampled shapes missing the historical count metadata.
+        foreach ([[1, 0, 1], [500, 100, 7]] as [$iterations, $warmup, $samples]) {
+            $document                           = $this->document();
+            $document['schema']                 = 'sirix-mezzio-valinor-compare/2';
+            $document['params']['iterations']   = $iterations;
+            $document['params']['warmup']       = $warmup;
+            $document['params']['samples']      = $samples;
+            $document['params']['scenario_ids'] = [1];
+
+            foreach ($document['batches'] as &$batch) {
+                $batch['result']['params'] = [
+                    'iterations' => $iterations,
+                    'warmup'     => $warmup,
+                    'samples'    => $samples,
+                ];
+                $batch['result']['scenarios'][0]['samples_us_per_op'] = array_fill(0, $samples, 2);
+
+                foreach (['min_us_per_op', 'median_us_per_op', 'max_us_per_op'] as $metric) {
+                    $batch['result']['scenarios'][0][$metric] = 2;
+                }
+            }
+
+            [$status, $stdout, $stderr] = $this->aggregate($document);
 
             self::assertSame(1, $status);
             self::assertSame('', $stdout);

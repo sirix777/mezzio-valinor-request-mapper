@@ -1,6 +1,0 @@
-{
-    "evidence_class": "POST-DATA retained cleanup, accounting, review and offline test evidence; not application load",
-    "original_execution_manifest_sha256": "6acbb0509a31a1e1e0a3bdc808f5449b62ad792379c7b57f36c9dbfc40fc6a9f",
-    "original_archive_sha256": "21bd7204cbcf7da98fe530b4407c073b786d03cda123de69d7c90c95e94ff232",
-    "additional_application_http": 0
-}

@@ -351,8 +351,9 @@ return [
 | `input_limits.max_total_string_bytes` | `?int` | `null` | Maximum total bytes of string keys and string values |
 
 All three default to `null` (disabled); enabling one does not enable the
-others. A limit is enforced in a single iterative traversal together with
-UTF-8 validation, before the mapper runs for the matching operation, and only
+others. Configured limits must be positive integers. A limit is enforced in a
+single iterative traversal together with UTF-8 validation, before the mapper
+runs for the matching operation, and only
 for the selected source (body, query or route). Exactly N nodes, depth D or B
 bytes are accepted; one more is rejected with a fixed `RequestInputError`
 reason (`input_node_limit_exceeded`, `input_depth_limit_exceeded`,
@@ -361,6 +362,15 @@ response. When limits are enabled, shared array branches are traversed once per
 occurrence and circular references are rejected. With all limits disabled the
 previous UTF-8 semantics (including accepting repeated/circular references) are
 unchanged.
+
+Each array element counts as one node, including an element whose value is an
+array; the root array and keys do not count as nodes. Only native arrays add
+depth: an empty root has depth 1, and an empty nested array still adds one
+level. String bytes are counted with `strlen`, not as characters: all string
+keys and string values contribute, including nested keys; integer keys and
+non-string scalars do not. Objects, their properties and iterables are not
+traversed. For `source` mappings, body, query and route budgets are checked
+independently, rather than added into one combined total.
 
 Budgets count the array structure that reaches the middleware: element nodes,
 nesting depth and the bytes of string keys and values are measured and
@@ -372,8 +382,7 @@ package is not a full sandbox for arbitrary parsed input.
 The request-scoped input snapshot is shallow: it holds the arrays retrieved
 from the request, not deep copies. Custom code must not mutate nested
 references in those arrays between mappings in the same request — the package
-does not deep-copy the payload or re-validate each DTO. See the
-[spec](docs/superpowers/specs/) for the exact counter semantics and IN-05.
+does not deep-copy the payload or re-validate each DTO.
 
 ### Error response options
 
@@ -412,10 +421,7 @@ types. This package separately keeps only handler and mapping metadata in
 memory. Under PHP-FPM that metadata lives for one request; persistent workers
 reuse it while their `WeakMap` entries can be released with routes and wrappers.
 The WeakMaps follow object lifetimes; strong class/reflection caches and Valinor
-type metadata remain for the worker lifetime. The
-[worker soak](docs/benchmarks/worker-soak.md) checks changing request data and
-temporary route release using a shared mapper, with used PHP memory after GC
-measured separately from allocator peaks and RSS.
+type metadata remain for the worker lifetime.
 Changing loaded PHP attributes requires a worker restart; `cache_watch` is a
 Valinor file-cache watcher, not an attribute watcher.
 
@@ -633,12 +639,5 @@ composer analyse-deps
 composer check
 ```
 
-The [hardening verification report](docs/benchmarks/hardening-verification.md)
-records contract coverage, the local PHP/router/lowest/no-intl matrix and worker
-evidence. Nyholm PSR-7/17 contracts run through a development dependency only;
-production dependency ranges are unchanged. Check the report's deferred gates
-before treating it as release readiness: PERF05 requires an isolated VM retest,
-and PERF04 requires a selected application/runtime before production capacity
-claims. The numeric JSON object and inherited callable discovery corrections
-change observable behavior and need a major release under this project's
-Semantic Versioning policy. No release number is selected here.
+Developer benchmark commands and their limitations are documented in the
+[benchmark guide](https://github.com/sirix777/mezzio-valinor-request-mapper/blob/HEAD/docs/BENCHMARKS.md).

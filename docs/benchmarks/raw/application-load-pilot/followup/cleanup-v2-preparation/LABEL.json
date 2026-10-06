@@ -1,6 +1,0 @@
-{
-    "evidence_class": "POST-DATA UNEXECUTED cleanup-v2 corrected replay, preparation only; not original executed source",
-    "additional_http": 0,
-    "native_proof_rerun": false,
-    "original_execution_manifest_sha256": "6acbb0509a31a1e1e0a3bdc808f5449b62ad792379c7b57f36c9dbfc40fc6a9f"
-}

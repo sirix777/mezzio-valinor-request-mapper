@@ -7,4 +7,5 @@
 /.php-cs-fixer.dist.php     export-ignore
 /.gitattributes             export-ignore
 /.github/                   export-ignore
-/docs/benchmarks            export-ignore
+/benchmarks/                export-ignore
+/docs/BENCHMARKS.md          export-ignore

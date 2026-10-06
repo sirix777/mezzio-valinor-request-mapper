@@ -1,8 +1,0 @@
-{
-    "status": "passed",
-    "directory": "/tmp/mezzio-pilot-task5-replay-rLau9H",
-    "regular_files": 3496,
-    "archive_sha256": "15734c7a4bce6a10615365b85dca7a195bba2950fd4f2ae011a50fbc370e1efb",
-    "file_manifest_sha256": "b0b5a509a4228be99ff288d1b65aa09156c59303d9a30b6e5938096f2d238cd9",
-    "http_requests": 0
-}

@@ -1,8 +1,0 @@
-{
-    "evidence_kind": "PRE-EXECUTION zero-HTTP native gates and explicitly labeled checker fixtures; not measured readiness or application load",
-    "application_http": 0,
-    "native_no_http_runs": 1,
-    "actual_runtime_revision_proofs": 6,
-    "prior_prelaunch_native_failures": 2,
-    "prior_runtime_inventory_failure": 1
-}
