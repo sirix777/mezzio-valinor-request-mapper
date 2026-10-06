@@ -117,12 +117,18 @@ $route->setOptions([
 ]);
 ```
 
-Any non-empty `valinor_mappings` value takes precedence over reflection and
-must be a list of maps using only `body`, `query`, `route`, `source`, `output`,
-`methods`, and `errorResponder`. An empty list (`[]`) or a missing key falls
-back to reflection. A non-empty invalid payload raises
-`InvalidMapRequestConfiguration`; it is a configuration failure, not a 422
-mapping response.
+A missing `valinor_mappings` key enables reflection discovery. An explicit
+empty list (`[]`) deliberately disables request mapping for that route: handler
+attributes are not instantiated, input is not read or validated by this
+middleware, and the mapper is not called. Other application middleware continues
+to run, and the original request passes downstream.
+
+A non-empty list replaces reflection mappings and must contain maps using only
+`body`, `query`, `route`, `source`, `output`, `methods`, and `errorResponder`.
+Invalid values, including `null`, strings, associative arrays instead of a list,
+and invalid definitions, raise `InvalidMapRequestConfiguration`; this is a
+configuration failure, not a 422 mapping response. Remove the
+`valinor_mappings` key if you want reflection discovery.
 
 Discovery reflects the **declared route handler**, not the service instance the
 container may return. If you register a service under an FQCN but the container
@@ -133,6 +139,10 @@ attributes of the actual instance, provide `valinor_mappings` explicitly.
 
 If your app uses `sirix/mezzio-routing-attributes ^1.4` and it scans/collects route attribute modifiers,
 `MapRequest` is discovered as an `AggregatingRouteAttributeModifierInterface` implementation. Class- and method-level mappings accumulate in declaration order, while `ValinorRequestMapperMiddleware` is attached once to each matching route.
+
+The scanner appends its mappings to route options. To deliberately disable
+mapping, set `valinor_mappings` to `[]` in the final route options after scanner
+assembly. An initial empty list does not suppress mappings added by the scanner.
 
 In this mode you usually do **not** need to register
 `\Sirix\Mezzio\Valinor\Middleware\ValinorRequestMapperMiddleware::class`

@@ -28,6 +28,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Breaking: explicit `valinor_mappings: []` disables request mapping for the
+  route, including handler attribute discovery, input reads/validation and
+  mapper calls. Remove the key to retain reflection discovery. A non-empty
+  list still replaces discovery; invalid values, including `null`, still throw
+  `InvalidMapRequestConfiguration`. With routing-attributes, apply the empty
+  override to final route options after scanner assembly.
 - Breaking: explicitly configured per-mapping error responders must be
   registered container services implementing `MappingErrorResponderInterface`.
   Missing services throw `MissingContainerServiceException` instead of using
@@ -67,9 +73,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - These changes require a major release under the project's Semantic
   Versioning policy because strict mapper configuration, required explicit
-  responders, numeric JSON paths and inherited callable discovery change
-  observable behavior. Additive limits remain disabled by default and could be
-  released separately.
+  responders, empty route metadata, numeric JSON paths and inherited callable
+  discovery change observable behavior. Additive limits remain disabled by
+  default and could be released separately.
 
 ## [3.0.0] - 2026-09-12
 

@@ -73,11 +73,7 @@ final class MapRequestResolver
     private function resolveMapRequests(Route $matchedRoute, bool $hasKey, mixed $snapshot): array
     {
         if ($hasKey) {
-            if ([] !== $snapshot) {
-                return $this->mapRequestOptionsParser->parse($snapshot);
-            }
-
-            // Empty payload [] falls back to reflection metadata (plan 02).
+            return $this->mapRequestOptionsParser->parse($snapshot);
         }
 
         $handler = $matchedRoute->getMiddleware();

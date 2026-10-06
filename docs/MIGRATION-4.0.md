@@ -1,8 +1,9 @@
 # Migrating to 4.0
 
 4.0 makes mapper configuration always strict, requires explicitly configured
-error responders, and includes the numeric JSON path and inherited callable
-discovery corrections below. When upgrading from an older release, apply the
+error responders, lets empty route metadata disable mapping, and includes the
+numeric JSON path and inherited callable discovery corrections below. When
+upgrading from an older release, apply the
 [3.0 migration guide](MIGRATION-3.0.md) first; for
 1.x, start with the [2.0 guide](MIGRATION-2.0.md).
 
@@ -65,7 +66,24 @@ or `RequestInputError`. Successful requests do not resolve the explicit
 responder. Omit `errorResponder` or set it to `null` to keep the application-wide
 responder and its existing built-in fallback.
 
-## 4. Read numeric error paths as JSON object properties
+## 4. Remove empty mapping metadata to keep discovery
+
+An explicit `valinor_mappings: []` in final route options now deliberately
+disables request mapping. Previously it fell back to handler attributes. Remove
+the `valinor_mappings` key if you want reflection discovery to continue.
+
+When disabled, this middleware does not instantiate handler attributes, read
+or validate input, or call the mapper. It passes the original request downstream;
+other application middleware continues to run. A non-empty list still replaces
+reflection mappings. Invalid values, including `null`, strings, associative
+arrays instead of a list and invalid definitions, still throw
+`InvalidMapRequestConfiguration`.
+
+With routing-attributes, the scanner appends its mappings. Set the empty
+override in final route options after scanner assembly; an initial `[]` does
+not prevent the scanner from adding mappings.
+
+## 5. Read numeric error paths as JSON object properties
 
 The default responder's `messages` is always a JSON object. Numeric paths
 previously could produce an array such as `[["..."]]`; they now produce
@@ -73,7 +91,7 @@ previously could produce an array such as `[["..."]]`; they now produce
 and response snapshots to read path properties, including numeric strings.
 The status `422`, JSON content type and `error` field remain unchanged.
 
-## 5. Check inherited handler callables
+## 6. Check inherited handler callables
 
 Inherited first-class instance and static method callables now use class
 attributes from the called child class, matching equivalent array callables.

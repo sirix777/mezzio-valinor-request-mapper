@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sirix\Mezzio\Valinor\Test\Integration;
 
+use CuyZ\Valinor\Mapper\TreeMapper;
 use CuyZ\Valinor\MapperBuilder;
 use Laminas\Diactoros\Response;
 use Laminas\Diactoros\ServerRequest;
@@ -65,6 +66,53 @@ final class RoutingAttributesMapRequestIntegrationTest extends TestCase
                 $this->mapping(route: RouteDto::class, output: 'route'),
             ],
         ], $routes[0]->defaults);
+    }
+
+    #[Test]
+    public function finalEmptyMetadataDisablesAssembledMappings(): void
+    {
+        [$route, $container, $handler, $responder] = $this->register(
+            AggregatingMapRequestHandler::class,
+            $this->extractor(),
+            new NullRouteRegistrarCache(),
+        );
+        if (! $handler instanceof AggregatingMapRequestHandler) {
+            throw new LogicException('Expected the aggregating route handler.');
+        }
+        self::assertSame([
+            $this->mapping(query: QueryDto::class, output: 'query'),
+            $this->mapping(body: BodyDto::class, output: 'body'),
+            $this->mapping(route: RouteDto::class, output: 'route'),
+        ], $route->getOptions()['valinor_mappings']);
+
+        $mapper = $this->createMock(TreeMapper::class);
+        $mapper->expects(self::never())->method('map');
+        $container->set(ValinorRequestMapperMiddleware::class, RequestMapperMiddlewareBuilder::build(
+            $mapper,
+            $responder,
+            $container,
+            self::class,
+        ));
+
+        $options                     = $route->getOptions();
+        $options['valinor_mappings'] = [];
+        $route->setOptions($options);
+        $this->resetDtoCounters();
+
+        $response = $route->process($this->request($route), new UnusedRequestHandler());
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame(0, QueryDto::$created);
+        self::assertSame(0, BodyDto::$created);
+        self::assertSame(0, RouteDto::$created);
+        self::assertSame(0, $responder->calls);
+        self::assertSame(1, $handler->calls);
+        self::assertSame([
+            'query' => null,
+            'body'  => null,
+            'route' => null,
+        ], $handler->attributes);
+        self::assertSame(1, $container->getCalls[ValinorRequestMapperMiddleware::class] ?? 0);
     }
 
     #[Test]

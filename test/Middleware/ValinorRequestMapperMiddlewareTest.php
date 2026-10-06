@@ -829,6 +829,59 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
     }
 
     #[Test]
+    public function disabledMappingDoesNotReadOrValidateInput(): void
+    {
+        $mapperCalls = 0;
+        $validator   = new MiddlewareCountingInputEncodingValidator();
+        $middleware  = $this->middleware(
+            $this->spyMapper($mapperCalls),
+            sourceFactory: new HttpRequestSourceFactory($validator),
+        );
+        $reads   = new MiddlewareRequestReads();
+        $request = (new MiddlewareCountingServerRequest($reads))
+            ->withMethod(RequestMethodInterface::METHOD_POST)
+            ->withParsedBody([
+                'name' => 'Ada',
+            ])
+            ->withQueryParams([
+                'page' => "\xB1\x31",
+            ])
+        ;
+
+        $handler = new #[MapRequest(body: RequiredRequest::class, output: 'body')]
+        #[MapRequest(query: PaginationRequest::class, output: 'query')]
+        class implements MiddlewareInterface, RequestHandlerInterface {
+            public ?ServerRequestInterface $request = null;
+
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                return $this->handle($request);
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                $this->request = $request;
+
+                return new EmptyResponse();
+            }
+        };
+
+        $route = new Route('/example', $handler, [RequestMethodInterface::METHOD_POST]);
+        $route->setOptions([
+            'valinor_mappings' => [],
+        ]);
+        $request = $request->withAttribute(RouteResult::class, RouteResult::fromRoute($route, []));
+
+        $middleware->process($request, $this->nextHandler($handler));
+
+        self::assertSame($request, $handler->request);
+        self::assertSame(0, $mapperCalls);
+        self::assertSame([], $validator->calls);
+        self::assertSame(0, $reads->parsedBodyReads);
+        self::assertSame(0, $reads->queryParameterReads);
+    }
+
+    #[Test]
     public function firstOperationFailureDoesNotReadOrValidateSourcesOfLaterOperations(): void
     {
         $validator  = new MiddlewareCountingInputEncodingValidator();

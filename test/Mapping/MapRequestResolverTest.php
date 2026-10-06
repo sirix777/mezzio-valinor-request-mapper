@@ -10,6 +10,7 @@ use Laminas\Stratigility\Middleware\RequestHandlerMiddleware;
 use Laminas\Stratigility\MiddlewarePipe;
 use Mezzio\Router\Route;
 use Mezzio\Router\RouteResult;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
@@ -182,7 +183,7 @@ final class MapRequestResolverTest extends TestCase
     }
 
     #[Test]
-    public function emptyRouteOptionsFallsBackToReflection(): void
+    public function emptyRouteOptionsDisableReflection(): void
     {
         $handler = new #[MapRequest(body: RequiredRequest::class)]
         class implements MiddlewareInterface {
@@ -197,10 +198,56 @@ final class MapRequestResolverTest extends TestCase
             'valinor_mappings' => [],
         ]);
 
-        $mapRequests = $this->resolver->resolve(RouteResult::fromRoute($route, []));
+        self::assertSame([], $this->resolver->resolve(RouteResult::fromRoute($route, [])));
+    }
 
-        self::assertCount(1, $mapRequests);
-        self::assertSame(RequiredRequest::class, $mapRequests[0]->body);
+    #[Test]
+    public function emptyMetadataDoesNotInstantiateHandlerAttributes(): void
+    {
+        $route = new Route('/example', new InvalidAttributedMiddleware(), [RequestMethodInterface::METHOD_POST]);
+        $route->setOptions([
+            'valinor_mappings' => [],
+        ]);
+
+        self::assertSame([], $this->resolver->resolve(RouteResult::fromRoute($route, [])));
+    }
+
+    #[Test]
+    public function absentMetadataStillRejectsInvalidHandlerAttributes(): void
+    {
+        $route = new Route('/example', new InvalidAttributedMiddleware(), [RequestMethodInterface::METHOD_POST]);
+
+        $this->expectException(InvalidMapRequestConfiguration::class);
+
+        $this->resolver->resolve(RouteResult::fromRoute($route, []));
+    }
+
+    #[Test]
+    #[DataProvider('invalidPresentMetadata')]
+    public function invalidPresentMetadataThrowsConfigurationError(mixed $metadata): void
+    {
+        $route = new Route('/example', new AttributedMiddleware(), [RequestMethodInterface::METHOD_POST]);
+        $route->setOptions([
+            'valinor_mappings' => $metadata,
+        ]);
+
+        $this->expectException(InvalidMapRequestConfiguration::class);
+
+        $this->resolver->resolve(RouteResult::fromRoute($route, []));
+    }
+
+    /** @return iterable<string, array{mixed}> */
+    public static function invalidPresentMetadata(): iterable
+    {
+        yield 'null' => [null];
+
+        yield 'string' => ['invalid'];
+
+        yield 'associative map' => [[
+            'body' => RequiredRequest::class,
+        ]];
+
+        yield 'invalid definition' => [[123]];
     }
 
     #[Test]
@@ -267,5 +314,14 @@ final class MapRequestResolverTest extends TestCase
         $route = new Route('/example', new MiddlewarePipe(), [RequestMethodInterface::METHOD_POST]);
 
         self::assertSame([], $this->resolver->resolve(RouteResult::fromRoute($route, [])));
+    }
+}
+
+#[MapRequest()]
+final class InvalidAttributedMiddleware implements MiddlewareInterface
+{
+    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+    {
+        return $handler->handle($request);
     }
 }

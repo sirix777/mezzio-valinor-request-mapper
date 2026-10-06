@@ -160,7 +160,7 @@ final class MappingCacheTest extends TestCase
     }
 
     #[Test]
-    public function emptyRouteOptionsFallsBackToReflectionAndCanBeOverriddenLater(): void
+    public function routeOptionsTransitionsRespectExplicitDisable(): void
     {
         $resolver = new MapRequestResolver(
             new HandlerTargetResolver(),
@@ -177,23 +177,35 @@ final class MappingCacheTest extends TestCase
 
         $route = new Route('/example', $handler, [RequestMethodInterface::METHOD_POST]);
 
-        $reflection = $resolver->resolve(RouteResult::fromRoute($route, []));
-        self::assertSame(RequiredRequest::class, $reflection[0]->body);
+        $reflectionMappings = $resolver->resolve(RouteResult::fromRoute($route, []));
+        self::assertCount(1, $reflectionMappings);
+        self::assertSame(RequiredRequest::class, $reflectionMappings[0]->body);
+
+        $initial = $resolver->resolve(RouteResult::fromRoute($route, []));
+        self::assertSame($reflectionMappings, $initial);
 
         $route->setOptions([
             'valinor_mappings' => [],
         ]);
-        $empty = $resolver->resolve(RouteResult::fromRoute($route, []));
-        self::assertSame($reflection, $empty);
+        $disabled = $resolver->resolve(RouteResult::fromRoute($route, []));
+        self::assertSame([], $disabled);
+        self::assertSame([], $resolver->resolve(RouteResult::fromRoute($route, [])));
 
         $route->setOptions([
             'valinor_mappings' => [[
-                'body' => PaginationRequest::class,
+                'body'   => PaginationRequest::class,
+                'output' => 'explicit',
             ]],
         ]);
-        $override = $resolver->resolve(RouteResult::fromRoute($route, []));
-        self::assertNotSame($reflection, $override);
-        self::assertSame(PaginationRequest::class, $override[0]->body);
+        $overridden = $resolver->resolve(RouteResult::fromRoute($route, []));
+        self::assertNotSame($reflectionMappings, $overridden);
+        self::assertSame(PaginationRequest::class, $overridden[0]->body);
+        self::assertSame('explicit', $overridden[0]->output);
+        self::assertSame($overridden, $resolver->resolve(RouteResult::fromRoute($route, [])));
+
+        $route->setOptions([]);
+        $restored = $resolver->resolve(RouteResult::fromRoute($route, []));
+        self::assertSame($reflectionMappings, $restored);
     }
 
     #[Test]
