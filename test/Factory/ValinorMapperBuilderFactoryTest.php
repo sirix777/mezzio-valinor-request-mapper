@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sirix\Mezzio\Valinor\Test\Factory;
 
-use ArgumentCountError;
 use CuyZ\Valinor\Cache\FileSystemCache;
 use CuyZ\Valinor\Mapper\Configurator\ConvertKeysToCamelCase;
 use CuyZ\Valinor\Mapper\Configurator\MapperBuilderConfigurator;
@@ -12,16 +11,17 @@ use CuyZ\Valinor\Mapper\MappingError;
 use CuyZ\Valinor\MapperBuilder;
 use DateTimeImmutable;
 use DateTimeInterface;
-use Error;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
 use Sirix\ContainerResolver\Exception\InvalidConfigValueException;
 use Sirix\ContainerResolver\Exception\InvalidContainerServiceException;
+use Sirix\ContainerResolver\Exception\MissingContainerServiceException;
 use Sirix\Mezzio\Valinor\Exception\InvalidMapRequestConfiguration;
 use Sirix\Mezzio\Valinor\Factory\ValinorMapperBuilderFactory;
 use Sirix\Mezzio\Valinor\Test\Factory\Fixture\CacheableRequest;
@@ -100,48 +100,64 @@ final class ValinorMapperBuilderFactoryTest extends TestCase
     }
 
     #[Test]
-    #[DataProvider('configuratorModes')]
-    public function rejectsConfiguratorServiceWithAnIncorrectType(bool $strict): void
+    public function rejectsConfiguratorServiceWithAnIncorrectType(): void
     {
         $this->expectException(InvalidContainerServiceException::class);
 
         $this->builder([
-            'strict_configurators' => $strict,
-            'configurators'        => ['MyConfigurator'],
+            'configurators' => ['MyConfigurator'],
         ], [
             'MyConfigurator' => new stdClass(),
         ]);
     }
 
     #[Test]
-    #[DataProvider('configuratorModes')]
-    public function configuratorClassNameIsInstantiatedDirectly(bool $strict): void
+    public function configuratorClassNameIsInstantiatedDirectly(): void
     {
         self::assertInstanceOf(MapperBuilder::class, $this->builder([
-            'strict_configurators' => $strict,
-            'configurators'        => [ConvertKeysToCamelCase::class],
+            'configurators' => [ConvertKeysToCamelCase::class],
         ]));
     }
 
     #[Test]
-    public function invalidStringConfiguratorIsSkipped(): void
+    #[DataProvider('invalidConfigurators')]
+    public function invalidConfiguratorsAreAlwaysRejected(mixed $value): void
     {
-        self::assertInstanceOf(MapperBuilder::class, $this->builder([
-            'configurators' => ['NonExistentClass'],
-        ]));
+        $this->expectException(InvalidMapRequestConfiguration::class);
+        $this->expectExceptionMessage('mapper.configurators[0]');
+
+        $this->builder([
+            'configurators' => [$value],
+        ]);
+    }
+
+    /** @return iterable<string, array{mixed}> */
+    public static function invalidConfigurators(): iterable
+    {
+        yield 'typo' => ['typo'];
+
+        yield 'integer' => [123];
+
+        yield 'null' => [null];
+
+        yield 'abstract' => [AbstractConfigurator::class];
+
+        yield 'private constructor' => [PrivateConstructorConfigurator::class];
+
+        yield 'constructor dependency' => [ConstructorRequiredConfigurator::class];
     }
 
     #[Test]
     #[DataProvider('unknownConfigurators')]
-    public function strictModeRejectsUnknownConfigurator(string $identifier): void
+    public function rejectsUnknownConfiguratorAtNamedIndex(string $identifier): void
     {
         $this->expectException(InvalidMapRequestConfiguration::class);
-        $this->expectExceptionMessageMatches('/mapper\.configurators\[missing\].*' . preg_quote($identifier, '/') . '/');
+        $this->expectExceptionMessage('mapper.configurators[named]');
+        $this->expectExceptionMessageMatches('/mapper\.configurators\[named\].*' . preg_quote($identifier, '/') . '/');
 
         $this->builder([
-            'strict_configurators' => true,
-            'configurators'        => [
-                'missing' => $identifier,
+            'configurators' => [
+                'named' => $identifier,
             ],
         ]);
     }
@@ -158,14 +174,13 @@ final class ValinorMapperBuilderFactoryTest extends TestCase
 
     #[Test]
     #[DataProvider('wrongConfiguratorElements')]
-    public function strictModeRejectsWrongElementType(mixed $value, string $type): void
+    public function rejectsWrongConfiguratorElementType(mixed $value, string $type): void
     {
         $this->expectException(InvalidMapRequestConfiguration::class);
         $this->expectExceptionMessageMatches('/mapper\.configurators\[7\].*' . preg_quote($type, '/') . '/');
 
         $this->builder([
-            'strict_configurators' => true,
-            'configurators'        => [
+            'configurators' => [
                 7 => $value,
             ],
         ]);
@@ -182,54 +197,10 @@ final class ValinorMapperBuilderFactoryTest extends TestCase
     }
 
     #[Test]
-    #[DataProvider('unconstructibleConfigurators')]
-    public function strictModeRejectsUnconstructibleClass(string $className, string $legacyException): void
-    {
-        $this->expectException(InvalidMapRequestConfiguration::class);
-        $this->expectExceptionMessageMatches('/mapper\.configurators\[0\].*' . preg_quote($className, '/') . '/');
-
-        $this->builder([
-            'strict_configurators' => true,
-            'configurators'        => [$className],
-        ]);
-    }
-
-    /** @return iterable<string, array{class-string<MapperBuilderConfigurator>, class-string<Throwable>}> */
-    public static function unconstructibleConfigurators(): iterable
-    {
-        yield 'abstract' => [AbstractConfigurator::class, Error::class];
-
-        yield 'constructor dependency' => [ConstructorRequiredConfigurator::class, ArgumentCountError::class];
-
-        yield 'private constructor' => [PrivateConstructorConfigurator::class, Error::class];
-    }
-
-    /** @param class-string<Throwable> $legacyException */
-    #[Test]
-    #[DataProvider('unconstructibleConfigurators')]
-    public function legacyModePreservesConstructionFailure(string $className, string $legacyException): void
-    {
-        $this->expectException($legacyException);
-
-        $this->builder([
-            'configurators' => [$className],
-        ]);
-    }
-
-    #[Test]
-    public function legacyModeSkipsInvalidConfiguratorElements(): void
-    {
-        self::assertInstanceOf(MapperBuilder::class, $this->builder([
-            'configurators' => [42, [], new stdClass(), stdClass::class, 'missing.configurator'],
-        ]));
-    }
-
-    #[Test]
     public function constructorDependencyIsResolvedFromContainer(): void
     {
         $mapper = $this->builder([
-            'strict_configurators' => true,
-            'configurators'        => [ConstructorRequiredConfigurator::class],
+            'configurators' => [ConstructorRequiredConfigurator::class],
         ], [
             ConstructorRequiredConfigurator::class => new ConstructorRequiredConfigurator('d/m/Y'),
         ])->mapper();
@@ -240,8 +211,7 @@ final class ValinorMapperBuilderFactoryTest extends TestCase
     }
 
     #[Test]
-    #[DataProvider('configuratorModes')]
-    public function configuratorFailureIsNotSwallowed(bool $strict): void
+    public function configuratorFailureIsNotSwallowed(): void
     {
         $exception    = new RuntimeException('Configurator failed');
         $configurator = new class($exception) implements MapperBuilderConfigurator {
@@ -255,8 +225,7 @@ final class ValinorMapperBuilderFactoryTest extends TestCase
 
         try {
             $this->builder([
-                'strict_configurators' => $strict,
-                'configurators'        => [$configurator],
+                'configurators' => [$configurator],
             ]);
             self::fail('The configurator exception must propagate.');
         } catch (RuntimeException $actual) {
@@ -264,31 +233,232 @@ final class ValinorMapperBuilderFactoryTest extends TestCase
         }
     }
 
-    /** @return iterable<string, array{bool}> */
-    public static function configuratorModes(): iterable
-    {
-        yield 'legacy' => [false];
-
-        yield 'strict' => [true];
-    }
-
     #[Test]
-    #[DataProvider('invalidStrictFlags')]
-    public function strictModeRejectsNonBooleanFlag(mixed $value): void
+    #[DataProvider('removedStrictFlags')]
+    public function removedStrictConfiguratorKeyIsRejected(?bool $value): void
     {
-        $this->expectException(InvalidConfigValueException::class);
+        $this->expectException(InvalidMapRequestConfiguration::class);
+        $this->expectExceptionMessage('sirix_mezzio_valinor.mapper.strict_configurators');
 
         $this->builder([
             'strict_configurators' => $value,
         ]);
     }
 
-    /** @return iterable<string, array{mixed}> */
-    public static function invalidStrictFlags(): iterable
+    /** @return iterable<string, array{null|bool}> */
+    public static function removedStrictFlags(): iterable
     {
-        yield 'string' => ['true'];
+        yield 'true' => [true];
 
-        yield 'integer' => [1];
+        yield 'false' => [false];
+
+        yield 'null' => [null];
+    }
+
+    #[Test]
+    #[DataProvider('unknownMapperKeys')]
+    public function unknownMapperKeysAreRejected(string $key): void
+    {
+        $this->expectException(InvalidMapRequestConfiguration::class);
+        $this->expectExceptionMessage('sirix_mezzio_valinor.mapper.' . $key);
+
+        $this->builder([
+            $key => true,
+        ]);
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function unknownMapperKeys(): iterable
+    {
+        yield 'typo' => ['allow_scaler_value_casting'];
+
+        yield 'unknown' => ['unknown'];
+    }
+
+    #[Test]
+    public function numericMapperKeysKeepConfigReaderTypeRejection(): void
+    {
+        $this->expectException(InvalidConfigValueException::class);
+        $this->expectExceptionMessage('map<string, mixed>');
+
+        $container = $this->createContainer([
+            'config' => [
+                'sirix_mezzio_valinor' => [
+                    'mapper' => [
+                        17 => false,
+                    ],
+                ],
+            ],
+        ]);
+
+        (new ValinorMapperBuilderFactory())($container);
+    }
+
+    #[Test]
+    public function unknownKeyIsRejectedBeforeCacheHandlingAndConfigurators(): void
+    {
+        $applied      = 0;
+        $configurator = new class($applied) implements MapperBuilderConfigurator {
+            public function __construct(private int &$applied) {}
+
+            public function configureMapperBuilder(MapperBuilder $builder): MapperBuilder
+            {
+                ++$this->applied;
+
+                return $builder;
+            }
+        };
+
+        try {
+            $this->builder([
+                'allow_scaler_value_casting' => true,
+                'cache_dir'                  => 123,
+                'configurators'              => [$configurator],
+            ]);
+            self::fail('The unknown mapper key must be rejected first.');
+        } catch (InvalidMapRequestConfiguration $caught) {
+            self::assertSame(
+                'sirix_mezzio_valinor.mapper.allow_scaler_value_casting: unknown mapper option.',
+                $caught->getMessage(),
+            );
+        }
+
+        self::assertSame(0, $applied);
+    }
+
+    /** @param array<string, mixed> $services */
+    #[Test]
+    #[DataProvider('absentMapperConfigurations')]
+    public function absentMapperConfigurationCreatesBuilder(array $services): void
+    {
+        self::assertInstanceOf(MapperBuilder::class, (new ValinorMapperBuilderFactory())($this->createContainer($services)));
+    }
+
+    /** @return iterable<string, array{array<string, mixed>}> */
+    public static function absentMapperConfigurations(): iterable
+    {
+        yield 'no config service' => [[]];
+
+        yield 'no package section' => [[
+            'config' => [
+                'unrelated' => [
+                    'strict_configurators' => false,
+                ],
+            ],
+        ]];
+
+        yield 'no mapper section' => [[
+            'config' => [
+                'sirix_mezzio_valinor' => [
+                    'unrelated' => true,
+                ],
+            ],
+        ]];
+
+        yield 'empty mapper' => [[
+            'config' => [
+                'sirix_mezzio_valinor' => [
+                    'mapper' => [],
+                ],
+            ],
+        ]];
+    }
+
+    #[Test]
+    public function allSupportedMapperKeysAreAccepted(): void
+    {
+        self::assertInstanceOf(MapperBuilder::class, $this->builder([
+            'configurators'              => [],
+            'allow_superfluous_keys'     => false,
+            'allow_scalar_value_casting' => false,
+            'allow_permissive_types'     => false,
+            'allow_undefined_values'     => false,
+            'support_date_formats'       => [],
+            'cache_dir'                  => null,
+            'cache_watch'                => false,
+        ]));
+    }
+
+    #[Test]
+    public function optionalConstructorArgumentsAllowDirectConstruction(): void
+    {
+        self::assertInstanceOf(MapperBuilder::class, $this->builder([
+            'configurators' => [OptionalConstructorConfigurator::class],
+        ]));
+    }
+
+    #[Test]
+    public function constructorFailureIsNotSwallowed(): void
+    {
+        $original                                   = new RuntimeException('Constructor failed');
+        ThrowingConstructorConfigurator::$exception = $original;
+
+        try {
+            $this->builder([
+                'configurators' => [ThrowingConstructorConfigurator::class],
+            ]);
+            self::fail('The constructor exception must propagate.');
+        } catch (RuntimeException $caught) {
+            self::assertSame($original, $caught);
+        } finally {
+            ThrowingConstructorConfigurator::$exception = null;
+        }
+    }
+
+    #[Test]
+    public function containerFailureIsNotSwallowed(): void
+    {
+        $original  = new RuntimeException('Container failed');
+        $container = $this->createMock(ContainerInterface::class);
+        $container->method('has')->willReturn(true);
+        $container->method('get')->willReturnCallback(static function(string $id) use ($original): array {
+            if ('config' === $id) {
+                return [
+                    'sirix_mezzio_valinor' => [
+                        'mapper' => [
+                            'configurators' => [ConvertKeysToCamelCase::class],
+                        ],
+                    ],
+                ];
+            }
+
+            throw $original;
+        });
+
+        try {
+            (new ValinorMapperBuilderFactory())($container);
+            self::fail('The container exception must propagate.');
+        } catch (RuntimeException $caught) {
+            self::assertSame($original, $caught);
+        }
+    }
+
+    #[Test]
+    public function containerNotFoundFailureKeepsItsOriginalCause(): void
+    {
+        $original  = new class('Container lost the service') extends RuntimeException implements NotFoundExceptionInterface {};
+        $container = $this->createMock(ContainerInterface::class);
+        $container->method('has')->willReturn(true);
+        $container->method('get')->willReturnCallback(static function(string $id) use ($original): array {
+            if ('config' === $id) {
+                return [
+                    'sirix_mezzio_valinor' => [
+                        'mapper' => [
+                            'configurators' => [ConvertKeysToCamelCase::class],
+                        ],
+                    ],
+                ];
+            }
+
+            throw $original;
+        });
+
+        try {
+            (new ValinorMapperBuilderFactory())($container);
+            self::fail('A disappearing container service must not fall back to direct construction.');
+        } catch (MissingContainerServiceException $caught) {
+            self::assertSame($original, $caught->getPrevious());
+        }
     }
 
     #[Test]
@@ -1025,6 +1195,32 @@ abstract class AbstractConfigurator implements MapperBuilderConfigurator {}
 final readonly class PrivateConstructorConfigurator implements MapperBuilderConfigurator
 {
     private function __construct() {}
+
+    public function configureMapperBuilder(MapperBuilder $builder): MapperBuilder
+    {
+        return $builder;
+    }
+}
+
+final readonly class OptionalConstructorConfigurator implements MapperBuilderConfigurator
+{
+    /** @param non-empty-string $format */
+    public function __construct(private string $format = 'Y-m-d') {}
+
+    public function configureMapperBuilder(MapperBuilder $builder): MapperBuilder
+    {
+        return $builder->supportDateFormats($this->format);
+    }
+}
+
+final class ThrowingConstructorConfigurator implements MapperBuilderConfigurator
+{
+    public static ?RuntimeException $exception = null;
+
+    public function __construct()
+    {
+        throw self::$exception ?? new RuntimeException('Constructor failed');
+    }
 
     public function configureMapperBuilder(MapperBuilder $builder): MapperBuilder
     {

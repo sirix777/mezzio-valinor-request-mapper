@@ -13,11 +13,15 @@ return [
     'sirix_mezzio_valinor' => [
         // --- MapperBuilder options ---
         'mapper' => [
+            // Unknown mapper options and invalid configurators are always rejected.
             // Configurators run in declaration order, before the allow_* flags.
             // Each flag is additive: false does not disable a capability already
             // enabled by a configurator; true additionally enables it.
             // Configurators: FQCN implementing MapperBuilderConfigurator.
-            // Resolved from container if available, otherwise instantiated directly.
+            // Resolved from container first; otherwise a concrete class with a public
+            // constructor and no required arguments is instantiated directly.
+            // Register configurators with required constructor arguments in the container.
+            // Constructor, container and configurator exceptions propagate.
             //
             // Built-in configurators from cuyz/valinor:
             //   ConvertKeysToCamelCase  — snake_case / kebab-case → camelCase
@@ -32,12 +36,6 @@ return [
             'configurators'              => [
                 ConvertKeysToCamelCase::class,
             ],
-
-            // Reject unresolved/invalid/unconstructible entries with their key
-            // and identifier/type. Services take precedence; register constructor
-            // dependencies in the container. False preserves legacy skips and
-            // direct-construction failures; configurator exceptions propagate.
-            'strict_configurators'       => false,
 
             // Allow extra keys in input that are not mapped. For HTTP request
             // mapping, extra top-level keys in body/query/route are still

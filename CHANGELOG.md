@@ -12,10 +12,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Persistent-worker soak CLI with static and ephemeral route modes, changing
   request IDs, object-release probes and a last-five-checkpoint used-memory gate;
   separate PHP heap, allocator peak and RSS evidence is recorded where available.
-- Opt-in `mapper.strict_configurators` diagnostics for unresolved, invalid or
-  unconstructible configurators, including their array key and identifier/type.
-  The default `false` retains legacy skips and direct-construction failures;
-  container services take precedence and configurator exceptions propagate.
 - Optional `input_limits` budgets (`max_nodes`, `max_depth`,
   `max_total_string_bytes`), all defaulting to `null`. When enabled, selected
   body/query/route inputs are rejected before mapping with stable
@@ -29,6 +25,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (unlimited) and apply only to the default responder. An oversized serialized
   body is replaced by a fixed `422` envelope with a root message; the initial
   encoding and custom extension messages are not sandboxed.
+
+### Changed
+
+- Breaking: mapper configuration is always strict. Unknown string keys in
+  `sirix_mezzio_valinor.mapper` throw `InvalidMapRequestConfiguration` with their
+  full path before cache setup or configurators run. Invalid, unresolved and
+  unconstructible configurators always throw with their array key and
+  identifier/type. Register configurators with required constructor arguments
+  in the container; optional arguments remain supported for direct construction.
+  Container precedence, exception propagation, additive flags and date formats
+  are preserved, as are existing configuration type checks.
+
+### Removed
+
+- `mapper.strict_configurators`; providing it now throws
+  `InvalidMapRequestConfiguration`, regardless of its value. See the
+  [4.0 migration guide](docs/MIGRATION-4.0.md).
 
 ### Fixed
 
@@ -47,9 +60,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Release classification
 
 - These changes require a major release under the project's Semantic
-  Versioning policy because numeric JSON paths and inherited callable discovery
-  change observable behavior. Additive limits and strict diagnostics remain
-  disabled by default and could be released separately.
+  Versioning policy because strict mapper configuration, numeric JSON paths and
+  inherited callable discovery change observable behavior. Additive limits
+  remain disabled by default and could be released separately.
 
 ## [3.0.0] - 2026-09-12
 

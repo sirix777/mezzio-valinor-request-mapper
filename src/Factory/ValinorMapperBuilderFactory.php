@@ -20,6 +20,7 @@ use Sirix\Mezzio\Valinor\Exception\InvalidMapRequestConfiguration;
 use function array_unique;
 use function array_values;
 use function get_debug_type;
+use function in_array;
 use function is_a;
 use function is_string;
 use function sprintf;
@@ -41,6 +42,25 @@ final readonly class ValinorMapperBuilderFactory
             self::class,
         )->map('mapper', default: []);
 
+        foreach ($config as $key => $value) {
+            if (! in_array($key, [
+                'configurators',
+                'allow_superfluous_keys',
+                'allow_scalar_value_casting',
+                'allow_permissive_types',
+                'allow_undefined_values',
+                'support_date_formats',
+                'cache_dir',
+                'cache_watch',
+            ], true)) {
+                throw new InvalidMapRequestConfiguration(sprintf(
+                    '%s.mapper.%s: unknown mapper option.',
+                    self::CONFIG_KEY,
+                    $key,
+                ));
+            }
+        }
+
         $configReader = ConfigReader::fromArray($config, self::class);
 
         $builder = new MapperBuilder();
@@ -51,14 +71,8 @@ final readonly class ValinorMapperBuilderFactory
             $builder = $builder->withCache($cache);
         }
 
-        $strict = $configReader->bool('strict_configurators', default: false);
-
         foreach ($configReader->array('configurators', default: []) as $index => $value) {
-            $configurator = $this->resolveConfigurator($value, $index, $strict, $resolver);
-
-            if ($configurator instanceof MapperBuilderConfigurator) {
-                $builder = $builder->configureWith($configurator);
-            }
+            $builder = $builder->configureWith($this->resolveConfigurator($value, $index, $resolver));
         }
 
         if ($configReader->bool('allow_superfluous_keys', default: true)) {
@@ -88,12 +102,8 @@ final readonly class ValinorMapperBuilderFactory
         return $builder;
     }
 
-    private function resolveConfigurator(
-        mixed $value,
-        int|string $index,
-        bool $strict,
-        ContainerResolver $resolver,
-    ): ?MapperBuilderConfigurator {
+    private function resolveConfigurator(mixed $value, int|string $index, ContainerResolver $resolver): MapperBuilderConfigurator
+    {
         if ($value instanceof MapperBuilderConfigurator) {
             return $value;
         }
@@ -106,10 +116,6 @@ final readonly class ValinorMapperBuilderFactory
             }
 
             if (is_a($value, MapperBuilderConfigurator::class, true)) {
-                if (! $strict) {
-                    return new $value();
-                }
-
                 $class = new ReflectionClass($value);
 
                 if ($class->isInstantiable() && 0 === ($class->getConstructor()?->getNumberOfRequiredParameters() ?? 0)) {
@@ -118,16 +124,12 @@ final readonly class ValinorMapperBuilderFactory
             }
         }
 
-        if ($strict) {
-            throw new InvalidMapRequestConfiguration(sprintf(
-                'mapper.configurators[%s]: expected a registered service or constructible %s; received %s.',
-                $index,
-                MapperBuilderConfigurator::class,
-                is_string($value) ? "'{$value}'" : get_debug_type($value),
-            ));
-        }
-
-        return null;
+        throw new InvalidMapRequestConfiguration(sprintf(
+            'mapper.configurators[%s]: expected a registered service or constructible %s; received %s.',
+            $index,
+            MapperBuilderConfigurator::class,
+            is_string($value) ? "'{$value}'" : get_debug_type($value),
+        ));
     }
 
     private function createCache(ConfigReader $config): ?Cache

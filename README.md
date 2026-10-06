@@ -322,7 +322,6 @@ return [
             'configurators' => [
                 \CuyZ\Valinor\Mapper\Configurator\ConvertKeysToCamelCase::class,
             ],
-            'strict_configurators' => false,
             'allow_superfluous_keys' => true,
             'allow_scalar_value_casting' => true,
             'allow_permissive_types' => false,
@@ -407,12 +406,18 @@ formatters/constructors are not sanitized by this package.
 | `cache_dir` | `?string` | `null` | Path to cache directory. When set, Valinor caches compiled type metadata via `FileSystemCache` |
 | `cache_watch` | `bool` | `false` | Wrap cache with `FileWatchingCache` to auto-invalidate when PHP files change (use in dev) |
 | `configurators` | `array<string\|MapperBuilderConfigurator>` | `[]` | Services or class-strings applied via `configureWith()` |
-| `strict_configurators` | `bool` | `false` | Reject unresolved, invalid or unconstructible configurators with their array key and identifier/type |
 | `allow_superfluous_keys` | `bool` | `true` | Allow extra keys in input that are not mapped. For HTTP request mapping, extra top-level keys in body/query/route are still ignored; this flag primarily affects direct array mapping through the registered `TreeMapper` |
 | `allow_scalar_value_casting` | `bool` | `true` | Allow automatic scalar type casting (e.g. `int` → `string`). For HTTP mapping, strings from query/route parameters are always cast to target scalar types; this flag mainly controls body/array mapping behavior |
 | `allow_permissive_types` | `bool` | `false` | Allow `mixed` type to accept any value |
 | `allow_undefined_values` | `bool` | `false` | Fill missing keys with `null` instead of failing |
 | `support_date_formats` | `list<string>` | `[]` | Additional date formats appended to those already supported by the configured builder. If no configurator replaces them, Valinor's default RFC 3339 / timestamp formats are preserved; otherwise the configurator's list is the base |
+
+The `mapper` section accepts only these eight options. Unknown option names
+throw `InvalidMapRequestConfiguration` with the full
+`sirix_mezzio_valinor.mapper.<key>` path before cache setup or configurators run.
+Absent mapper configuration still creates the default builder; other
+configuration sections are unaffected. Existing option type checks remain in
+place, including requiring a string-keyed mapper map.
 
 ### Cache
 
@@ -470,21 +475,22 @@ of the corresponding flags. Direct array mapping uses the builder's options.
 `mapper.configurators` supports:
 
 - service id (resolved from container)
-- class-string implementing `MapperBuilderConfigurator` (instantiated if service not found)
+- class-string implementing `MapperBuilderConfigurator` (instantiated if no service is registered and the class has a public constructor with no required arguments, or no constructor)
 - `MapperBuilderConfigurator` instance
 
 Container services take precedence over direct construction. Register configurators
-with constructor dependencies in the container. Setting `strict_configurators`
-to `true` rejects unknown entries, wrong types, abstract classes, inaccessible
-constructors and required constructor arguments with
+with required constructor arguments in the container. Invalid entries are always
+rejected: unknown entries, wrong types, abstract classes, inaccessible
+constructors and unregistered classes with required constructor arguments throw
 `InvalidMapRequestConfiguration`, naming `mapper.configurators[index]` and the
 identifier or type. Array keys are retained for diagnostics.
 
-The default `false` preserves legacy skipping of missing or unsuitable entries
-and existing direct-construction failures. A registered service of the wrong
-type throws `InvalidContainerServiceException` in both modes. Exceptions from
-constructors, container resolution or `configureMapperBuilder()` propagate;
-they are not treated as skipped configurators.
+Optional constructor arguments remain supported for direct construction. A
+registered service of the wrong type throws `InvalidContainerServiceException`.
+Exceptions from constructors, container resolution or `configureMapperBuilder()`
+propagate;
+PSR-11 not-found exceptions retain their cause in the container resolver's
+contextual `MissingContainerServiceException`.
 
 ## Error responders
 
@@ -616,8 +622,10 @@ paths (the root path is the empty string) and each value is a non-empty array of
 strings. Numeric paths are preserved as string JSON property names, and an empty
 message collection is encoded as `{}` rather than `[]`. To change the response
 contract, register an implementation of `MappingErrorResponderInterface`. See the
-[3.0 migration guide](docs/MIGRATION-3.0.md); applications upgrading from 1.x
-should first follow the [2.0 guide](docs/MIGRATION-2.0.md).
+[4.0 migration guide](docs/MIGRATION-4.0.md) for strict mapper configuration,
+numeric JSON paths and inherited callable discovery. Applications upgrading from
+earlier versions should first follow the [3.0 guide](docs/MIGRATION-3.0.md) and,
+when upgrading from 1.x, the [2.0 guide](docs/MIGRATION-2.0.md).
 
 ## Notes and caveats
 
