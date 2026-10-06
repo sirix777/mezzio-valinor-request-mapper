@@ -9,6 +9,7 @@ use Laminas\Diactoros\Response\EmptyResponse;
 use Laminas\Stratigility\Middleware\RequestHandlerMiddleware;
 use Mezzio\Router\Route;
 use Mezzio\Router\RouteResult;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
@@ -102,6 +103,40 @@ final class MappingPlanResolverTest extends TestCase
         self::assertSame(PaginationRequest::class, $operations[1]->dtoClass);
         self::assertSame('route', $operations[2]->source);
         self::assertSame(SearchRequest::class, $operations[2]->dtoClass);
+    }
+
+    #[Test]
+    #[DataProvider('targetSignatureProvider')]
+    public function typeSignatureIsTheDefaultOutputKey(string $target): void
+    {
+        $handler = new class implements MiddlewareInterface {
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                return $handler->handle($request);
+            }
+        };
+        $route = new Route('/example', $handler, [RequestMethodInterface::METHOD_GET]);
+        $route->setOptions([
+            'valinor_mappings' => [[
+                'query' => $target,
+            ]],
+        ]);
+
+        $operations = $this->resolver->resolve(RouteResult::fromRoute($route, []), RequestMethodInterface::METHOD_GET);
+
+        self::assertCount(1, $operations);
+        self::assertSame($target, $operations[0]->dtoClass);
+        self::assertSame($target, $operations[0]->requestAttributeKey);
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function targetSignatureProvider(): iterable
+    {
+        yield 'DTO class' => [RequiredRequest::class];
+
+        yield 'generic DTO' => ['Example\GenericDto<int>'];
+
+        yield 'array shape' => ['array{page: int}'];
     }
 
     #[Test]

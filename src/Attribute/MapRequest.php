@@ -11,22 +11,23 @@ use Sirix\Mezzio\Valinor\Exception\InvalidMapRequestConfiguration;
 use Sirix\Mezzio\Valinor\Mapping\HttpMethodNormalizer;
 use Sirix\Mezzio\Valinor\Middleware\ValinorRequestMapperMiddleware;
 
+use function array_key_exists;
 use function sprintf;
 use function trim;
 
 #[Attribute(Attribute::TARGET_CLASS | Attribute::TARGET_METHOD | Attribute::IS_REPEATABLE)]
 final readonly class MapRequest implements AggregatingRouteAttributeModifierInterface
 {
-    /** @var null|class-string */
+    /** @var null|string Non-empty Valinor target type signature. */
     public ?string $body;
 
-    /** @var null|class-string */
+    /** @var null|string Non-empty Valinor target type signature. */
     public ?string $query;
 
-    /** @var null|class-string */
+    /** @var null|string Non-empty Valinor target type signature. */
     public ?string $route;
 
-    /** @var null|class-string */
+    /** @var null|string Non-empty Valinor target type signature. */
     public ?string $source;
 
     public ?string $output;
@@ -40,11 +41,11 @@ final readonly class MapRequest implements AggregatingRouteAttributeModifierInte
     public array $methods;
 
     /**
-     * @param null|class-string                                 $body           Map from parsed body to this DTO
-     * @param null|class-string                                 $query          Map from query params to this DTO
-     * @param null|class-string                                 $route          Map from route params to this DTO
-     * @param null|class-string                                 $source         Map from all three sources combined to this DTO
-     * @param null|string                                       $output         Attribute key in $request (default: DTO FQCN)
+     * @param null|string                                       $body           Non-empty Valinor target type signature for parsed body
+     * @param null|string                                       $query          Non-empty Valinor target type signature for query params
+     * @param null|string                                       $route          Non-empty Valinor target type signature for route params
+     * @param null|string                                       $source         Non-empty Valinor target type signature for all HTTP sources combined
+     * @param null|string                                       $output         Attribute key in $request (default: exact target type signature)
      * @param null|class-string<MappingErrorResponderInterface> $errorResponder
      * @param mixed[]                                           $methods        HTTP method filter. Empty = any method.
      */
@@ -80,6 +81,8 @@ final readonly class MapRequest implements AggregatingRouteAttributeModifierInte
                 'MapRequest: at least one of $body, $query, $route or $source must be set.',
             );
         }
+
+        $this->assertDistinctOutputKeys();
 
         $this->methods = (new HttpMethodNormalizer())->normalizeList($methods);
     }
@@ -127,9 +130,7 @@ final readonly class MapRequest implements AggregatingRouteAttributeModifierInte
     }
 
     /**
-     * @param null|class-string $value
-     *
-     * @return null|class-string
+     * @param null|string $value Non-empty Valinor target type signature
      */
     private function validateClassString(string $field, ?string $value): ?string
     {
@@ -155,6 +156,35 @@ final readonly class MapRequest implements AggregatingRouteAttributeModifierInte
         $this->assertNonEmptyStringWithoutSurroundingWhitespace($field, $value);
 
         return $value;
+    }
+
+    private function assertDistinctOutputKeys(): void
+    {
+        $seen = [];
+
+        foreach ([
+            'body'   => $this->body,
+            'query'  => $this->query,
+            'route'  => $this->route,
+            'source' => $this->source,
+        ] as $source => $target) {
+            if (null === $target) {
+                continue;
+            }
+
+            $key = $this->output ?? $target;
+
+            if (array_key_exists($key, $seen)) {
+                throw new InvalidMapRequestConfiguration(sprintf(
+                    "MapRequest: output key '%s' is used by both $%s and $%s.",
+                    $key,
+                    $seen[$key],
+                    $source,
+                ));
+            }
+
+            $seen[$key] = $source;
+        }
     }
 
     private function assertNonEmptyStringWithoutSurroundingWhitespace(string $field, ?string $value): void

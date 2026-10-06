@@ -49,7 +49,6 @@ final class MapRequestTest extends TestCase
             body: self::class,
             query: TestCase::class,
             route: MapRequest::class,
-            output: 'form',
             methods: [RequestMethodInterface::METHOD_POST, RequestMethodInterface::METHOD_PUT],
             errorResponder: DefaultMappingErrorResponder::class,
         );
@@ -63,7 +62,7 @@ final class MapRequestTest extends TestCase
         self::assertSame(TestCase::class, $mapping['query']);
         self::assertSame(MapRequest::class, $mapping['route']);
         self::assertNull($mapping['source']);
-        self::assertSame('form', $mapping['output']);
+        self::assertNull($mapping['output']);
         self::assertSame(DefaultMappingErrorResponder::class, $mapping['errorResponder']);
         self::assertSame([RequestMethodInterface::METHOD_POST, RequestMethodInterface::METHOD_PUT], $mapping['methods']);
     }
@@ -127,6 +126,182 @@ final class MapRequestTest extends TestCase
         self::assertSame(self::class, $attr->body);
         self::assertSame(TestCase::class, $attr->query);
         self::assertSame(MapRequest::class, $attr->route);
+    }
+
+    /** @param array<string, string> $args */
+    #[Test]
+    #[DataProvider('intrinsicCollisionProvider')]
+    public function intrinsicOutputCollisionsAreRejected(array $args, string $effectiveOutput): void
+    {
+        $this->expectException(InvalidMapRequestConfiguration::class);
+        $this->expectExceptionMessage($effectiveOutput);
+
+        new MapRequest(...$args);
+    }
+
+    /** @param array<string, string> $args */
+    #[Test]
+    #[DataProvider('intrinsicCollisionProvider')]
+    public function intrinsicCollisionMessageNamesFirstConflictingSources(
+        array $args,
+        string $effectiveOutput,
+        string $firstSource,
+        string $secondSource,
+    ): void {
+        try {
+            new MapRequest(...$args);
+        } catch (InvalidMapRequestConfiguration $caught) {
+            self::assertStringContainsString($effectiveOutput, $caught->getMessage());
+            self::assertStringContainsString($firstSource, $caught->getMessage());
+            self::assertStringContainsString($secondSource, $caught->getMessage());
+
+            return;
+        }
+
+        self::fail('Expected intrinsic output collision to be rejected by the constructor.');
+    }
+
+    /** @param array<string, string> $args */
+    #[Test]
+    #[DataProvider('intrinsicCollisionProvider')]
+    public function intrinsicCollisionIsRejectedRegardlessOfMethodFilter(array $args, string $effectiveOutput): void
+    {
+        $this->expectException(InvalidMapRequestConfiguration::class);
+        $this->expectExceptionMessage($effectiveOutput);
+
+        new MapRequest(...$args, methods: ['PATCH']);
+    }
+
+    /** @return iterable<string, array{array<string, string>, string, string, string}> */
+    public static function intrinsicCollisionProvider(): iterable
+    {
+        yield 'body query explicit output' => [[
+            'body'   => self::class,
+            'query'  => TestCase::class,
+            'output' => 'payload',
+        ], 'payload', 'body', 'query'];
+
+        yield 'body route explicit output' => [[
+            'body'   => self::class,
+            'route'  => TestCase::class,
+            'output' => 'payload',
+        ], 'payload', 'body', 'route'];
+
+        yield 'query route explicit output' => [[
+            'query'  => self::class,
+            'route'  => TestCase::class,
+            'output' => 'payload',
+        ], 'payload', 'query', 'route'];
+
+        yield 'all sources explicit output' => [[
+            'body'   => self::class,
+            'query'  => TestCase::class,
+            'route'  => MapRequest::class,
+            'output' => 'payload',
+        ], 'payload', 'body', 'query'];
+
+        yield 'body query same target' => [[
+            'body'  => self::class,
+            'query' => self::class,
+        ], self::class, 'body', 'query'];
+
+        yield 'body route same target' => [[
+            'body'  => self::class,
+            'route' => self::class,
+        ], self::class, 'body', 'route'];
+
+        yield 'query route same target' => [[
+            'query' => self::class,
+            'route' => self::class,
+        ], self::class, 'query', 'route'];
+
+        yield 'all sources same target' => [[
+            'body'  => self::class,
+            'query' => self::class,
+            'route' => self::class,
+        ], self::class, 'body', 'query'];
+    }
+
+    /** @param array<string, string> $args */
+    #[Test]
+    #[DataProvider('zeroCollisionProvider')]
+    public function numericZeroOutputCollisionsAreRejected(array $args): void
+    {
+        $this->expectException(InvalidMapRequestConfiguration::class);
+        $this->expectExceptionMessage('0');
+
+        new MapRequest(...$args);
+    }
+
+    /** @return iterable<string, array{array<string, string>}> */
+    public static function zeroCollisionProvider(): iterable
+    {
+        yield 'explicit zero output' => [[
+            'body'   => self::class,
+            'query'  => TestCase::class,
+            'output' => '0',
+        ]];
+
+        yield 'zero target default output' => [[
+            'body'  => '0',
+            'query' => '0',
+        ]];
+    }
+
+    #[Test]
+    #[DataProvider('singleSourceProvider')]
+    public function singleSourceWithExplicitOutputIsAllowed(string $source): void
+    {
+        $attr = new MapRequest(...[
+            $source  => self::class,
+            'output' => 'payload',
+        ]);
+
+        self::assertSame('payload', $attr->output);
+        self::assertSame('payload', $attr->mergeDefaults([])['valinor_mappings'][0]['output']);
+    }
+
+    #[Test]
+    #[DataProvider('singleSourceProvider')]
+    public function singleSourceRetainsNumericZeroOutput(string $source): void
+    {
+        $attr = new MapRequest(...[
+            $source  => self::class,
+            'output' => '0',
+        ]);
+
+        self::assertSame('0', $attr->output);
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function singleSourceProvider(): iterable
+    {
+        yield 'body' => ['body'];
+
+        yield 'query' => ['query'];
+
+        yield 'route' => ['route'];
+
+        yield 'source' => ['source'];
+    }
+
+    #[Test]
+    #[DataProvider('targetSignatureProvider')]
+    public function targetSignaturesArePreservedWithoutClassValidation(string $target): void
+    {
+        self::assertSame($target, (new MapRequest(query: $target))->query);
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function targetSignatureProvider(): iterable
+    {
+        yield 'DTO class' => [self::class];
+
+        yield 'generic DTO' => ['Example\GenericDto<int>'];
+
+        yield 'array shape' => ['array{page: int}'];
+
+        yield 'grammar interpreted later' => ['array{'];
     }
 
     #[Test]

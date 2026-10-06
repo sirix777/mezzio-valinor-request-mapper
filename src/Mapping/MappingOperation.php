@@ -12,7 +12,7 @@ use Sirix\Mezzio\Valinor\Attribute\MapRequest;
 final readonly class MappingOperation
 {
     /**
-     * @param class-string                    $dtoClass
+     * @param string                          $dtoClass Non-empty Valinor target type signature
      * @param 'body'|'query'|'route'|'source' $source
      */
     public function __construct(

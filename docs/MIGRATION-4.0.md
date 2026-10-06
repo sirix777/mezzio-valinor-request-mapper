@@ -1,7 +1,8 @@
 # Migrating to 4.0
 
 4.0 makes mapper configuration always strict, requires explicitly configured
-error responders, lets empty route metadata disable mapping, and includes the
+error responders, rejects intrinsic output-key collisions during construction,
+lets empty route metadata disable mapping, and includes the
 numeric JSON path and inherited callable discovery corrections below. When
 upgrading from an older release, apply the
 [3.0 migration guide](MIGRATION-3.0.md) first; for
@@ -98,3 +99,38 @@ attributes from the called child class, matching equivalent array callables.
 Attributes on the inherited method remain active; parent class attributes are
 not inherited automatically. Check routes using child-class method callables
 and update their expected mappings or declare the intended child attributes.
+
+## 7. Split definitions with colliding output keys
+
+An individual `MapRequest` now throws `InvalidMapRequestConfiguration` during
+construction when multiple sources resolve to the same output key. This also
+applies while parsing each `valinor_mappings` item and before method filtering.
+For example, `MapRequest(body: BodyDto::class, query: QueryDto::class,
+output: 'payload')` is invalid even with `methods: ['PATCH']`; so is mapping
+the same target from both body and query without an explicit output.
+The exception names the repeated key and the first two conflicting sources.
+
+Use separate definitions with distinct output keys:
+
+```php
+#[MapRequest(body: BodyDto::class, output: 'bodyPayload')]
+#[MapRequest(query: QueryDto::class, output: 'queryPayload')]
+final class Handler implements RequestHandlerInterface
+{
+    // ...
+}
+```
+
+For route options, split the item into two `valinor_mappings` items with the
+same distinct outputs. Multiple sources with different targets and no explicit
+output remain valid. Separate definitions may still reuse an output for
+non-overlapping HTTP methods: collisions across definitions are checked only
+after method filtering.
+
+Targets continue to accept non-empty Valinor type signatures, including DTO
+FQCNs, generic DTOs and array shapes. Type grammar is interpreted by Valinor
+during mapping. The default output key is the exact target string; for
+`query: 'array{page: int}'`, use `output: 'payload'` to read the resulting array
+with `$request->getAttribute('payload')`. The existing `MappingOperation` and
+`MappingErrorContext` `$dtoClass` fields carry the target signature and retain
+their names.

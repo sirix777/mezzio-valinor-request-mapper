@@ -49,7 +49,7 @@ final class MapRequestOptionsParserTest extends TestCase
                 'body'           => self::class,
                 'query'          => TestCase::class,
                 'route'          => MapRequest::class,
-                'output'         => 'form',
+                'output'         => null,
                 'errorResponder' => DefaultMappingErrorResponderForParserTest::class,
                 'methods'        => ['post', 'PUT'],
             ],
@@ -61,7 +61,7 @@ final class MapRequestOptionsParserTest extends TestCase
         self::assertSame(TestCase::class, $mapping->query);
         self::assertSame(MapRequest::class, $mapping->route);
         self::assertNull($mapping->source);
-        self::assertSame('form', $mapping->output);
+        self::assertNull($mapping->output);
         self::assertSame(DefaultMappingErrorResponderForParserTest::class, $mapping->errorResponder);
         self::assertSame(['POST', 'PUT'], $mapping->methods);
     }
@@ -82,6 +82,44 @@ final class MapRequestOptionsParserTest extends TestCase
 
         self::assertCount(1, $result);
         self::assertSame(self::class, $result[0]->body);
+    }
+
+    #[Test]
+    public function parsesSingleSourceWithExplicitOutput(): void
+    {
+        $result = $this->parser->parse([[
+            'query'  => 'array{page: int}',
+            'output' => 'payload',
+        ]]);
+
+        self::assertSame('array{page: int}', $result[0]->query);
+        self::assertSame('payload', $result[0]->output);
+    }
+
+    /** @param array<string, string> $mapping */
+    #[Test]
+    #[DataProvider('intrinsicCollisionProvider')]
+    public function intrinsicCollisionInRouteOptionsIsRejected(array $mapping, string $effectiveOutput): void
+    {
+        $this->expectException(InvalidMapRequestConfiguration::class);
+        $this->expectExceptionMessage($effectiveOutput);
+
+        $this->parser->parse([$mapping]);
+    }
+
+    /** @return iterable<string, array{array<string, string>, string}> */
+    public static function intrinsicCollisionProvider(): iterable
+    {
+        yield 'shared explicit output' => [[
+            'body'   => self::class,
+            'query'  => TestCase::class,
+            'output' => 'payload',
+        ], 'payload'];
+
+        yield 'same default target' => [[
+            'body'  => self::class,
+            'query' => self::class,
+        ], self::class];
     }
 
     #[Test]

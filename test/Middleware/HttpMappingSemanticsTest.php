@@ -16,6 +16,7 @@ use Laminas\Diactoros\ServerRequest;
 use Laminas\Diactoros\StreamFactory;
 use Mezzio\Router\Route;
 use Mezzio\Router\RouteResult;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -139,6 +140,62 @@ final class HttpMappingSemanticsTest extends TestCase
         $body     = json_decode((string) $response->getBody(), true);
 
         self::assertSame(2, $body['page']);
+    }
+
+    #[Test]
+    #[DataProvider('arrayShapeMappingProvider')]
+    public function queryArrayShapeUsesExplicitOutput(bool $routeOptions): void
+    {
+        $middleware = $this->middleware([
+            'allow_scalar_value_casting' => false,
+        ]);
+        $request = $this->request(RequestMethodInterface::METHOD_GET, query: [
+            'page' => '2',
+        ]);
+        $routeHandler = new #[MapRequest(query: 'array{page: int}', output: 'payload')]
+        class implements MiddlewareInterface {
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                return $handler->handle($request);
+            }
+        };
+        $route = new Route('/example', $routeHandler, [RequestMethodInterface::METHOD_GET]);
+
+        if ($routeOptions) {
+            $route->setOptions([
+                'valinor_mappings' => [[
+                    'query'  => 'array{page: int}',
+                    'output' => 'payload',
+                ]],
+            ]);
+        }
+
+        $request    = $request->withAttribute(RouteResult::class, RouteResult::fromRoute($route, []));
+        $downstream = new class implements RequestHandlerInterface {
+            public ?ServerRequestInterface $request = null;
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                $this->request = $request;
+
+                return new EmptyResponse();
+            }
+        };
+
+        $middleware->process($request, $downstream);
+
+        self::assertNotNull($downstream->request);
+        self::assertSame([
+            'page' => 2,
+        ], $downstream->request->getAttribute('payload'));
+    }
+
+    /** @return iterable<string, array{bool}> */
+    public static function arrayShapeMappingProvider(): iterable
+    {
+        yield 'attribute' => [false];
+
+        yield 'route options' => [true];
     }
 
     #[Test]

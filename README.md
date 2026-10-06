@@ -225,11 +225,11 @@ final class CreateUserHandler implements RequestHandlerInterface
 final readonly class MapRequest
 {
     public function __construct(
-        ?string $body = null,           // DTO class from parsed body
-        ?string $query = null,          // DTO class from query parameters
-        ?string $route = null,          // DTO class from route parameters
-        ?string $source = null,         // DTO class using all HTTP sources
-        ?string $output = null,         // request attribute key; defaults to DTO class
+        ?string $body = null,           // Valinor target from parsed body
+        ?string $query = null,          // Valinor target from query parameters
+        ?string $route = null,          // Valinor target from route parameters
+        ?string $source = null,         // Valinor target using all HTTP sources
+        ?string $output = null,         // request attribute key; defaults to exact target string
         array $methods = [],            // HTTP method filter
         ?string $errorResponder = null, // responder service class
     ) {}
@@ -242,7 +242,12 @@ Rules:
   `body/query/route`
 - source, output, and responder strings must be non-empty and have no leading
   or trailing whitespace
-- if `output` is omitted, mapped DTO is stored under its class name
+- targets accept Valinor type signatures, including DTO FQCNs, generic DTOs
+  such as `App\GenericDto<int>`, and array shapes such as `array{page: int}`.
+  Valinor interprets the type grammar during mapping; the attribute does not
+  validate class existence or parse that grammar
+- if `output` is omitted, the mapped value is stored under the exact target
+  string (a DTO FQCN for class targets). Use explicit `output` for a friendly key
 - `methods = []` means any HTTP method
 - non-empty `methods` must be a list of non-empty HTTP tokens; they are
   normalized (`post`, `Post` -> `POST`)
@@ -253,6 +258,28 @@ Rules:
 - active operations must have distinct effective output keys. For example, two
   sources that map the same DTO need separate `output` values; the package no
   longer lets a later operation overwrite an earlier DTO.
+- each definition is checked when `MapRequest` is constructed, including when
+  route options are parsed. Multiple sources sharing one `output`, or the same
+  target without `output`, are rejected even with a method filter. Multiple
+  sources with different targets and no explicit `output` remain valid;
+  use repeated attributes for separate explicit output keys
+
+For an array shape, query `page=2` maps to `['page' => 2]` at `payload`:
+
+```php
+#[MapRequest(query: 'array{page: int}', output: 'payload')]
+final class PaginationHandler implements RequestHandlerInterface
+{
+    public function handle(ServerRequestInterface $request): ResponseInterface
+    {
+        $pagination = $request->getAttribute('payload');
+        // ...
+    }
+}
+```
+
+Without `output`, retrieve it with `$request->getAttribute('array{page: int}')`.
+Equivalent `valinor_mappings` route options accept the same target signatures.
 
 For example, this is valid because the output keys differ:
 
@@ -510,8 +537,9 @@ On a mapping failure, the middleware delegates to
 `MappingErrorResponderInterface`. The responder receives a
 `MappingErrorContext` whose `error` is either Valinor `MappingError` or this
 package's `RequestInputError`, plus the current PSR-7 request, `MapRequest`,
-DTO class, mapping source (`body`, `query`, `route`, or `source`), and request
-attribute key. For `RequestInputError`, inspect `reason` and `inputSource`
+Valinor target signature in the existing `$dtoClass` field, mapping source
+(`body`, `query`, `route`, or `source`), and request attribute key.
+For `RequestInputError`, inspect `reason` and `inputSource`
 instead of calling Valinor's `messages()`.
 
 The package registers `MappingErrorResponderInterface` to the built-in

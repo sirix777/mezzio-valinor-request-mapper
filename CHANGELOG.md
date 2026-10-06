@@ -28,6 +28,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Breaking: an individual `MapRequest` now rejects repeated effective output
+  keys during construction (and route-options parsing), even if its method
+  filter would exclude the current request. Split multiple sources sharing an
+  explicit output, or identical targets without an output, into separate
+  definitions with distinct outputs. Different targets without an explicit
+  output remain valid; collisions across definitions are still checked after
+  method filtering.
 - Breaking: explicit `valinor_mappings: []` disables request mapping for the
   route, including handler attribute discovery, input reads/validation and
   mapper calls. Remove the key to retain reflection discovery. A non-empty
@@ -57,6 +64,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Target PHPDoc and attribute documentation now describe non-empty Valinor
+  type signatures, including generic DTOs and array shapes. The default output
+  key is the exact target string; the existing `$dtoClass` fields retain their
+  names and carry that signature.
 - Inherited first-class handler callables now discover attributes from the
   called child class, matching equivalent array callables. Attributes on the
   inherited method remain active; parent class attributes are not inherited.
@@ -73,9 +84,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - These changes require a major release under the project's Semantic
   Versioning policy because strict mapper configuration, required explicit
-  responders, empty route metadata, numeric JSON paths and inherited callable
-  discovery change observable behavior. Additive limits remain disabled by
-  default and could be released separately.
+  responders, early output-key rejection, empty route metadata, numeric JSON
+  paths and inherited callable discovery change observable behavior. Additive
+  limits remain disabled by default and could be released separately.
 
 ## [3.0.0] - 2026-09-12
 
