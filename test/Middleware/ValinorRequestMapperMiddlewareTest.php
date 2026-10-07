@@ -6,6 +6,7 @@ namespace Sirix\Mezzio\Valinor\Test\Middleware;
 
 use Closure;
 use CuyZ\Valinor\Mapper\Configurator\ConvertKeysToCamelCase;
+use CuyZ\Valinor\Mapper\MappingError;
 use CuyZ\Valinor\Mapper\TreeMapper;
 use CuyZ\Valinor\MapperBuilder;
 use Fig\Http\Message\RequestMethodInterface;
@@ -1878,6 +1879,110 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
         ], json_decode((string) $response->getBody(), true));
         self::assertNull($defaultResponder->context);
         self::assertSame(0, $handler->calls);
+    }
+
+    /**
+     * @param array<string, string>                             $query
+     * @param null|class-string<MappingError|RequestInputError> $errorType
+     */
+    #[Test]
+    #[DataProvider('namedResponderRequests')]
+    public function namedResponderIsUsedOnlyForErrors(bool $routeOptions, array $query, ?string $errorType): void
+    {
+        $responder        = new CaptureResponder();
+        $defaultResponder = new CaptureResponder();
+        $container        = $this->createMock(ContainerInterface::class);
+        $container->expects(null === $errorType ? self::never() : self::once())
+            ->method('has')->with('problem.details')->willReturn(true)
+        ;
+        $container->expects(null === $errorType ? self::never() : self::once())
+            ->method('get')->with('problem.details')->willReturn($responder)
+        ;
+        $middleware = RequestMapperMiddlewareBuilder::build(
+            $this->defaultMapper(),
+            $defaultResponder,
+            $container,
+            MappingErrorResponderResolverFactory::class,
+        );
+        $handler = new #[MapRequest(query: RequiredRequest::class, errorResponder: 'problem.details')]
+        class implements MiddlewareInterface, RequestHandlerInterface {
+            public int $calls = 0;
+
+            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+            {
+                return $this->handle($request);
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                ++$this->calls;
+
+                return new JsonResponse($request->getAttribute(RequiredRequest::class));
+            }
+        };
+        $route = new Route('/example', $handler, [RequestMethodInterface::METHOD_GET]);
+
+        if ($routeOptions) {
+            $route->setOptions([
+                'valinor_mappings' => [[
+                    'query'          => RequiredRequest::class,
+                    'errorResponder' => 'problem.details',
+                ]],
+            ]);
+        }
+
+        $request = $this->request(RequestMethodInterface::METHOD_GET, query: $query)
+            ->withAttribute(RouteResult::class, RouteResult::fromRoute($route, []))
+        ;
+        $response = $middleware->process($request, $this->nextHandler($handler));
+
+        self::assertNull($defaultResponder->context);
+
+        if (null === $errorType) {
+            self::assertNull($responder->context);
+            self::assertSame(1, $handler->calls);
+            self::assertSame(200, $response->getStatusCode());
+            self::assertSame([
+                'name' => 'mapped',
+            ], json_decode((string) $response->getBody(), true));
+
+            return;
+        }
+
+        self::assertSame(0, $handler->calls);
+        self::assertSame(409, $response->getStatusCode());
+        self::assertSame([
+            'handled' => true,
+        ], json_decode((string) $response->getBody(), true));
+        self::assertNotNull($responder->context);
+        self::assertInstanceOf($errorType, $responder->context->error);
+        self::assertSame('problem.details', $responder->context->mapRequest->errorResponder);
+        self::assertSame('query', $responder->context->source);
+        self::assertSame(RequiredRequest::class, $responder->context->requestAttributeKey);
+    }
+
+    /** @return iterable<string, array{bool, array<string, string>, null|class-string<MappingError|RequestInputError>}> */
+    public static function namedResponderRequests(): iterable
+    {
+        yield 'attribute mapping error' => [false, [], MappingError::class];
+
+        yield 'options mapping error' => [true, [], MappingError::class];
+
+        yield 'attribute input error' => [false, [
+            'name' => "\xB1\x31",
+        ], RequestInputError::class];
+
+        yield 'options input error' => [true, [
+            'name' => "\xB1\x31",
+        ], RequestInputError::class];
+
+        yield 'attribute success' => [false, [
+            'name' => 'mapped',
+        ], null];
+
+        yield 'options success' => [true, [
+            'name' => 'mapped',
+        ], null];
     }
 
     /**

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Per-mapping error responder PHPDoc now accepts fully qualified class names
+  or non-empty named container service IDs, such as `problem.details`, matching
+  the existing runtime behavior. Both `MapRequest` and `valinor_mappings` use
+  registered `MappingErrorResponderInterface` services; resolution remains lazy
+  on mapping/input errors, and `null` retains the application-wide/default responder.
+
 ### Added
 
 - Persistent-worker soak CLI with static and ephemeral route modes, changing

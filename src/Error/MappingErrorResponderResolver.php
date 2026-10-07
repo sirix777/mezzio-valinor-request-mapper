@@ -14,7 +14,7 @@ final readonly class MappingErrorResponderResolver
     public function __construct(private MappingErrorResponderInterface $defaultResponder, private ContainerResolver $containerResolver) {}
 
     /**
-     * @param null|class-string<MappingErrorResponderInterface> $responderClass
+     * @param null|non-empty-string $responderClass
      *
      * @throws ContainerExceptionInterface
      * @throws MissingContainerServiceException when the explicit responder is not registered

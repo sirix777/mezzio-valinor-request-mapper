@@ -6,7 +6,6 @@ namespace Sirix\Mezzio\Valinor\Attribute;
 
 use Attribute;
 use Sirix\Mezzio\Routing\Contracts\AggregatingRouteAttributeModifierInterface;
-use Sirix\Mezzio\Valinor\Error\MappingErrorResponderInterface;
 use Sirix\Mezzio\Valinor\Exception\InvalidMapRequestConfiguration;
 use Sirix\Mezzio\Valinor\Mapping\HttpMethodNormalizer;
 use Sirix\Mezzio\Valinor\Middleware\ValinorRequestMapperMiddleware;
@@ -32,7 +31,7 @@ final readonly class MapRequest implements AggregatingRouteAttributeModifierInte
 
     public ?string $output;
 
-    /** @var null|class-string<MappingErrorResponderInterface> */
+    /** @var null|non-empty-string */
     public ?string $errorResponder;
 
     /**
@@ -41,13 +40,13 @@ final readonly class MapRequest implements AggregatingRouteAttributeModifierInte
     public array $methods;
 
     /**
-     * @param null|string                                       $body           Non-empty Valinor target type signature for parsed body
-     * @param null|string                                       $query          Non-empty Valinor target type signature for query params
-     * @param null|string                                       $route          Non-empty Valinor target type signature for route params
-     * @param null|string                                       $source         Non-empty Valinor target type signature for all HTTP sources combined
-     * @param null|string                                       $output         Attribute key in $request (default: exact target type signature)
-     * @param null|class-string<MappingErrorResponderInterface> $errorResponder
-     * @param mixed[]                                           $methods        HTTP method filter. Empty = any method.
+     * @param null|string           $body           Non-empty Valinor target type signature for parsed body
+     * @param null|string           $query          Non-empty Valinor target type signature for query params
+     * @param null|string           $route          Non-empty Valinor target type signature for route params
+     * @param null|string           $source         Non-empty Valinor target type signature for all HTTP sources combined
+     * @param null|string           $output         Attribute key in $request (default: exact target type signature)
+     * @param null|non-empty-string $errorResponder
+     * @param mixed[]               $methods        HTTP method filter. Empty = any method.
      */
     public function __construct(
         ?string $body = null,
@@ -140,9 +139,9 @@ final readonly class MapRequest implements AggregatingRouteAttributeModifierInte
     }
 
     /**
-     * @param null|class-string<MappingErrorResponderInterface> $value
+     * @param null|non-empty-string $value
      *
-     * @return null|class-string<MappingErrorResponderInterface>
+     * @return null|non-empty-string
      */
     private function validateResponderClassString(string $field, ?string $value): ?string
     {

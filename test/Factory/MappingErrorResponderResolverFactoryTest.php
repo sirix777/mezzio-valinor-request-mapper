@@ -6,6 +6,7 @@ namespace Sirix\Mezzio\Valinor\Test\Factory;
 
 use Laminas\Diactoros\ResponseFactory;
 use Laminas\Diactoros\StreamFactory;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -46,17 +47,19 @@ final class MappingErrorResponderResolverFactoryTest extends TestCase
         self::assertSame($defaultResponder, $resolver->resolve(null));
     }
 
+    /** @param non-empty-string $serviceId */
     #[Test]
-    public function resolvesAnAttributeResponderFromTheContainer(): void
+    #[DataProvider('explicitResponderIds')]
+    public function resolvesAnAttributeResponderFromTheContainer(string $serviceId): void
     {
         $defaultResponder   = new ProblemDetailsResponder();
         $attributeResponder = new ProblemDetailsResponder();
         $resolver           = (new MappingErrorResponderResolverFactory())($this->container([
             MappingErrorResponderInterface::class => $defaultResponder,
-            ProblemDetailsResponder::class        => $attributeResponder,
+            $serviceId                            => $attributeResponder,
         ]));
 
-        self::assertSame($attributeResponder, $resolver->resolve(ProblemDetailsResponder::class));
+        self::assertSame($attributeResponder, $resolver->resolve($serviceId));
     }
 
     #[Test]
@@ -69,17 +72,23 @@ final class MappingErrorResponderResolverFactoryTest extends TestCase
         ]));
     }
 
+    /** @param non-empty-string $serviceId */
     #[Test]
-    public function missingExplicitResponderIsRejected(): void
+    #[DataProvider('explicitResponderIds')]
+    public function missingExplicitResponderIsRejected(string $serviceId): void
     {
         $resolver = (new MappingErrorResponderResolverFactory())($this->container([
             MappingErrorResponderInterface::class => new ProblemDetailsResponder(),
         ]));
 
-        $this->expectException(MissingContainerServiceException::class);
-        $this->expectExceptionMessage(ProblemDetailsResponder::class);
-
-        $resolver->resolve(ProblemDetailsResponder::class);
+        try {
+            $resolver->resolve($serviceId);
+            self::fail('A missing explicit responder must be rejected.');
+        } catch (MissingContainerServiceException $caught) {
+            self::assertStringContainsString($serviceId, $caught->getMessage());
+            self::assertStringContainsString(MappingErrorResponderResolverFactory::class, $caught->getMessage());
+            self::assertNull($caught->getPrevious());
+        }
     }
 
     #[Test]
@@ -95,48 +104,68 @@ final class MappingErrorResponderResolverFactoryTest extends TestCase
         $resolver->resolve(UnregisteredResponder::class);
     }
 
+    /** @param non-empty-string $serviceId */
     #[Test]
-    public function incorrectlyTypedExplicitResponderIsRejected(): void
+    #[DataProvider('explicitResponderIds')]
+    public function incorrectlyTypedExplicitResponderIsRejected(string $serviceId): void
     {
         $resolver = (new MappingErrorResponderResolverFactory())($this->container([
             MappingErrorResponderInterface::class => new ProblemDetailsResponder(),
-            ProblemDetailsResponder::class        => new stdClass(),
+            $serviceId                            => new stdClass(),
         ]));
 
-        $this->expectException(InvalidContainerServiceException::class);
-        $this->expectExceptionMessage(ProblemDetailsResponder::class);
-
-        $resolver->resolve(ProblemDetailsResponder::class);
+        try {
+            $resolver->resolve($serviceId);
+            self::fail('An incorrectly typed explicit responder must be rejected.');
+        } catch (InvalidContainerServiceException $caught) {
+            self::assertStringContainsString($serviceId, $caught->getMessage());
+            self::assertStringContainsString(MappingErrorResponderResolverFactory::class, $caught->getMessage());
+            self::assertStringContainsString(MappingErrorResponderInterface::class, $caught->getMessage());
+            self::assertStringContainsString(stdClass::class, $caught->getMessage());
+            self::assertNull($caught->getPrevious());
+        }
     }
 
+    /** @param non-empty-string $serviceId */
     #[Test]
-    public function explicitResponderFactoryFailureIsNotSwallowed(): void
+    #[DataProvider('explicitResponderIds')]
+    public function explicitResponderFactoryFailureIsNotSwallowed(string $serviceId): void
     {
         $thrownByServiceFactory = new RuntimeException('Responder factory failure.');
         $resolver               = (new MappingErrorResponderResolverFactory())($this->failingResponderContainer($thrownByServiceFactory));
 
         try {
-            $resolver->resolve(ProblemDetailsResponder::class);
+            $resolver->resolve($serviceId);
             self::fail('The responder factory failure must propagate.');
         } catch (RuntimeException $caught) {
             self::assertSame($thrownByServiceFactory, $caught);
         }
     }
 
+    /** @param non-empty-string $serviceId */
     #[Test]
-    public function explicitResponderNotFoundFailurePreservesItsCauseAndFactoryContext(): void
+    #[DataProvider('explicitResponderIds')]
+    public function explicitResponderNotFoundFailurePreservesItsCauseAndFactoryContext(string $serviceId): void
     {
         $original = new class('Responder dependency not found.') extends RuntimeException implements NotFoundExceptionInterface {};
         $resolver = (new MappingErrorResponderResolverFactory())($this->failingResponderContainer($original));
 
         try {
-            $resolver->resolve(ProblemDetailsResponder::class);
+            $resolver->resolve($serviceId);
             self::fail('The responder not-found failure must propagate.');
         } catch (MissingContainerServiceException $caught) {
             self::assertSame($original, $caught->getPrevious());
-            self::assertStringContainsString(ProblemDetailsResponder::class, $caught->getMessage());
+            self::assertStringContainsString($serviceId, $caught->getMessage());
             self::assertStringContainsString(MappingErrorResponderResolverFactory::class, $caught->getMessage());
         }
+    }
+
+    /** @return iterable<string, array{non-empty-string}> */
+    public static function explicitResponderIds(): iterable
+    {
+        yield 'FQCN' => [ProblemDetailsResponder::class];
+
+        yield 'named service' => ['problem.details'];
     }
 
     private function failingResponderContainer(RuntimeException $exception): ContainerInterface

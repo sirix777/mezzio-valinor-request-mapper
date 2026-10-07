@@ -231,7 +231,7 @@ final readonly class MapRequest
         ?string $source = null,         // Valinor target using all HTTP sources
         ?string $output = null,         // request attribute key; defaults to exact target string
         array $methods = [],            // HTTP method filter
-        ?string $errorResponder = null, // responder service class
+        ?string $errorResponder = null, // FQCN or named responder service ID
     ) {}
 }
 ```
@@ -640,13 +640,32 @@ receives the container and creates the responder with its dependencies.
 Registering the concrete class is also required when it is referenced by a
 per-mapping `errorResponder` attribute.
 
-For a single mapping, use `errorResponder` on `MapRequest` and register that
-class in the container. The middleware never instantiates this class-string;
+For a single mapping, use `errorResponder` on `MapRequest` with a fully qualified
+class name or a named container service ID. The middleware never constructs the service directly;
 an explicit responder must implement `MappingErrorResponderInterface` and be
 registered under the requested identifier.
 
 ```php
 #[MapRequest(body: CreateUserRequest::class, errorResponder: ProblemDetailsResponder::class)]
+final class CreateUserHandler implements RequestHandlerInterface
+{
+    // ...
+}
+```
+
+Named service IDs also work in `valinor_mappings`. For example, register
+`problem.details` using the same responder factory and use that ID on the mapping:
+
+```php
+return [
+    'dependencies' => [
+        'factories' => [
+            'problem.details' => ProblemDetailsResponderFactory::class,
+        ],
+    ],
+];
+
+#[MapRequest(body: CreateUserRequest::class, errorResponder: 'problem.details')]
 final class CreateUserHandler implements RequestHandlerInterface
 {
     // ...
