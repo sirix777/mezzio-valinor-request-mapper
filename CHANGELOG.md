@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-10-07
+
 ### Added
 
 - Persistent-worker soak CLI with static and ephemeral route modes, changing
