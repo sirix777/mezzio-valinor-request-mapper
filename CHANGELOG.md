@@ -7,14 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-
-- Per-mapping error responder PHPDoc now accepts fully qualified class names
-  or non-empty named container service IDs, such as `problem.details`, matching
-  the existing runtime behavior. Both `MapRequest` and `valinor_mappings` use
-  registered `MappingErrorResponderInterface` services; resolution remains lazy
-  on mapping/input errors, and `null` retains the application-wide/default responder.
-
 ### Added
 
 - Persistent-worker soak CLI with static and ephemeral route modes, changing
@@ -36,6 +28,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The default error responder rejects obviously oversized retained paths and
+  messages before JSON encoding when `max_response_bytes` is enabled. Retained
+  formatter and UTF-8 failures still propagate; the exact serialized-byte cap
+  remains in effect and does not bound total mapper memory.
 - Breaking: built-in configuration-reading factories accept only `mapper`,
   `input_limits` and `error_response` within `sirix_mezzio_valinor`.
   Unknown sections throw `InvalidMapRequestConfiguration` with the full
@@ -83,6 +79,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Per-mapping error responder PHPDoc now accepts fully qualified class names
+  or non-empty named container service IDs, such as `problem.details`, matching
+  the existing runtime behavior. Both `MapRequest` and `valinor_mappings` use
+  registered `MappingErrorResponderInterface` services; resolution remains lazy
+  on mapping/input errors, and `null` retains the application-wide/default responder.
 - Target PHPDoc and attribute documentation now describe non-empty Valinor
   type signatures, including generic DTOs and array shapes. The default output
   key is the exact target string; the existing `$dtoClass` fields retain their

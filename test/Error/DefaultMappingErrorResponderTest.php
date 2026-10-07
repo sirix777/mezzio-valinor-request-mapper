@@ -11,10 +11,13 @@ use CuyZ\Valinor\Mapper\Tree\Message\Formatter\MessageFormatter;
 use CuyZ\Valinor\Mapper\Tree\Message\Messages;
 use CuyZ\Valinor\Mapper\Tree\Message\NodeMessage;
 use CuyZ\Valinor\MapperBuilder;
+use CuyZ\Valinor\Utility\String\StringFormatterError;
 use Exception;
+use JsonException;
 use Laminas\Diactoros\ResponseFactory;
 use Laminas\Diactoros\ServerRequest;
 use Laminas\Diactoros\StreamFactory;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
@@ -33,8 +36,12 @@ use stdClass;
 use function array_keys;
 use function array_map;
 use function array_values;
+use function extension_loaded;
 use function get_object_vars;
 use function json_decode;
+use function memory_get_peak_usage;
+use function memory_get_usage;
+use function memory_reset_peak_usage;
 use function str_repeat;
 use function strlen;
 
@@ -343,6 +350,253 @@ final class DefaultMappingErrorResponderTest extends TestCase
         );
         self::assertSame(422, $response->getStatusCode());
         self::assertSame('application/json', $response->getHeaderLine('Content-Type'));
+    }
+
+    #[Test]
+    public function oversizedPathDoesNotAllocateFullJsonBody(): void
+    {
+        $responder = new DefaultMappingErrorResponder(
+            new ResponseFactory(),
+            new StreamFactory(),
+            new ErrorResponseOptions(maxMessages: 1, maxResponseBytes: 256),
+        );
+        $warmup = $responder->respond(new MappingErrorContext(
+            $this->syntheticError($this->nodeMessage('a', 'bad')),
+            new ServerRequest(),
+            new MapRequest(body: RequiredRequest::class),
+            RequiredRequest::class,
+            'body',
+            RequiredRequest::class,
+        ));
+        unset($warmup);
+
+        $context = new MappingErrorContext(
+            $this->syntheticError($this->nodeMessage(str_repeat('x', 8 * 1024 * 1024), 'bad')),
+            new ServerRequest(),
+            new MapRequest(body: RequiredRequest::class),
+            RequiredRequest::class,
+            'body',
+            RequiredRequest::class,
+        );
+
+        memory_reset_peak_usage();
+        $before   = memory_get_usage(false);
+        $response = $responder->respond($context);
+        $extra    = memory_get_peak_usage(false) - $before;
+
+        self::assertLessThan(2 * 1024 * 1024, $extra);
+        self::assertSame(422, $response->getStatusCode());
+        self::assertSame('application/json', $response->getHeaderLine('Content-Type'));
+        $body = (string) $response->getBody();
+        self::assertSame(
+            '{"error":"Mapping failed","messages":{"":['
+            . '"Mapping error details exceed the response limit."]}}',
+            $body,
+        );
+        self::assertLessThanOrEqual(256, strlen($body));
+    }
+
+    #[Test]
+    public function oversizedPathPreservesInvalidUtf8BodyException(): void
+    {
+        $error = $this->syntheticError($this->nodeMessage(str_repeat('x', 8 * 1024 * 1024), "\xB1"));
+
+        // ICU rejects invalid UTF-8 while formatting; the regex fallback reaches JSON encoding.
+        $this->expectException(extension_loaded('intl') ? StringFormatterError::class : JsonException::class);
+
+        $this->respondTo($error, new ErrorResponseOptions(maxMessages: 1, maxResponseBytes: 256));
+    }
+
+    #[Test]
+    public function oversizedPathPreservesInvalidUtf8KeyException(): void
+    {
+        $error = $this->syntheticError($this->nodeMessage(str_repeat('x', 8 * 1024 * 1024) . "\xB1", 'bad'));
+
+        $this->expectException(extension_loaded('intl') ? StringFormatterError::class : JsonException::class);
+
+        $this->respondTo($error, new ErrorResponseOptions(maxMessages: 1, maxResponseBytes: 256));
+    }
+
+    #[Test]
+    #[DataProvider('invalidUtf8AfterOverflow')]
+    public function oversizedPathPreservesLaterInvalidUtf8Exception(string $path, string $body): void
+    {
+        $error = $this->syntheticError(
+            $this->nodeMessage(str_repeat('x', 8 * 1024 * 1024), 'bad'),
+            $this->nodeMessage($path, $body),
+        );
+
+        $this->expectException(extension_loaded('intl') ? StringFormatterError::class : JsonException::class);
+
+        $this->respondTo($error, new ErrorResponseOptions(maxMessages: 2, maxResponseBytes: 256));
+    }
+
+    /**
+     * @return array<string, array{string, string}>
+     */
+    public static function invalidUtf8AfterOverflow(): array
+    {
+        return [
+            'later body' => ['b', "\xB1"],
+            'later key'  => ["b\xB1", 'bad'],
+        ];
+    }
+
+    #[Test]
+    public function oversizedFirstMessageDoesNotHideLaterRetainedFormatterFailure(): void
+    {
+        $failure   = new RuntimeException('Retained formatter failed');
+        $formatter = new class($failure) implements MessageFormatter {
+            public function __construct(private readonly RuntimeException $failure) {}
+
+            public function format(NodeMessage $message): NodeMessage
+            {
+                if ('b' === $message->path()) {
+                    throw $this->failure;
+                }
+
+                return $message;
+            }
+        };
+        $messages = (new Messages(
+            $this->nodeMessage(str_repeat('x', 8 * 1024 * 1024), 'bad'),
+            $this->nodeMessage('b', 'bad'),
+        ))->formatWith($formatter);
+
+        $this->expectExceptionObject($failure);
+
+        $this->respondTo($this->errorFromMessages($messages), new ErrorResponseOptions(maxMessages: 2, maxResponseBytes: 256));
+    }
+
+    #[Test]
+    #[DataProvider('escapedAndUnicodeMessages')]
+    public function escapedAndUnicodeMessagesStillUseExactByteCap(string $message): void
+    {
+        $error     = $this->syntheticError($this->nodeMessage('a', $message));
+        $unlimited = (string) $this->respondTo($error)->getBody();
+
+        self::assertLessThan(256, strlen('a') + strlen($message));
+        self::assertGreaterThan(256, strlen($unlimited));
+
+        $body = (string) $this->respondTo($error, new ErrorResponseOptions(maxResponseBytes: 256))->getBody();
+        self::assertSame(
+            '{"error":"Mapping failed","messages":{"":['
+            . '"Mapping error details exceed the response limit."]}}',
+            $body,
+        );
+        self::assertLessThanOrEqual(256, strlen($body));
+        self::assertSame(
+            $unlimited,
+            (string) $this->respondTo($error, new ErrorResponseOptions(maxResponseBytes: strlen($unlimited)))->getBody(),
+        );
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function escapedAndUnicodeMessages(): array
+    {
+        return [
+            'escaping' => [str_repeat('"', 150)],
+            'unicode'  => [str_repeat('я', 100)],
+        ];
+    }
+
+    #[Test]
+    public function aggregateRetainedStringsRespectByteCap(): void
+    {
+        $error = $this->syntheticError(
+            $this->nodeMessage('a', str_repeat('x', 100)),
+            $this->nodeMessage('b', str_repeat('x', 100)),
+            $this->nodeMessage('c', str_repeat('x', 100)),
+        );
+
+        $body = (string) $this->respondTo($error, new ErrorResponseOptions(maxResponseBytes: 256))->getBody();
+
+        self::assertSame(
+            '{"error":"Mapping failed","messages":{"":['
+            . '"Mapping error details exceed the response limit."]}}',
+            $body,
+        );
+        self::assertLessThanOrEqual(256, strlen($body));
+    }
+
+    #[Test]
+    public function oversizedNulLeadingPathPreservesVisibleEncodedBody(): void
+    {
+        $error = $this->mappingError('array<string, int>', [
+            'a'                         => 'bad',
+            "\0" . str_repeat('x', 300) => 'bad',
+        ]);
+        $expected = '{"error":"Mapping failed","messages":{"a":["Value \'bad\' is not a valid integer."]}}';
+
+        self::assertSame($expected, (string) $this->respondTo($error)->getBody());
+
+        $response = $this->respondTo($error, new ErrorResponseOptions(maxResponseBytes: 256));
+        $body     = (string) $response->getBody();
+
+        self::assertSame($expected, $body);
+        self::assertLessThanOrEqual(256, strlen($body));
+        self::assertSame(422, $response->getStatusCode());
+        self::assertSame('application/json', $response->getHeaderLine('Content-Type'));
+    }
+
+    #[Test]
+    public function oversizedMessageUnderNulLeadingPathPreservesVisibleEncodedBody(): void
+    {
+        $error = $this->syntheticError(
+            $this->nodeMessage('a', 'normal detail'),
+            $this->nodeMessage("\0hidden", str_repeat('x', 300)),
+        );
+        $expected = '{"error":"Mapping failed","messages":{"a":["normal detail"]}}';
+
+        self::assertSame($expected, (string) $this->respondTo($error)->getBody());
+
+        $response = $this->respondTo($error, new ErrorResponseOptions(maxResponseBytes: 256));
+        $body     = (string) $response->getBody();
+
+        self::assertSame($expected, $body);
+        self::assertLessThanOrEqual(256, strlen($body));
+        self::assertSame(422, $response->getStatusCode());
+        self::assertSame('application/json', $response->getHeaderLine('Content-Type'));
+    }
+
+    #[Test]
+    public function nulLeadingPathsPreserveRetainedFormatterFailures(): void
+    {
+        $error = $this->syntheticError(
+            $this->nodeMessage('a', 'normal detail'),
+            $this->nodeMessage("\0" . str_repeat('x', 300), 'bad', throwing: true),
+        );
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('body() must not be called for discarded messages');
+
+        $this->respondTo($error, new ErrorResponseOptions(maxMessages: 2, maxResponseBytes: 256));
+    }
+
+    #[Test]
+    public function unlimitedAndMessageOnlyLimitsPreserveEncodedBody(): void
+    {
+        $error = $this->syntheticError(
+            $this->nodeMessage('0', 'zero'),
+            $this->nodeMessage('*root*', 'root'),
+            $this->nodeMessage('0', 'second'),
+        );
+
+        self::assertSame(
+            '{"error":"Mapping failed","messages":{"0":["zero","second"],"":["root"]}}',
+            (string) $this->respondTo($error)->getBody(),
+        );
+        self::assertSame(
+            '{"error":"Mapping failed","messages":{"0":["zero","second"],"":["root"]}}',
+            (string) $this->respondTo($error, new ErrorResponseOptions(maxMessages: 3))->getBody(),
+        );
+        self::assertSame(
+            '{"error":"Mapping failed","messages":{"0":["zero"],"":["root",'
+            . '"Additional mapping errors were omitted."]}}',
+            (string) $this->respondTo($error, new ErrorResponseOptions(maxMessages: 2))->getBody(),
+        );
     }
 
     #[Test]

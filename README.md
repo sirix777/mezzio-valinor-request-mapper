@@ -432,11 +432,16 @@ does not deep-copy the payload or re-validate each DTO.
 Both limits apply only to the built-in `DefaultMappingErrorResponder`. Custom
 responders keep their own contract and are responsible for their own limits.
 
-`max_response_bytes` checks the fully encoded JSON body once after the (already
-bounded) message collection is serialized. It bounds the transmitted body, and
-when `max_messages` is disabled it does not bound the memory used to build the
-original response. Custom extension messages and exceptions from user
-formatters/constructors are not sanitized by this package.
+`max_response_bytes` caps the serialized JSON body. After all retained messages
+are formatted, a conservative check of path and message bytes rejects obviously
+oversized details before JSON encoding. Other collections are checked against
+the fully encoded body, including escaping and Unicode; an exact fit is accepted.
+Retained formatter and UTF-8 errors still propagate.
+
+The cap bounds the transmitted body, not the total memory used by the body
+parser, Valinor's error tree or retained message collection. Custom extension
+messages and exceptions from user formatters/constructors are not sandboxed or
+sanitized by this package.
 
 The package namespace `sirix_mezzio_valinor` accepts only `mapper`,
 `input_limits` and `error_response`. Each built-in factory that reads this
