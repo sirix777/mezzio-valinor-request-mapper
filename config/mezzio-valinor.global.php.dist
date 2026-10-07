@@ -10,6 +10,9 @@ use CuyZ\Valinor\Mapper\Configurator\ConvertKeysToCamelCase;
  * Copy this file to config/autoload/mezzio-valinor.global.php and adjust.
  */
 return [
+    // Only mapper, input_limits and error_response are accepted in this namespace.
+    // Built-in readers reject unknown sections with InvalidMapRequestConfiguration
+    // and the full sirix_mezzio_valinor.<key> path when their factory is invoked.
     'sirix_mezzio_valinor' => [
         // --- MapperBuilder options ---
         'mapper' => [
@@ -67,6 +70,9 @@ return [
 
             // Watch PHP files for changes and invalidate the cache automatically.
             // Enable in development; disable in production.
+            // Must be boolean even without a cache directory; invalid values throw
+            // InvalidConfigValueException. No non-empty directory means no cache,
+            // including when this option is true.
             'cache_watch'                => false,
         ],
 

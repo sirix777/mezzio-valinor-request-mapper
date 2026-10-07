@@ -438,6 +438,13 @@ when `max_messages` is disabled it does not bound the memory used to build the
 original response. Custom extension messages and exceptions from user
 formatters/constructors are not sanitized by this package.
 
+The package namespace `sirix_mezzio_valinor` accepts only `mapper`,
+`input_limits` and `error_response`. Each built-in factory that reads this
+namespace rejects unknown section names with `InvalidMapRequestConfiguration`
+and the full `sirix_mezzio_valinor.<key>` path. Unrelated application configuration
+outside this namespace remains unrestricted. Validation happens when the
+relevant factory is invoked; custom services retain their own configuration contract.
+
 ### Mapper options
 
 | Option | Type | Default | Description |
@@ -454,9 +461,13 @@ formatters/constructors are not sanitized by this package.
 The `mapper` section accepts only these eight options. Unknown option names
 throw `InvalidMapRequestConfiguration` with the full
 `sirix_mezzio_valinor.mapper.<key>` path before cache setup or configurators run.
-Absent mapper configuration still creates the default builder; other
-configuration sections are unaffected. Existing option type checks remain in
+Absent mapper configuration still creates the default builder. Existing option type checks remain in
 place, including requiring a string-keyed mapper map.
+
+`cache_watch` must be a boolean even when `cache_dir` is absent, `null`, empty
+or whitespace-only. Invalid values throw `InvalidConfigValueException`.
+Without a non-empty cache directory, an absent, `false` or `true` watcher option
+still creates no file-system cache.
 
 ### Cache
 

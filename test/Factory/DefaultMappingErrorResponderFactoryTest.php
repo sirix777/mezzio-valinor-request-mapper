@@ -11,15 +11,18 @@ use CuyZ\Valinor\Mapper\Tree\Message\NodeMessage;
 use Laminas\Diactoros\ResponseFactory;
 use Laminas\Diactoros\ServerRequest;
 use Laminas\Diactoros\StreamFactory;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use RuntimeException;
+use Sirix\ContainerResolver\Exception\InvalidConfigValueException;
 use Sirix\Mezzio\Valinor\Attribute\MapRequest;
 use Sirix\Mezzio\Valinor\Error\MappingErrorContext;
 use Sirix\Mezzio\Valinor\Error\RequestInputError;
+use Sirix\Mezzio\Valinor\Exception\InvalidMapRequestConfiguration;
 use Sirix\Mezzio\Valinor\Factory\DefaultMappingErrorResponderFactory;
 use Sirix\Mezzio\Valinor\Test\Middleware\Fixture\RequiredRequest;
 
@@ -27,6 +30,87 @@ use function json_decode;
 
 final class DefaultMappingErrorResponderFactoryTest extends TestCase
 {
+    #[Test]
+    #[DataProvider('unknownRootSections')]
+    public function rejectsUnknownRootSection(string $key): void
+    {
+        $this->expectException(InvalidMapRequestConfiguration::class);
+        $this->expectExceptionMessage('sirix_mezzio_valinor.' . $key);
+
+        $config = [
+            'sirix_mezzio_valinor' => [
+                $key => [],
+            ],
+        ];
+        (new DefaultMappingErrorResponderFactory())($this->container($config));
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function unknownRootSections(): iterable
+    {
+        yield 'typo' => ['input_limt'];
+
+        yield 'unrelated' => ['unrelated'];
+    }
+
+    #[Test]
+    #[DataProvider('malformedPackageSections')]
+    public function malformedPackageSectionKeepsConfigReaderDiagnostics(mixed $section, string $type): void
+    {
+        $config = [
+            'sirix_mezzio_valinor' => $section,
+        ];
+
+        try {
+            (new DefaultMappingErrorResponderFactory())($this->container($config));
+            self::fail('The package section must be a string-keyed map.');
+        } catch (InvalidConfigValueException $caught) {
+            self::assertStringContainsString('sirix_mezzio_valinor', $caught->getMessage());
+            self::assertStringContainsString(DefaultMappingErrorResponderFactory::class, $caught->getMessage());
+            self::assertStringContainsString('must be ' . ('array' === $type ? 'map<string, mixed>' : 'array'), $caught->getMessage());
+            self::assertStringContainsString($type . ' given', $caught->getMessage());
+        }
+    }
+
+    /** @return iterable<string, array{mixed, string}> */
+    public static function malformedPackageSections(): iterable
+    {
+        yield 'numeric key' => [[
+            0 => [],
+        ], 'array'];
+
+        yield 'null' => [null, 'null'];
+
+        yield 'scalar' => [42, 'int'];
+    }
+
+    #[Test]
+    public function acceptsKnownRootSectionsAndUnrelatedApplicationConfiguration(): void
+    {
+        $config = [
+            'unrelated'            => [
+                'input_limt' => true,
+            ],
+            'sirix_mezzio_valinor' => [
+                'mapper'         => [],
+                'input_limits'   => [],
+                'error_response' => [],
+            ],
+        ];
+
+        $responder = (new DefaultMappingErrorResponderFactory())($this->container($config));
+        $response  = $responder->respond(new MappingErrorContext(
+            RequestInputError::unsupportedParsedBody(),
+            new ServerRequest(),
+            new MapRequest(body: RequiredRequest::class),
+            RequiredRequest::class,
+            'body',
+            'form',
+        ));
+
+        self::assertSame(422, $response->getStatusCode());
+    }
+
     #[Test]
     public function buildsTheInputErrorResponderWithPsr17Factories(): void
     {

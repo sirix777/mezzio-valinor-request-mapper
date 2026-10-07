@@ -8,7 +8,16 @@ upgrading from an older release, apply the
 [3.0 migration guide](MIGRATION-3.0.md) first; for
 1.x, start with the [2.0 guide](MIGRATION-2.0.md).
 
-## 1. Remove the strict flag and validate mapper options
+## 1. Validate package sections and mapper options
+
+Keep only `mapper`, `input_limits` and `error_response` under
+`sirix_mezzio_valinor`. Correct section-name typos and move unrelated application
+settings outside that namespace. Each built-in factory that reads the namespace
+rejects unknown sections with `InvalidMapRequestConfiguration` and the full
+`sirix_mezzio_valinor.<key>` path when invoked. Custom services keep their own
+configuration contract; no eager startup validation is added.
+Numeric namespace keys, `null` and scalar namespace values retain the existing
+`ConfigReader` type failures and originating factory context.
 
 Remove `sirix_mezzio_valinor.mapper.strict_configurators` from application
 configuration. The key is rejected even when its value is `false` or `null`.
@@ -23,6 +32,12 @@ remove unrelated keys from that section. Unknown string keys throw
 Existing type validation remains in place: numeric mapper keys still fail the
 `ConfigReader` string-keyed map check with `InvalidConfigValueException`.
 Absent mapper configuration continues to create the default builder.
+
+Use a boolean for `mapper.cache_watch`, even when `cache_dir` is absent, `null`,
+empty or whitespace-only. Values such as `null`, `'true'`, `1` and `[]` now throw
+`InvalidConfigValueException` without a cache directory too. An absent, `false`
+or `true` watcher option without a non-empty directory still creates no
+file-system cache.
 
 ## 2. Register configurators that need constructor arguments
 

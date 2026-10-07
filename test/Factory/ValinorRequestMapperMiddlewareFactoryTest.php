@@ -30,6 +30,7 @@ use Sirix\Mezzio\Valinor\Attribute\MapRequest;
 use Sirix\Mezzio\Valinor\Error\DefaultMappingErrorResponder;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderInterface;
 use Sirix\Mezzio\Valinor\Error\MappingErrorResponderResolver;
+use Sirix\Mezzio\Valinor\Exception\InvalidMapRequestConfiguration;
 use Sirix\Mezzio\Valinor\Factory\DefaultMappingErrorResponderFactory;
 use Sirix\Mezzio\Valinor\Factory\MappingErrorResponderResolverFactory;
 use Sirix\Mezzio\Valinor\Factory\MappingPlanResolverFactory;
@@ -244,7 +245,7 @@ final class ValinorRequestMapperMiddlewareFactoryTest extends TestCase
     }
 
     #[Test]
-    public function ignoresRemovedLegacyErrorConfiguration(): void
+    public function rejectsRemovedLegacyErrorConfiguration(): void
     {
         $container = $this->createContainer([
             'config' => [
@@ -259,33 +260,10 @@ final class ValinorRequestMapperMiddlewareFactoryTest extends TestCase
                 ],
             ],
         ]);
-        $middleware = (new ValinorRequestMapperMiddlewareFactory())($container);
+        $this->expectException(InvalidMapRequestConfiguration::class);
+        $this->expectExceptionMessage('sirix_mezzio_valinor.error');
 
-        $handler = new #[MapRequest(body: RequiredRequest::class)]
-        class implements MiddlewareInterface, RequestHandlerInterface {
-            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
-            {
-                return $this->handle($request);
-            }
-
-            public function handle(ServerRequestInterface $request): ResponseInterface
-            {
-                return new JsonResponse([]);
-            }
-        };
-
-        $request = (new ServerRequest())
-            ->withParsedBody([])
-            ->withMethod(RequestMethodInterface::METHOD_POST)
-            ->withAttribute(RouteResult::class, RouteResult::fromRoute(new Route('/example', $handler, [RequestMethodInterface::METHOD_POST]), []))
-        ;
-
-        $response = $middleware->process($request, $this->nextHandler($handler));
-        $body     = json_decode((string) $response->getBody(), true);
-
-        self::assertSame(StatusCodeInterface::STATUS_UNPROCESSABLE_ENTITY, $response->getStatusCode());
-        self::assertSame('application/json', $response->getHeaderLine('Content-Type'));
-        self::assertArrayHasKey('name', $body['messages']);
+        (new ValinorRequestMapperMiddlewareFactory())($container);
     }
 
     #[Test]

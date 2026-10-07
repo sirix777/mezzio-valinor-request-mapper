@@ -28,6 +28,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Breaking: built-in configuration-reading factories accept only `mapper`,
+  `input_limits` and `error_response` within `sirix_mezzio_valinor`.
+  Unknown sections throw `InvalidMapRequestConfiguration` with the full
+  `sirix_mezzio_valinor.<key>` path. Configuration outside this namespace
+  remains unrestricted; numeric keys and malformed sections retain existing
+  `ConfigReader` type diagnostics.
+- Breaking: `mapper.cache_watch` is validated as a boolean even when
+  `cache_dir` is absent, `null`, empty or whitespace-only. Invalid values throw
+  `InvalidConfigValueException`; valid watcher options without a cache directory
+  continue to create no file-system cache.
+
 - Breaking: an individual `MapRequest` now rejects repeated effective output
   keys during construction (and route-options parsing), even if its method
   filter would exclude the current request. Split multiple sources sharing an

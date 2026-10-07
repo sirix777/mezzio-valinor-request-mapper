@@ -12,12 +12,89 @@ use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Sirix\ContainerResolver\Exception\InvalidConfigValueException;
 use Sirix\Mezzio\Valinor\Error\RequestInputError;
+use Sirix\Mezzio\Valinor\Exception\InvalidMapRequestConfiguration;
 use Sirix\Mezzio\Valinor\Factory\InputEncodingValidatorFactory;
 
 use function range;
 
 final class InputEncodingValidatorFactoryTest extends TestCase
 {
+    #[Test]
+    #[DataProvider('unknownRootSections')]
+    public function rejectsUnknownRootSection(string $key): void
+    {
+        $this->expectException(InvalidMapRequestConfiguration::class);
+        $this->expectExceptionMessage('sirix_mezzio_valinor.' . $key);
+
+        $config = [
+            'sirix_mezzio_valinor' => [
+                $key => [],
+            ],
+        ];
+        (new InputEncodingValidatorFactory())($this->container($config));
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function unknownRootSections(): iterable
+    {
+        yield 'typo' => ['input_limt'];
+
+        yield 'unrelated' => ['unrelated'];
+    }
+
+    #[Test]
+    #[DataProvider('malformedPackageSections')]
+    public function malformedPackageSectionKeepsConfigReaderDiagnostics(mixed $section, string $type): void
+    {
+        $config = [
+            'sirix_mezzio_valinor' => $section,
+        ];
+
+        try {
+            (new InputEncodingValidatorFactory())($this->container($config));
+            self::fail('The package section must be a string-keyed map.');
+        } catch (InvalidConfigValueException $caught) {
+            self::assertStringContainsString('sirix_mezzio_valinor', $caught->getMessage());
+            self::assertStringContainsString(InputEncodingValidatorFactory::class, $caught->getMessage());
+            self::assertStringContainsString('must be ' . ('array' === $type ? 'map<string, mixed>' : 'array'), $caught->getMessage());
+            self::assertStringContainsString($type . ' given', $caught->getMessage());
+        }
+    }
+
+    /** @return iterable<string, array{mixed, string}> */
+    public static function malformedPackageSections(): iterable
+    {
+        yield 'numeric key' => [[
+            0 => [],
+        ], 'array'];
+
+        yield 'null' => [null, 'null'];
+
+        yield 'scalar' => [42, 'int'];
+    }
+
+    #[Test]
+    public function acceptsKnownRootSectionsAndUnrelatedApplicationConfiguration(): void
+    {
+        $config = [
+            'unrelated'            => [
+                'input_limt' => true,
+            ],
+            'sirix_mezzio_valinor' => [
+                'mapper'         => [],
+                'input_limits'   => [],
+                'error_response' => [],
+            ],
+        ];
+
+        $validator = (new InputEncodingValidatorFactory())($this->container($config));
+
+        self::expectNotToPerformAssertions();
+        $validator->assertValid([
+            'name' => 'Ada',
+        ], 'body');
+    }
+
     #[Test]
     public function factoryWithoutConfigKeepsDefaults(): void
     {

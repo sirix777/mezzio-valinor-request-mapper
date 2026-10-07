@@ -37,10 +37,7 @@ final readonly class ValinorMapperBuilderFactory
     {
         $resolver = ContainerResolver::forFactory($container, self::class);
 
-        $config   = ConfigReader::fromArray(
-            ConfigReader::fromContainer($resolver)->map(self::CONFIG_KEY, default: []),
-            self::class,
-        )->map('mapper', default: []);
+        $config = PackageConfigReader::fromContainer($resolver)->map('mapper', default: []);
 
         foreach ($config as $key => $value) {
             if (! in_array($key, [
@@ -134,6 +131,8 @@ final readonly class ValinorMapperBuilderFactory
 
     private function createCache(ConfigReader $config): ?Cache
     {
+        $cacheWatch = $config->bool('cache_watch', default: false);
+
         if (null === $config->get('cache_dir')) {
             return null;
         }
@@ -146,7 +145,7 @@ final readonly class ValinorMapperBuilderFactory
 
         $cache = new FileSystemCache($cacheDir);
 
-        if ($config->bool('cache_watch', default: false)) {
+        if ($cacheWatch) {
             return new FileWatchingCache($cache);
         }
 

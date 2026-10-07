@@ -47,9 +47,223 @@ use function unlink;
 final class ValinorMapperBuilderFactoryTest extends TestCase
 {
     #[Test]
+    #[DataProvider('unknownRootSections')]
+    public function rejectsUnknownRootSection(string $key): void
+    {
+        $this->expectException(InvalidMapRequestConfiguration::class);
+        $this->expectExceptionMessage('sirix_mezzio_valinor.' . $key);
+
+        $config = [
+            'sirix_mezzio_valinor' => [
+                $key => [],
+            ],
+        ];
+        (new ValinorMapperBuilderFactory())($this->createContainer([
+            'config' => $config,
+        ]));
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function unknownRootSections(): iterable
+    {
+        yield 'typo' => ['input_limt'];
+
+        yield 'unrelated' => ['unrelated'];
+    }
+
+    #[Test]
+    #[DataProvider('malformedPackageSections')]
+    public function malformedPackageSectionKeepsConfigReaderDiagnostics(mixed $section, string $type): void
+    {
+        $config = [
+            'sirix_mezzio_valinor' => $section,
+        ];
+
+        try {
+            (new ValinorMapperBuilderFactory())($this->createContainer([
+                'config' => $config,
+            ]));
+            self::fail('The package section must be a string-keyed map.');
+        } catch (InvalidConfigValueException $caught) {
+            self::assertStringContainsString('sirix_mezzio_valinor', $caught->getMessage());
+            self::assertStringContainsString(ValinorMapperBuilderFactory::class, $caught->getMessage());
+            self::assertStringContainsString('must be ' . ('array' === $type ? 'map<string, mixed>' : 'array'), $caught->getMessage());
+            self::assertStringContainsString($type . ' given', $caught->getMessage());
+        }
+    }
+
+    /** @return iterable<string, array{mixed, string}> */
+    public static function malformedPackageSections(): iterable
+    {
+        yield 'numeric key' => [[
+            0 => [],
+        ], 'array'];
+
+        yield 'null' => [null, 'null'];
+
+        yield 'scalar' => [42, 'int'];
+    }
+
+    #[Test]
+    public function acceptsKnownRootSectionsAndUnrelatedApplicationConfiguration(): void
+    {
+        $config = [
+            'unrelated'            => [
+                'input_limt' => true,
+            ],
+            'sirix_mezzio_valinor' => [
+                'mapper'         => [],
+                'input_limits'   => [],
+                'error_response' => [],
+            ],
+        ];
+
+        $builder = (new ValinorMapperBuilderFactory())($this->createContainer([
+            'config' => $config,
+        ]));
+
+        self::assertSame([
+            'name' => '42',
+        ], $builder->mapper()->map('array{name: string}', [
+            'name' => 42,
+        ]));
+    }
+
+    #[Test]
     public function defaultConfigCreatesMapperBuilder(): void
     {
         self::assertInstanceOf(MapperBuilder::class, $this->builder());
+    }
+
+    #[Test]
+    public function unknownRootSectionIsRejectedBeforeConfigurators(): void
+    {
+        $configurator = new class implements MapperBuilderConfigurator {
+            public bool $applied = false;
+
+            public function configureMapperBuilder(MapperBuilder $builder): MapperBuilder
+            {
+                $this->applied = true;
+
+                return $builder;
+            }
+        };
+
+        try {
+            (new ValinorMapperBuilderFactory())($this->createContainer([
+                'config' => [
+                    'sirix_mezzio_valinor' => [
+                        'input_limt' => [],
+                        'mapper'     => [
+                            'configurators' => [$configurator],
+                        ],
+                    ],
+                ],
+            ]));
+            self::fail('The unknown root section must be rejected first.');
+        } catch (InvalidMapRequestConfiguration $caught) {
+            self::assertSame('sirix_mezzio_valinor.input_limt: unknown configuration section.', $caught->getMessage());
+        }
+
+        self::assertFalse($configurator->applied);
+    }
+
+    /** @param array<string, mixed> $config */
+    #[Test]
+    #[DataProvider('invalidCacheWatchWithoutDirectory')]
+    public function rejectsInvalidCacheWatchWithoutDirectory(array $config, string $type): void
+    {
+        try {
+            $this->builder($config);
+            self::fail('cache_watch must be a boolean even without a cache directory.');
+        } catch (InvalidConfigValueException $caught) {
+            self::assertStringContainsString('cache_watch', $caught->getMessage());
+            self::assertStringContainsString(ValinorMapperBuilderFactory::class, $caught->getMessage());
+            self::assertStringContainsString('must be bool', $caught->getMessage());
+            self::assertStringContainsString($type . ' given', $caught->getMessage());
+        }
+    }
+
+    /** @return iterable<string, array{array<string, mixed>, string}> */
+    public static function invalidCacheWatchWithoutDirectory(): iterable
+    {
+        foreach ([
+            'absent'     => [],
+            'null'       => [
+                'cache_dir' => null,
+            ],
+            'empty'      => [
+                'cache_dir' => '',
+            ],
+            'whitespace' => [
+                'cache_dir' => '   ',
+            ],
+        ] as $directory => $config) {
+            foreach ([
+                'null'    => [null, 'null'],
+                'string'  => ['true', 'string'],
+                'integer' => [1, 'int'],
+                'array'   => [[], 'array'],
+            ] as $name => [$value, $type]) {
+                yield $directory . ' / ' . $name => [[
+                    'cache_watch' => $value,
+                ] + $config, $type];
+            }
+        }
+    }
+
+    /** @param array<string, mixed> $config */
+    #[Test]
+    #[DataProvider('validCacheWatchWithoutDirectory')]
+    public function validCacheWatchWithoutDirectoryKeepsCacheDisabled(array $config): void
+    {
+        $cacheDir    = $this->createTempDir();
+        $originalCwd = getcwd();
+        self::assertNotFalse($originalCwd);
+
+        try {
+            chdir($cacheDir);
+            $builder = $this->builder($config);
+            $builder->warmupCacheFor(CacheableRequest::class);
+            $dto = $builder->mapper()->map(CacheableRequest::class, [
+                'name' => 'test',
+            ]);
+
+            self::assertSame('test', $dto->name);
+            self::assertSame([], $this->findFiles($cacheDir));
+        } finally {
+            chdir($originalCwd);
+            $this->removeDir($cacheDir);
+        }
+    }
+
+    /** @return iterable<string, array{array<string, mixed>}> */
+    public static function validCacheWatchWithoutDirectory(): iterable
+    {
+        foreach ([
+            'absent'     => [],
+            'null'       => [
+                'cache_dir' => null,
+            ],
+            'empty'      => [
+                'cache_dir' => '',
+            ],
+            'whitespace' => [
+                'cache_dir' => '   ',
+            ],
+        ] as $directory => $config) {
+            foreach ([
+                'absent' => [],
+                'false'  => [
+                    'cache_watch' => false,
+                ],
+                'true'   => [
+                    'cache_watch' => true,
+                ],
+            ] as $watch => $option) {
+                yield $directory . ' / ' . $watch => [$config + $option];
+            }
+        }
     }
 
     #[Test]
@@ -350,7 +564,7 @@ final class ValinorMapperBuilderFactoryTest extends TestCase
         yield 'no mapper section' => [[
             'config' => [
                 'sirix_mezzio_valinor' => [
-                    'unrelated' => true,
+                    'input_limits' => [],
                 ],
             ],
         ]];
