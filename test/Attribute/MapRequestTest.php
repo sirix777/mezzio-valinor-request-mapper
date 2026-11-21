@@ -130,7 +130,7 @@ final class MapRequestTest extends TestCase
 
     /** @param array<string, string> $args */
     #[Test]
-    #[DataProvider('intrinsicCollisionProvider')]
+    #[DataProvider('intrinsicCollisionOutputs')]
     public function intrinsicOutputCollisionsAreRejected(array $args, string $effectiveOutput): void
     {
         $this->expectException(InvalidMapRequestConfiguration::class);
@@ -159,17 +159,6 @@ final class MapRequestTest extends TestCase
         }
 
         self::fail('Expected intrinsic output collision to be rejected by the constructor.');
-    }
-
-    /** @param array<string, string> $args */
-    #[Test]
-    #[DataProvider('intrinsicCollisionProvider')]
-    public function intrinsicCollisionIsRejectedRegardlessOfMethodFilter(array $args, string $effectiveOutput): void
-    {
-        $this->expectException(InvalidMapRequestConfiguration::class);
-        $this->expectExceptionMessage($effectiveOutput);
-
-        new MapRequest(...$args, methods: ['PATCH']);
     }
 
     /** @return iterable<string, array{array<string, string>, string, string, string}> */
@@ -220,6 +209,25 @@ final class MapRequestTest extends TestCase
             'query' => self::class,
             'route' => self::class,
         ], self::class, 'body', 'query'];
+    }
+
+    /** @param array<string, string> $args */
+    #[Test]
+    #[DataProvider('intrinsicCollisionOutputs')]
+    public function intrinsicCollisionIsRejectedRegardlessOfMethodFilter(array $args, string $effectiveOutput): void
+    {
+        $this->expectException(InvalidMapRequestConfiguration::class);
+        $this->expectExceptionMessage($effectiveOutput);
+
+        new MapRequest(...$args, methods: ['PATCH']);
+    }
+
+    /** @return iterable<string, array{array<string, string>, string}> */
+    public static function intrinsicCollisionOutputs(): iterable
+    {
+        foreach (self::intrinsicCollisionProvider() as $name => [$args, $effectiveOutput]) {
+            yield $name => [$args, $effectiveOutput];
+        }
     }
 
     /** @param array<string, string> $args */

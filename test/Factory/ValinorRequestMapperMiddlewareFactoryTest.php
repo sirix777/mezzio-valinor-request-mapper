@@ -322,11 +322,11 @@ final class ValinorRequestMapperMiddlewareFactoryTest extends TestCase
      */
     private function createContainer(array $services): ContainerInterface
     {
-        return new class($services) implements ContainerInterface {
+        return new readonly class($services) implements ContainerInterface {
             /**
              * @param array<string, mixed> $services
              */
-            public function __construct(private readonly array $services) {}
+            public function __construct(private array $services) {}
 
             public function get($id): mixed
             {
@@ -378,8 +378,8 @@ final class ValinorRequestMapperMiddlewareFactoryTest extends TestCase
 
     private function nextHandler(RequestHandlerInterface $routeHandler): RequestHandlerInterface
     {
-        return new class($routeHandler) implements RequestHandlerInterface {
-            public function __construct(private readonly RequestHandlerInterface $handler) {}
+        return new readonly class($routeHandler) implements RequestHandlerInterface {
+            public function __construct(private RequestHandlerInterface $handler) {}
 
             public function handle(ServerRequestInterface $request): ResponseInterface
             {

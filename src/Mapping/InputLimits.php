@@ -16,9 +16,9 @@ use function sprintf;
  */
 final readonly class InputLimits
 {
-    private const CONFIG_PATH = 'sirix_mezzio_valinor.input_limits';
+    private const string CONFIG_PATH = 'sirix_mezzio_valinor.input_limits';
 
-    private const KNOWN_KEYS = [
+    private const array KNOWN_KEYS = [
         'max_nodes'              => true,
         'max_depth'              => true,
         'max_total_string_bytes' => true,

@@ -428,8 +428,8 @@ final class ValinorMapperBuilderFactoryTest extends TestCase
     public function configuratorFailureIsNotSwallowed(): void
     {
         $exception    = new RuntimeException('Configurator failed');
-        $configurator = new class($exception) implements MapperBuilderConfigurator {
-            public function __construct(private readonly RuntimeException $exception) {}
+        $configurator = new readonly class($exception) implements MapperBuilderConfigurator {
+            public function __construct(private RuntimeException $exception) {}
 
             public function configureMapperBuilder(MapperBuilder $builder): MapperBuilder
             {
@@ -623,7 +623,7 @@ final class ValinorMapperBuilderFactoryTest extends TestCase
     public function containerFailureIsNotSwallowed(): void
     {
         $original  = new RuntimeException('Container failed');
-        $container = $this->createMock(ContainerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
         $container->method('has')->willReturn(true);
         $container->method('get')->willReturnCallback(static function(string $id) use ($original): array {
             if ('config' === $id) {
@@ -651,7 +651,7 @@ final class ValinorMapperBuilderFactoryTest extends TestCase
     public function containerNotFoundFailureKeepsItsOriginalCause(): void
     {
         $original  = new class('Container lost the service') extends RuntimeException implements NotFoundExceptionInterface {};
-        $container = $this->createMock(ContainerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
         $container->method('has')->willReturn(true);
         $container->method('get')->willReturnCallback(static function(string $id) use ($original): array {
             if ('config' === $id) {
@@ -1385,11 +1385,11 @@ final class ValinorMapperBuilderFactoryTest extends TestCase
      */
     private function createContainer(array $services): ContainerInterface
     {
-        return new class($services) implements ContainerInterface {
+        return new readonly class($services) implements ContainerInterface {
             /**
              * @param array<string, mixed> $services
              */
-            public function __construct(private readonly array $services) {}
+            public function __construct(private array $services) {}
 
             public function get($id): mixed
             {

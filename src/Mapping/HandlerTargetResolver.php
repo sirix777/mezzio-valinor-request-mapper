@@ -28,13 +28,13 @@ use function str_contains;
  */
 final readonly class HandlerTargetResolver
 {
-    private const REQUEST_HANDLER_MIDDLEWARE = 'Laminas\Stratigility\Middleware\RequestHandlerMiddleware';
+    private const string REQUEST_HANDLER_MIDDLEWARE = 'Laminas\Stratigility\Middleware\RequestHandlerMiddleware';
 
-    private const CALLABLE_MIDDLEWARE_DECORATOR = 'Laminas\Stratigility\Middleware\CallableMiddlewareDecorator';
+    private const string CALLABLE_MIDDLEWARE_DECORATOR = 'Laminas\Stratigility\Middleware\CallableMiddlewareDecorator';
 
-    private const LAZY_LOADING_MIDDLEWARE = 'Mezzio\Middleware\LazyLoadingMiddleware';
+    private const string LAZY_LOADING_MIDDLEWARE = 'Mezzio\Middleware\LazyLoadingMiddleware';
 
-    private const MIDDLEWARE_PIPE = 'Laminas\Stratigility\MiddlewarePipe';
+    private const string MIDDLEWARE_PIPE = 'Laminas\Stratigility\MiddlewarePipe';
 
     /** @var WeakMap<object, HandlerTargetCacheEntry> */
     private WeakMap $cache;
@@ -194,7 +194,7 @@ final readonly class HandlerTargetResolver
 
         $scopeClass = $refFunction->getClosureCalledClass() ?? $refFunction->getClosureScopeClass();
 
-        if (null === $scopeClass) {
+        if (! $scopeClass instanceof ReflectionClass) {
             return null;
         }
 

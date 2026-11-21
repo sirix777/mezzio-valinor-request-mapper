@@ -27,7 +27,7 @@ use function sprintf;
 
 final readonly class ValinorMapperBuilderFactory
 {
-    private const CONFIG_KEY = 'sirix_mezzio_valinor';
+    private const string CONFIG_KEY = 'sirix_mezzio_valinor';
 
     /**
      * @throws ContainerExceptionInterface

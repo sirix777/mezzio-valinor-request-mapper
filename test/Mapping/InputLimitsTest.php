@@ -120,4 +120,23 @@ final class InputLimitsTest extends TestCase
             'unknown' => 1,
         ]);
     }
+
+    #[Test]
+    public function constructorRejectsNonPositiveLimits(): void
+    {
+        foreach ([
+            'maxNodes'            => 'max_nodes',
+            'maxDepth'            => 'max_depth',
+            'maxTotalStringBytes' => 'max_total_string_bytes',
+        ] as $argument => $key) {
+            try {
+                new InputLimits(...[
+                    $argument => 0,
+                ]);
+                self::fail("Expected InvalidMapRequestConfiguration for {$argument}.");
+            } catch (InvalidMapRequestConfiguration $exception) {
+                self::assertSame("sirix_mezzio_valinor.input_limits.{$key} must be null or a positive integer.", $exception->getMessage());
+            }
+        }
+    }
 }

@@ -300,7 +300,7 @@ final class HandlerTargetResolverTest extends TestCase
     #[Test]
     public function lazyLoadingMiddlewareWithRequestHandlerResolvesToHandle(): void
     {
-        $lazy = new LazyLoadingMiddleware($this->createMock(MiddlewareContainer::class), LazyLoadingRequestHandler::class);
+        $lazy = new LazyLoadingMiddleware($this->createStub(MiddlewareContainer::class), LazyLoadingRequestHandler::class);
 
         $target = $this->resolver->resolve($lazy);
 
@@ -312,7 +312,7 @@ final class HandlerTargetResolverTest extends TestCase
     #[Test]
     public function lazyLoadingMiddlewareWithMiddlewareResolvesToProcess(): void
     {
-        $lazy = new LazyLoadingMiddleware($this->createMock(MiddlewareContainer::class), LazyLoadingMiddlewareHandler::class);
+        $lazy = new LazyLoadingMiddleware($this->createStub(MiddlewareContainer::class), LazyLoadingMiddlewareHandler::class);
 
         $target = $this->resolver->resolve($lazy);
 
@@ -324,7 +324,7 @@ final class HandlerTargetResolverTest extends TestCase
     #[Test]
     public function lazyLoadingMiddlewareWithUnknownClassReturnsNull(): void
     {
-        $lazy = new LazyLoadingMiddleware($this->createMock(MiddlewareContainer::class), 'UnknownMiddlewareService');
+        $lazy = new LazyLoadingMiddleware($this->createStub(MiddlewareContainer::class), 'UnknownMiddlewareService');
 
         self::assertNull($this->resolver->resolve($lazy));
     }
@@ -350,12 +350,12 @@ final class HandlerTargetResolverTest extends TestCase
     #[Test]
     public function doesNotUnwrapUserMiddlewareWithDecoratorLikePrivateProperties(): void
     {
-        $handler = new class implements MiddlewareInterface {
-            private readonly RequestHandlerInterface $handler;
+        $handler = new readonly class implements MiddlewareInterface {
+            private RequestHandlerInterface $handler;
 
-            private readonly Closure $middleware;
+            private Closure $middleware;
 
-            private readonly string $middlewareName;
+            private string $middlewareName;
 
             public function __construct()
             {
@@ -386,6 +386,38 @@ final class HandlerTargetResolverTest extends TestCase
         self::assertNotNull($target);
         self::assertSame($handler::class, $target->className);
         self::assertSame('process', $target->methodName);
+    }
+
+    #[Test]
+    public function lazyLoadingMiddlewareWithInvokableClassResolvesToInvoke(): void
+    {
+        $lazy = new LazyLoadingMiddleware($this->createStub(MiddlewareContainer::class), InvokableHandler::class);
+
+        $target = $this->resolver->resolve($lazy);
+
+        self::assertNotNull($target);
+        self::assertSame(InvokableHandler::class, $target->className);
+        self::assertSame('__invoke', $target->methodName);
+    }
+
+    #[Test]
+    public function lazyLoadingMiddlewareWithNonHandlerClassReturnsNull(): void
+    {
+        $lazy = new LazyLoadingMiddleware($this->createStub(MiddlewareContainer::class), stdClass::class);
+
+        self::assertNull($this->resolver->resolve($lazy));
+    }
+
+    #[Test]
+    public function callableMiddlewareDecoratorWithFunctionNameReturnsNull(): void
+    {
+        self::assertNull($this->resolver->resolve(new CallableMiddlewareDecorator('strlen')));
+    }
+
+    #[Test]
+    public function callableMiddlewareDecoratorWithFirstClassFunctionCallableReturnsNull(): void
+    {
+        self::assertNull($this->resolver->resolve(new CallableMiddlewareDecorator(strlen(...))));
     }
 
     /** @return WeakMap<object, object> */

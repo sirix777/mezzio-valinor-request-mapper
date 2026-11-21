@@ -116,11 +116,8 @@ final class DefaultMappingErrorResponderFactoryTest extends TestCase
     {
         $responseFactory = new ResponseFactory();
         $streamFactory   = new StreamFactory();
-        $responder       = (new DefaultMappingErrorResponderFactory())(new class($responseFactory, $streamFactory) implements ContainerInterface {
-            public function __construct(
-                private readonly ResponseFactoryInterface $responseFactory,
-                private readonly StreamFactoryInterface $streamFactory,
-            ) {}
+        $responder       = (new DefaultMappingErrorResponderFactory())(new readonly class($responseFactory, $streamFactory) implements ContainerInterface {
+            public function __construct(private ResponseFactoryInterface $responseFactory, private StreamFactoryInterface $streamFactory) {}
 
             public function get($id): mixed
             {
@@ -212,14 +209,14 @@ final class DefaultMappingErrorResponderFactoryTest extends TestCase
         $responseFactory = new ResponseFactory();
         $streamFactory   = new StreamFactory();
 
-        return new class($responseFactory, $streamFactory, $config) implements ContainerInterface {
+        return new readonly class($responseFactory, $streamFactory, $config) implements ContainerInterface {
             /**
              * @param array<string, mixed> $config
              */
             public function __construct(
-                private readonly ResponseFactoryInterface $responseFactory,
-                private readonly StreamFactoryInterface $streamFactory,
-                private readonly array $config,
+                private ResponseFactoryInterface $responseFactory,
+                private StreamFactoryInterface $streamFactory,
+                private array $config,
             ) {}
 
             public function get($id): mixed
@@ -243,8 +240,8 @@ final class DefaultMappingErrorResponderFactoryTest extends TestCase
 
     private function nodeMessage(string $path, string $body): NodeMessage
     {
-        $message = (static fn (): ErrorMessage => new class($body) implements ErrorMessage {
-            public function __construct(private readonly string $body) {}
+        $message = (static fn (): ErrorMessage => new readonly class($body) implements ErrorMessage {
+            public function __construct(private string $body) {}
 
             public function body(): string
             {

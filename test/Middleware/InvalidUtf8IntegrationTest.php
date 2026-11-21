@@ -538,8 +538,8 @@ final class InvalidUtf8IntegrationTest extends TestCase
 
     private function nextHandler(RequestHandlerInterface $routeHandler): RequestHandlerInterface
     {
-        return new class($routeHandler) implements RequestHandlerInterface {
-            public function __construct(private readonly RequestHandlerInterface $handler) {}
+        return new readonly class($routeHandler) implements RequestHandlerInterface {
+            public function __construct(private RequestHandlerInterface $handler) {}
 
             public function handle(ServerRequestInterface $request): ResponseInterface
             {
@@ -551,7 +551,7 @@ final class InvalidUtf8IntegrationTest extends TestCase
     private function spyMapper(int &$mapCount): TreeMapper
     {
         $inner = (new MapperBuilder())->mapper();
-        $mock  = $this->createMock(TreeMapper::class);
+        $mock  = $this->createStub(TreeMapper::class);
         $mock->method('map')->willReturnCallback(
             static function(string $signature, mixed $source) use ($inner, &$mapCount): mixed {
                 ++$mapCount;

@@ -20,9 +20,9 @@ This package reads `#[MapRequest]` attributes on route handlers and maps request
 
 ## Requirements
 
-- PHP `~8.2 || ~8.3 || ~8.4 || ~8.5`
+- PHP `~8.3 || ~8.4 || ~8.5 || ~8.6`
 - `cuyz/valinor ^2.4`
-- `mezzio/mezzio-router ^3.15 || ^4.1`
+- `mezzio/mezzio-router ^3.17 || ^4.1` (4.3+ on PHP 8.6: 3.x and 4.0–4.2 do not allow it)
 - PSR-17 `ResponseFactoryInterface` and `StreamFactoryInterface` services
 - `sirix/mezzio-routing-contracts ^1.2`
 

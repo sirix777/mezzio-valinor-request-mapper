@@ -139,9 +139,9 @@ function createServices(?string $cacheDir = null, ?InputLimits $inputLimits = nu
         ? new DefaultMappingErrorResponder($responseFactory, $streamFactory, $errorOptions)
         : new DefaultMappingErrorResponder($responseFactory, $streamFactory);
 
-    $container = new class($defaultResponder) implements ContainerInterface {
+    $container = new readonly class($defaultResponder) implements ContainerInterface {
         /** @var array<class-string, MappingErrorResponderInterface> */
-        private readonly array $services;
+        private array $services;
 
         public function __construct(MappingErrorResponderInterface $defaultResponder)
         {
@@ -535,9 +535,9 @@ function measureMappedScenario(
 /** @param array<string, object> $expected */
 function assertMappedScenario(ValinorRequestMapperMiddleware $middleware, ServerRequestInterface $request, array $expected): void
 {
-    $verifier = new class($expected) implements RequestHandlerInterface {
+    $verifier = new readonly class($expected) implements RequestHandlerInterface {
         /** @param array<string, object> $expected */
-        public function __construct(private readonly array $expected) {}
+        public function __construct(private array $expected) {}
 
         public function handle(ServerRequestInterface $request): ResponseInterface
         {

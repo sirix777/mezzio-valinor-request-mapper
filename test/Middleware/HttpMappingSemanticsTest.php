@@ -466,11 +466,11 @@ final class HttpMappingSemanticsTest extends TestCase
             ],
         ];
 
-        return new class($config) implements ContainerInterface {
+        return new readonly class($config) implements ContainerInterface {
             /**
              * @param array<string, mixed> $config
              */
-            public function __construct(private readonly array $config) {}
+            public function __construct(private array $config) {}
 
             public function get($id): mixed
             {
@@ -561,8 +561,8 @@ final class HttpMappingSemanticsTest extends TestCase
 
     private function nextHandler(RequestHandlerInterface $routeHandler): RequestHandlerInterface
     {
-        return new class($routeHandler) implements RequestHandlerInterface {
-            public function __construct(private readonly RequestHandlerInterface $handler) {}
+        return new readonly class($routeHandler) implements RequestHandlerInterface {
+            public function __construct(private RequestHandlerInterface $handler) {}
 
             public function handle(ServerRequestInterface $request): ResponseInterface
             {
@@ -573,8 +573,8 @@ final class HttpMappingSemanticsTest extends TestCase
 
     private function nextMiddlewareHandler(MiddlewareInterface $routeMiddleware): RequestHandlerInterface
     {
-        return new class($routeMiddleware) implements RequestHandlerInterface {
-            public function __construct(private readonly MiddlewareInterface $middleware) {}
+        return new readonly class($routeMiddleware) implements RequestHandlerInterface {
+            public function __construct(private MiddlewareInterface $middleware) {}
 
             public function handle(ServerRequestInterface $request): ResponseInterface
             {
