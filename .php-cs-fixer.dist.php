@@ -7,7 +7,7 @@ use Sirix\CsFixerConfig\ConfigBuilder;
 
 return ConfigBuilder::create()
     ->setRules([
-        '@PHP8x2Migration' => true,
+        '@PHP8x3Migration' => true,
         'PedroTroller/line_break_between_method_arguments' => [
             'max-args' => 4,
             'max-length' => 140,

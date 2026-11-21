@@ -13,9 +13,9 @@ use function sprintf;
 
 final readonly class ErrorResponseOptions
 {
-    private const CONFIG_PATH = 'sirix_mezzio_valinor.error_response';
+    private const string CONFIG_PATH = 'sirix_mezzio_valinor.error_response';
 
-    private const KNOWN_KEYS = [
+    private const array KNOWN_KEYS = [
         'max_messages'       => true,
         'max_response_bytes' => true,
     ];

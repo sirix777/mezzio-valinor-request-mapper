@@ -489,4 +489,50 @@ final class InputEncodingValidatorTest extends TestCase
             'list' => ['a', 'b'],
         ], $original);
     }
+
+    /**
+     * @param array<mixed>           $values
+     * @param 'body'|'query'|'route' $inputSource
+     */
+    #[Test]
+    #[DataProvider('invalidUtf8WithinBudgetProvider')]
+    public function rejectsInvalidUtf8WhenLimitsAreEnabled(InputLimits $limits, array $values, string $inputSource): void
+    {
+        try {
+            (new InputEncodingValidator($limits))->assertValid($values, $inputSource);
+            self::fail('Expected RequestInputError to be thrown.');
+        } catch (RequestInputError $error) {
+            self::assertSame('invalid_utf8', $error->reason);
+            self::assertSame($inputSource, $error->inputSource);
+        }
+    }
+
+    /**
+     * @return iterable<string, array{InputLimits, array<mixed>, 'body'|'query'|'route'}>
+     */
+    public static function invalidUtf8WithinBudgetProvider(): iterable
+    {
+        yield 'key with node limit only' => [new InputLimits(maxNodes: 10), [
+            "\xB1" => 'value',
+        ], 'query'];
+
+        yield 'value with node limit only' => [new InputLimits(maxNodes: 10), [
+            'name' => "\xB1",
+        ], 'body'];
+
+        yield 'nested value with depth limit only' => [
+            new InputLimits(maxDepth: 5), [
+                'a' => [
+                    'b' => "\xB1",
+                ],
+            ], 'body'];
+
+        yield 'key within byte budget' => [new InputLimits(maxTotalStringBytes: 100), [
+            "\xB1" => 'value',
+        ], 'route'];
+
+        yield 'value within byte budget' => [new InputLimits(maxTotalStringBytes: 100), [
+            'name' => "\xB1",
+        ], 'query'];
+    }
 }

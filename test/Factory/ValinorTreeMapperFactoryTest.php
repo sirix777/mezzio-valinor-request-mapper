@@ -93,11 +93,11 @@ final class ValinorTreeMapperFactoryTest extends TestCase
      */
     private function createContainer(array $services): ContainerInterface
     {
-        return new class($services) implements ContainerInterface {
+        return new readonly class($services) implements ContainerInterface {
             /**
              * @param array<string, mixed> $services
              */
-            public function __construct(private readonly array $services) {}
+            public function __construct(private array $services) {}
 
             public function get($id): mixed
             {

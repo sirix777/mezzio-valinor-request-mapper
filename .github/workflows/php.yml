@@ -19,10 +19,14 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                php-version: ["8.2", "8.3", "8.4", "8.5"]
-                router: ["^3.15", "^4.1"]
+                php-version: ["8.3", "8.4", "8.5", "8.6"]
+                router: ["^3.17", "^4.1"]
+                exclude:
+                    # mezzio-router 3.x does not allow PHP 8.6; 4.3+ does.
+                    - php-version: "8.6"
+                      router: "^3.17"
                 include:
-                    - php-version: "8.2"
+                    - php-version: "8.3"
                       router: "^4.1"
                       intl: true
 
@@ -54,12 +58,12 @@ jobs:
               run: composer test
 
     tests-lowest:
-        name: Tests lowest (PHP 8.2, Valinor 2.4.0, router ${{ matrix.router }})
+        name: Tests lowest (PHP 8.3, Valinor 2.4.0, router ${{ matrix.router }})
         runs-on: ubuntu-latest
         strategy:
             fail-fast: false
             matrix:
-                router: ["3.15.0", "4.1.0"]
+                router: ["3.17.0", "4.1.0"]
 
         steps:
             - uses: actions/checkout@v5
@@ -67,7 +71,7 @@ jobs:
             - name: Setup PHP
               uses: shivammathur/setup-php@v2
               with:
-                  php-version: "8.2"
+                  php-version: "8.3"
                   coverage: none
 
             - name: Validate composer.json
@@ -88,7 +92,7 @@ jobs:
               run: composer test
 
     tests-no-intl:
-        name: Tests without intl (PHP 8.2, router ^4.1)
+        name: Tests without intl (PHP 8.3, router ^4.1)
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v5
@@ -96,7 +100,7 @@ jobs:
             - name: Setup PHP without intl
               uses: shivammathur/setup-php@v2
               with:
-                  php-version: "8.2"
+                  php-version: "8.3"
                   coverage: none
                   extensions: :intl
 
@@ -122,7 +126,7 @@ jobs:
               run: vendor/bin/phpunit --colors=always --testdox --filter 'Encoding|Responder|Utf8|InvalidUtf8|DefaultMappingError|InputLimits|AlternatePsr'
 
     qa:
-        name: QA (PHP 8.2)
+        name: QA (PHP 8.3)
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v5
@@ -130,7 +134,7 @@ jobs:
             - name: Setup PHP
               uses: shivammathur/setup-php@v2
               with:
-                  php-version: "8.2"
+                  php-version: "8.3"
                   coverage: none
 
             - name: Validate composer.json

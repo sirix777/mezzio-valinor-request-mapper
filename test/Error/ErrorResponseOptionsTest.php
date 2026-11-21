@@ -116,4 +116,22 @@ final class ErrorResponseOptionsTest extends TestCase
             'unknown' => 1,
         ]);
     }
+
+    #[Test]
+    public function constructorRejectsInvalidMaxMessages(): void
+    {
+        $this->expectException(InvalidMapRequestConfiguration::class);
+        $this->expectExceptionMessage('sirix_mezzio_valinor.error_response.max_messages must be null or a positive integer.');
+
+        new ErrorResponseOptions(maxMessages: 0);
+    }
+
+    #[Test]
+    public function constructorRejectsMaxResponseBytesBelowMinimum(): void
+    {
+        $this->expectException(InvalidMapRequestConfiguration::class);
+        $this->expectExceptionMessage('sirix_mezzio_valinor.error_response.max_response_bytes must be null or an integer of at least 256.');
+
+        new ErrorResponseOptions(maxResponseBytes: 255);
+    }
 }

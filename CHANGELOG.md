@@ -5,7 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [4.1.0] - 2026-11-21
+
+### Changed
+
+- Supported PHP window is now 8.3–8.6 (8.6 added, 8.2 dropped).
+- `mezzio/mezzio-router` constraint is now `^3.17 || ^4.1`: 3.15 and 3.16 do not
+  allow any supported PHP version, 3.17.0 is the first 3.x release that allows
+  PHP 8.3. On PHP 8.6, 4.3+ is required: 3.x and 4.0–4.2 do not allow PHP 8.6.
+  The CI matrix skips PHP 8.6 with `mezzio-router` `^3.17`, and the
+  lowest-dependency job now pins `mezzio-router` 3.17.0 instead of 3.15.0.
+- Private class constants are now typed (Rector `UP_TO_PHP_83`); all affected
+  classes are `final`, so behavior is unchanged.
+- Development tooling: PHPUnit `^12.5` (expectation-less mocks are now stubs),
+  Rector `UP_TO_PHP_83` (without the obsolete `EARLY_RETURN` set), PHP CS Fixer
+  `@PHP8x3Migration`; the CI matrix covers PHP 8.3–8.6, and the lowest, no-intl
+  and QA jobs run on PHP 8.3.
+
+### Added
+
+- Tests for invalid UTF-8 keys and values being rejected when `input_limits`
+  are enabled, for direct `InputLimits` and `ErrorResponseOptions` construction
+  with invalid values, and for handler target resolution of invokable lazy
+  services, non-handler classes and plain function callables.
 
 ## [4.0.0] - 2026-10-07
 

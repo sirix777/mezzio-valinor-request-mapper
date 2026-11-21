@@ -320,8 +320,8 @@ final class InputLimitsIntegrationTest extends TestCase
             RouteResult::fromRoute(new Route($path, $routeMiddleware, $methods), $routeParams),
         );
 
-        return $middleware->process($request, new class($routeMiddleware) implements RequestHandlerInterface {
-            public function __construct(private readonly RequestHandlerInterface $handler) {}
+        return $middleware->process($request, new readonly class($routeMiddleware) implements RequestHandlerInterface {
+            public function __construct(private RequestHandlerInterface $handler) {}
 
             public function handle(ServerRequestInterface $request): ResponseInterface
             {

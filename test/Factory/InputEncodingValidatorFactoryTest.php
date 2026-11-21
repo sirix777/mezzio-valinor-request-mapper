@@ -162,12 +162,12 @@ final class InputEncodingValidatorFactoryTest extends TestCase
     {
         $notFound = new class extends Exception implements NotFoundExceptionInterface {};
 
-        return new class($config, $notFound) implements ContainerInterface {
+        return new readonly class($config, $notFound) implements ContainerInterface {
             /**
              * @param null|array<string, mixed>            $config
              * @param Exception&NotFoundExceptionInterface $notFound
              */
-            public function __construct(private readonly ?array $config, private readonly Exception $notFound) {}
+            public function __construct(private ?array $config, private Exception $notFound) {}
 
             public function get($id): mixed
             {

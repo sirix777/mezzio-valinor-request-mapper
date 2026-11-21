@@ -446,8 +446,8 @@ final class DefaultMappingErrorResponderTest extends TestCase
     public function oversizedFirstMessageDoesNotHideLaterRetainedFormatterFailure(): void
     {
         $failure   = new RuntimeException('Retained formatter failed');
-        $formatter = new class($failure) implements MessageFormatter {
-            public function __construct(private readonly RuntimeException $failure) {}
+        $formatter = new readonly class($failure) implements MessageFormatter {
+            public function __construct(private RuntimeException $failure) {}
 
             public function format(NodeMessage $message): NodeMessage
             {
@@ -732,8 +732,8 @@ final class DefaultMappingErrorResponderTest extends TestCase
 
     private function nodeMessage(string $path, string $body, bool $throwing = false): NodeMessage
     {
-        $message = (static fn (): ErrorMessage => new class($body, $throwing) implements ErrorMessage {
-            public function __construct(private readonly string $body, private readonly bool $throwing) {}
+        $message = (static fn (): ErrorMessage => new readonly class($body, $throwing) implements ErrorMessage {
+            public function __construct(private string $body, private bool $throwing) {}
 
             public function body(): string
             {
@@ -771,8 +771,8 @@ final class DefaultMappingErrorResponderTest extends TestCase
 
     private function mappingErrorWithMultipleMessagesOnSamePath(string $path): MappingError
     {
-        $message = (static fn (string $body): ErrorMessage => new class($body) implements ErrorMessage {
-            public function __construct(private readonly string $body) {}
+        $message = (static fn (string $body): ErrorMessage => new readonly class($body) implements ErrorMessage {
+            public function __construct(private string $body) {}
 
             public function body(): string
             {

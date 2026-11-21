@@ -19,7 +19,7 @@ use function sprintf;
  */
 final readonly class MapRequestOptionsParser
 {
-    private const KNOWN_KEYS = [
+    private const array KNOWN_KEYS = [
         'body'           => true,
         'query'          => true,
         'route'          => true,

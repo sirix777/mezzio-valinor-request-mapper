@@ -109,7 +109,7 @@ final class MappingCacheTest extends TestCase
             RequestMethodInterface::METHOD_POST,
         ]);
         $aliasRoute = new Route('/alias', new LazyLoadingMiddleware(
-            $this->createMock(MiddlewareContainer::class),
+            $this->createStub(MiddlewareContainer::class),
             $alias,
         ), [RequestMethodInterface::METHOD_POST]);
 

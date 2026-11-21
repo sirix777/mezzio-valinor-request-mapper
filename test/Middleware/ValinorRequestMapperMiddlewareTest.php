@@ -298,14 +298,14 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
             'name' => 'foo',
         ]);
 
-        $handler = new class implements MiddlewareInterface {
-            private const DECORATOR_LIKE_PROPERTIES = ['handler', 'middleware', 'middlewareName'];
+        $handler = new readonly class implements MiddlewareInterface {
+            private const array DECORATOR_LIKE_PROPERTIES = ['handler', 'middleware', 'middlewareName'];
 
-            private readonly RequestHandlerInterface $handler;
+            private RequestHandlerInterface $handler;
 
-            private readonly Closure $middleware;
+            private Closure $middleware;
 
-            private readonly string $middlewareName;
+            private string $middlewareName;
 
             public function __construct()
             {
@@ -347,7 +347,7 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
         ]);
 
         $handler = new class implements MiddlewareInterface {
-            private const DECORATOR_LIKE_PROPERTIES = ['handler', 'middleware', 'middlewareName'];
+            private const array DECORATOR_LIKE_PROPERTIES = ['handler', 'middleware', 'middlewareName'];
 
             private RequestHandlerInterface $handler;
 
@@ -1007,7 +1007,7 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
     #[Test]
     public function doesNotCatchRuntimeExceptionsThrownByTheMapper(): void
     {
-        $mapper = $this->createMock(TreeMapper::class);
+        $mapper = $this->createStub(TreeMapper::class);
         $mapper->method('map')->willThrowException(new RuntimeException('Application mapper failure.'));
         $middleware = $this->middleware($mapper);
         $request    = $this->request(RequestMethodInterface::METHOD_POST, [
@@ -1685,7 +1685,7 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
     public function missingExplicitResponderEscapesBothErrorPaths(array $query): void
     {
         $defaultResponderCalls = 0;
-        $defaultResponder      = $this->createMock(MappingErrorResponderInterface::class);
+        $defaultResponder      = $this->createStub(MappingErrorResponderInterface::class);
         $defaultResponder->method('respond')->willReturnCallback(
             static function() use (&$defaultResponderCalls): ResponseInterface {
                 ++$defaultResponderCalls;
@@ -1744,7 +1744,7 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
     public function successfulMappingDoesNotResolveExplicitResponder(): void
     {
         $explicitIdLookups = [];
-        $container         = $this->createMock(ContainerInterface::class);
+        $container         = $this->createStub(ContainerInterface::class);
         $container->method('has')->willReturnCallback(
             static function(string $id) use (&$explicitIdLookups): bool {
                 $explicitIdLookups[] = ['has', $id];
@@ -1804,7 +1804,7 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
         $firstResponderCalls  = 0;
         $secondResponderCalls = 0;
         $captureResponder     = new CaptureResponder();
-        $firstResponder       = $this->createMock(MappingErrorResponderInterface::class);
+        $firstResponder       = $this->createStub(MappingErrorResponderInterface::class);
         $firstResponder->method('respond')->willReturnCallback(
             static function() use (&$firstResponderCalls): ResponseInterface {
                 ++$firstResponderCalls;
@@ -1812,7 +1812,7 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
                 return new EmptyResponse();
             },
         );
-        $secondResponder = $this->createMock(MappingErrorResponderInterface::class);
+        $secondResponder = $this->createStub(MappingErrorResponderInterface::class);
         $secondResponder->method('respond')->willReturnCallback(
             static function(MappingErrorContext $context) use (&$secondResponderCalls, $captureResponder): ResponseInterface {
                 ++$secondResponderCalls;
@@ -1820,7 +1820,7 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
                 return $captureResponder->respond($context);
             },
         );
-        $container = $this->createMock(ContainerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
         $container->method('has')->willReturnMap([
             [ProblemDetailsResponder::class, true],
             [CaptureResponder::class, true],
@@ -2132,8 +2132,8 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
 
     private function nextHandler(RequestHandlerInterface $routeHandler): RequestHandlerInterface
     {
-        return new class($routeHandler) implements RequestHandlerInterface {
-            public function __construct(private readonly RequestHandlerInterface $handler) {}
+        return new readonly class($routeHandler) implements RequestHandlerInterface {
+            public function __construct(private RequestHandlerInterface $handler) {}
 
             public function handle(ServerRequestInterface $request): ResponseInterface
             {
@@ -2144,8 +2144,8 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
 
     private function nextMiddlewareHandler(MiddlewareInterface $routeMiddleware): RequestHandlerInterface
     {
-        return new class($routeMiddleware) implements RequestHandlerInterface {
-            public function __construct(private readonly MiddlewareInterface $middleware) {}
+        return new readonly class($routeMiddleware) implements RequestHandlerInterface {
+            public function __construct(private MiddlewareInterface $middleware) {}
 
             public function handle(ServerRequestInterface $request): ResponseInterface
             {
@@ -2162,7 +2162,7 @@ final class ValinorRequestMapperMiddlewareTest extends TestCase
     private function spyMapper(int &$mapCount): TreeMapper
     {
         $inner = (new MapperBuilder())->mapper();
-        $mock  = $this->createMock(TreeMapper::class);
+        $mock  = $this->createStub(TreeMapper::class);
         $mock->method('map')->willReturnCallback(
             static function(string $signature, mixed $source) use ($inner, &$mapCount): mixed {
                 ++$mapCount;

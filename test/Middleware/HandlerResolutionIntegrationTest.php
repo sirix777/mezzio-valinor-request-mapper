@@ -178,7 +178,7 @@ final class HandlerResolutionIntegrationTest extends TestCase
             }
         };
 
-        $this->middleware($this->createMock(TreeMapper::class))->process($request, $next);
+        $this->middleware($this->createStub(TreeMapper::class))->process($request, $next);
 
         self::assertTrue($next->called);
         self::assertFalse($container->wasCalled(LazyLoadingRequestHandler::class), 'Service should not be resolved during metadata discovery');
@@ -475,7 +475,7 @@ final class HandlerResolutionIntegrationTest extends TestCase
     private function spyMapper(int &$mapCount, array &$calls): TreeMapper
     {
         $inner = (new MapperBuilder())->mapper();
-        $mock  = $this->createMock(TreeMapper::class);
+        $mock  = $this->createStub(TreeMapper::class);
         $mock->method('map')->willReturnCallback(
             static function(string $signature, mixed $source) use ($inner, &$mapCount, &$calls): mixed {
                 ++$mapCount;
@@ -503,8 +503,8 @@ final class HandlerResolutionIntegrationTest extends TestCase
 
     private function dispatchingNextHandler(MiddlewareInterface $routeMiddleware): RequestHandlerInterface
     {
-        return new class($routeMiddleware) implements RequestHandlerInterface {
-            public function __construct(private readonly MiddlewareInterface $middleware) {}
+        return new readonly class($routeMiddleware) implements RequestHandlerInterface {
+            public function __construct(private MiddlewareInterface $middleware) {}
 
             public function handle(ServerRequestInterface $request): ResponseInterface
             {

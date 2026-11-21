@@ -19,7 +19,7 @@ use function trim;
  */
 final readonly class HttpMethodNormalizer
 {
-    private const TOKEN_PATTERN = '/^[A-Za-z0-9!#$%&\'*+\-.^_`|~]+$/';
+    private const string TOKEN_PATTERN = '/^[A-Za-z0-9!#$%&\'*+\-.^_`|~]+$/';
 
     public function normalize(string $method): string
     {
